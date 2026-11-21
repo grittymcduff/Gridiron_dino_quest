@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Brady's Gridiron Dino Quest</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:radial-gradient(ellipse at center,#2a1f48 0%,#100b1e 75%);overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#wrap{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+#holder{position:relative}
+#game{position:absolute;left:0;top:0;width:640px;height:416px;transform-origin:0 0;background:#000;border-radius:6px;overflow:hidden;font-family:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;color:#1a1230;font-size:12px;box-shadow:0 0 0 4px #3b2f5c,0 0 0 8px #0b0816,0 18px 50px rgba(0,0,0,.6)}
+#cv{position:absolute;left:0;top:0;width:640px;height:416px;image-rendering:pixelated;image-rendering:crisp-edges}
+.hidden{display:none!important}
+.box{background:#fdf8ec;border:3px solid #1a1230;border-radius:7px;box-shadow:inset 0 0 0 2px #e6dbbd,0 3px 0 rgba(0,0,0,.35)}
+button{font-family:inherit;font-weight:700;cursor:pointer;border:2px solid #1a1230;border-radius:5px;background:#fff6dc;color:#1a1230;font-size:11px;padding:4px 8px;box-shadow:0 2px 0 #1a1230}
+button:hover:not(:disabled){background:#ffe9a8}
+button:active:not(:disabled){transform:translateY(2px);box-shadow:none}
+button:disabled{opacity:.4;cursor:default}
+.bar{height:7px;background:#3a3050;border:2px solid #1a1230;border-radius:4px;overflow:hidden;flex:1}
+.bar i{display:block;height:100%;width:100%;background:#3ccf5a;transition:width .5s ease,background .3s}
+small{font-size:10px}
+.good{color:#1f8a3a}.bad{color:#c62828}.crit{color:#d48a00}.quick{color:#1f6fd6}.fire{color:#e8501c}.muted{color:#888}
+/* HUD */
+#hud{position:absolute;inset:0;pointer-events:none}
+#hudL{position:absolute;left:6px;top:6px;padding:4px 8px 4px 4px;display:flex;gap:6px;align-items:center;width:200px}
+#face{width:36px;height:26px;image-rendering:pixelated;background:#cfe8ff;border:2px solid #1a1230;border-radius:4px}
+#hudL>div{flex:1}
+#hudName{font-weight:800;font-size:11px;display:flex;justify-content:space-between}
+#hudHpRow{display:flex;align-items:center;gap:4px;margin-top:2px}
+#hudHpT{font-size:10px;font-weight:700;min-width:46px;text-align:right}
+#hudCoins{font-size:10px;font-weight:700;margin-top:1px}
+#hudR{position:absolute;right:6px;top:6px;padding:4px 8px 4px 4px;display:flex;gap:6px;align-items:center;max-width:300px}
+#compass{width:24px;height:24px}
+#objective{font-weight:700;font-size:10px;line-height:1.25}
+#trophies{font-weight:800;font-size:11px;white-space:nowrap}
+#buffs{position:absolute;left:8px;top:58px;display:flex;gap:3px}
+.buff{background:#fdf8ec;border:2px solid #1a1230;border-radius:5px;padding:0 3px;font-size:12px}
+.buff small{font-size:9px;font-weight:800;margin-left:1px}
+#hudBtns{position:absolute;right:6px;bottom:6px;display:flex;gap:4px;pointer-events:auto}
+#hudBtns button{font-size:10px;padding:3px 6px;opacity:.9}
+#toast{position:absolute;left:50%;top:44px;transform:translate(-50%,-20px);background:#1a1230;color:#fff6dc;padding:6px 12px;border-radius:6px;font-weight:700;opacity:0;transition:.25s;pointer-events:none;white-space:nowrap;z-index:30}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#banner{position:absolute;left:50%;top:150px;transform:translateX(-50%);background:rgba(26,18,48,.85);color:#ffe08a;padding:8px 22px;border:2px solid #ffe08a;border-radius:4px;font-weight:800;font-size:15px;letter-spacing:2px;opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap;text-transform:uppercase;z-index:5}
+#banner.show{opacity:1}
+/* dialog */
+#dialog{position:absolute;left:8px;right:8px;bottom:8px;min-height:92px;padding:10px 14px;font-size:13px;line-height:1.45;font-weight:600;z-index:10}
+#dlgText{min-height:38px;white-space:pre-wrap}
+#dlgNext{position:absolute;right:12px;bottom:6px;animation:bob .6s infinite alternate;font-size:12px}
+@keyframes bob{to{transform:translateY(3px)}}
+#dlgChoices{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px}
+#dlgChoices .ch{text-align:left;font-size:11px;padding:5px 8px}
+.sel{background:#ffe08a!important;outline:2px solid #e8900c}
+/* battle */
+#battle{position:absolute;inset:0}
+#enBox{position:absolute;left:10px;top:10px;width:250px;padding:6px 10px}
+#plBox{position:absolute;right:10px;top:194px;width:236px;padding:6px 10px}
+.nm{display:flex;justify-content:space-between;font-weight:800;font-size:13px}
+.hpRow{display:flex;gap:5px;align-items:center;margin-top:3px}.hpRow b{font-size:9px;background:#e8900c;color:#fff;padding:0 3px;border-radius:2px}
+#enTag{font-size:9px;font-weight:700;color:#6a5a8a;margin-top:2px}
+#plHpT{text-align:right;font-weight:800;font-size:11px}
+.xpbar{height:4px;background:#2a2440;border-radius:2px;overflow:hidden;margin-top:2px}.xpbar i{display:block;height:100%;background:#3aa0ff;transition:width .5s}
+#streak{font-size:10px;font-weight:800;color:#e8501c;min-height:12px}
+#qPanel{position:absolute;left:6px;right:6px;bottom:6px;padding:7px 10px 6px;min-height:146px;display:flex;flex-direction:column}
+#qMain{flex:1}
+#qHead{display:flex;gap:8px;align-items:center;font-size:10px;font-weight:800;margin-bottom:3px}
+.cat{color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:800;white-space:nowrap}
+.diff{color:#e8900c}
+#qTimer{margin-left:auto;color:#1f6fd6}
+#qText{font-size:13.5px;font-weight:800;line-height:1.3;margin-bottom:5px}
+#qAns{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.ans{text-align:left;font-size:11.5px;padding:5px 7px;line-height:1.2;min-height:28px}
+.ans b{display:inline-block;background:#1a1230;color:#fff;border-radius:3px;width:15px;text-align:center;margin-right:3px;font-size:10px}
+.ans.right{background:#7be08f!important;opacity:1!important}.ans.wrong{background:#ff8a80!important;opacity:1!important}.ans.gone{visibility:hidden}
+#qTools{display:flex;gap:5px;justify-content:flex-end;margin-top:5px}
+#qTools .tool{font-size:10px;padding:3px 7px}
+#qTools .go{font-size:12px;padding:5px 14px;background:#ffd84a}
+.qIntro{font-size:13.5px;font-weight:700;line-height:1.45;padding:4px 2px}
+.qIntro.vic{font-size:12px;line-height:1.5}
+.bagList{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}.bagList .tool{text-align:left;font-size:10px}
+#qFeedback{position:absolute;left:8px;top:8px;width:384px;padding:8px 11px;font-size:11.5px;line-height:1.4;font-weight:600;animation:pop .2s}
+#qFeedback.ok{background:#effbe9;border-color:#1f8a3a}#qFeedback.no{background:#fff0ee;border-color:#c62828}
+@keyframes pop{from{transform:scale(.9);opacity:0}}
+/* menu */
+#menu,#shop,#mapView,#ending,#newGameBox{position:absolute;inset:8px;z-index:20;display:flex;flex-direction:column;padding:8px}
+#menuTabs{display:flex;gap:4px;flex-wrap:wrap;align-items:center;padding-bottom:6px;border-bottom:2px dashed #cbbd98}
+#menuTabs button{font-size:10.5px;padding:4px 7px}
+#menuTabs button.on{background:#1a1230;color:#ffe08a}
+#menuTabs .x{margin-left:auto}
+#menuTabs .coins{margin-left:auto;font-weight:800;font-size:13px}
+#menuBody,#menuBody2{overflow:auto;flex:1;padding-top:6px}
+.sub{font-size:11px;margin:2px 0 6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.card{display:flex;gap:7px;align-items:center;border:2px solid #cbbd98;border-radius:6px;padding:5px;background:#fffdf6;font-size:11px}
+.card>div:nth-child(2){flex:1}
+.card .ic{font-size:20px;width:28px;text-align:center}
+.card.won{background:#fff4c8;border-color:#e8900c}
+.dex .card canvas{width:58px;height:50px;image-rendering:pixelated;background:#e8f4ff;border-radius:4px}
+.stats{font-size:11.5px;background:#1a1230;color:#ffe08a;padding:5px 8px;border-radius:5px;margin-bottom:6px}
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:7px}
+.slot{border:2px solid #1a1230;border-radius:6px;padding:5px;font-size:10.5px;background:#fff;min-height:60px}
+.catbars{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-bottom:6px}
+.cb{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700}.cb span{width:120px}.cb .bar{height:8px}
+h4{margin:6px 0 4px;font-size:12px;display:flex;align-items:center;gap:8px}
+.film{border-left:4px solid #cbbd98;padding:3px 7px;margin-bottom:5px;font-size:11px;line-height:1.35;background:#fffdf6}
+.opt{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.help{font-size:11px;line-height:1.5;background:#fffdf6;border:2px solid #cbbd98;border-radius:6px;padding:7px 9px}
+.danger{background:#ffd0cc}
+#mapView{align-items:center}
+#mapCv{width:450px;height:330px;image-rendering:pixelated;border:3px solid #1a1230;border-radius:4px;margin-top:4px}
+.mapLeg{font-size:10px;margin-top:4px}
+/* title */
+#title{position:absolute;inset:0;z-index:25;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(rgba(16,11,30,.35),rgba(16,11,30,.7))}
+#logo{text-align:center;color:#fff6dc;text-shadow:3px 3px 0 #1a1230,-1px -1px 0 #1a1230,1px -1px 0 #1a1230,-1px 1px 0 #1a1230}
+#logo .l1{font-size:15px;font-weight:800;letter-spacing:4px;color:#ffd84a}
+#logo .l2{font-size:38px;font-weight:900;letter-spacing:1px;line-height:1}
+#logo .l3{font-size:28px;font-weight:900;color:#7be08f;letter-spacing:3px}
+#titleArt{display:flex;align-items:flex-end;gap:30px;margin:8px 0 6px}
+#titleArt canvas{image-rendering:pixelated}
+#titleBtns{display:flex;gap:10px}
+#titleBtns button{font-size:14px;padding:8px 18px;background:#ffd84a}
+#titleFoot{color:#d8cff0;font-size:10px;margin-top:10px;text-align:center;text-shadow:1px 1px 0 #000}
+#newGameBox{inset:60px 110px;justify-content:center;align-items:center;text-align:center;gap:8px}
+#newGameBox .dbtn{width:330px;text-align:left;font-size:12px;padding:7px 10px}
+#ending{justify-content:center;align-items:center;text-align:center;gap:8px;background:#fff8dc}
+#ending h2{margin:0;font-size:24px}
+/* touch */
+#touch{display:none;width:100%;max-width:640px;justify-content:space-between;align-items:center;padding:0 14px;pointer-events:none}
+body.touch #touch{display:flex}
+body.touch:not(.portrait) #touch{position:fixed;left:0;right:0;bottom:10px;max-width:none;opacity:.55}
+#dpad{display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(3,54px);pointer-events:auto}
+#dpad button,#abtns button{font-size:20px;border-radius:10px;background:#3b2f5c;color:#fff;border:3px solid #0b0816;box-shadow:0 3px 0 #0b0816;touch-action:none}
+#abtns{display:flex;gap:10px;align-items:center;pointer-events:auto}
+#abtns button{width:64px;height:64px;border-radius:50%;font-size:18px}
+#abtns #tA{background:#e8443a}#abtns #tB{background:#2f6fd6;width:54px;height:54px}#abtns #tM{width:44px;height:44px;font-size:14px;background:#555}
+</style></head>
+<body>
+<div id="wrap">
+ <div id="holder"><div id="game">
+  <canvas id="cv" width="320" height="208"></canvas>
+  <div id="hud" class="hidden">
+   <div id="hudL" class="box"><canvas id="face" width="36" height="26"></canvas><div><div id="hudName"><span>BRADY</span><span id="hudLv">Lv1</span></div><div id="hudHpRow"><div class="bar"><i id="hudHp"></i></div><span id="hudHpT"></span></div><div id="hudCoins"></div></div></div>
+   <div id="hudR" class="box"><canvas id="compass" width="24" height="24"></canvas><div id="objective"></div><div id="trophies"></div></div>
+   <div id="buffs"></div>
+   <div id="hudBtns"><button id="btnMenu">☰ Menu (I)</button><button id="btnMap">🗺 Map (M)</button><button id="btnSnd">🔊</button></div>
+  </div>
+  <div id="battle" class="hidden">
+   <div id="enBox" class="box"><div class="nm"><span id="enName"></span><span id="enLv"></span></div><div class="hpRow"><b>HP</b><div class="bar"><i id="enHp"></i></div></div><div id="enTag"></div></div>
+   <div id="plBox" class="box"><div class="nm"><span>BRADY</span><span id="plLv"></span></div><div class="hpRow"><b>HP</b><div class="bar"><i id="plHp"></i></div></div><div id="plHpT"></div><div class="xpbar"><i id="plXp"></i></div><div id="streak"></div></div>
+   <div id="qFeedback" class="box hidden"></div>
+   <div id="qPanel" class="box"><div id="qMain"></div><div id="qTools"></div></div>
+  </div>
+  <div id="dialog" class="box hidden"><div id="dlgText"></div><div id="dlgChoices"></div><div id="dlgNext">▼</div></div>
+  <div id="menu" class="box hidden"><div id="menuTabs"></div><div id="menuBody"></div></div>
+  <div id="shop" class="box hidden"></div>
+  <div id="mapView" class="box hidden"><div id="menuTabs" style="width:100%"><b style="font-size:13px">🗺 The Gridiron Isles</b><button class="x" onclick="G.closeMenu()">✕</button></div><canvas id="mapCv" width="450" height="330"></canvas><div class="mapLeg">🟥 Head Coach (not beaten) · 🟩 beaten · ⬜ Kickoff Town · 🟨 legendary chest · 🔵 you (blinking)</div></div>
+  <div id="ending" class="box hidden"><div style="font-size:44px">🏆🦖🏈</div><h2>GRIDIRON LEGEND!</h2><div>Brady beat all seven Head Coaches and became Champion of the Gridiron Isles!</div><div id="endStats" class="help"></div><div><small>Keep exploring to find every legendary chest, fill your Dino-Dex, and clear your Film Room.</small></div><button onclick="G.endContinue()" style="font-size:13px;padding:7px 16px;background:#ffd84a">Keep Exploring ▶</button></div>
+  <div id="title">
+   <div id="logo"><div class="l1">★ BRADY'S ★</div><div class="l2">GRIDIRON</div><div class="l3">DINO QUEST</div></div>
+   <div id="titleArt"><canvas id="titleBrady" width="72" height="72"></canvas><canvas id="titleDino" width="116" height="100"></canvas></div>
+   <div id="titleBtns"><button id="btnCont" onclick="G.continueGame()">▶ Continue</button><button onclick="G.showNew()">🏈 New Game</button></div>
+   <div id="titleFoot">Answer NFL trivia to battle dinosaurs! · Arrows/WASD move · Space/Enter interact · I menu · M map</div>
+   <div id="newGameBox" class="box hidden"><b style="font-size:14px">Choose your difficulty</b>
+    <button class="dbtn" onclick="G.newGame('rookie')">🟢 ROOKIE: easier questions, dinos hit softer. Great for learning!</button>
+    <button class="dbtn" onclick="G.newGame('pro')">🟡 PRO: the standard experience.</button>
+    <button class="dbtn" onclick="G.newGame('allpro')">🔴 ALL-PRO: harder questions, dinos hit harder.</button>
+    <small>You can change this later in Menu → Options.</small></div>
+  </div>
+  <div id="toast"></div><div id="banner"></div>
+ </div></div>
+ <div id="touch"><div id="dpad"><span></span><button data-d="up">▲</button><span></span><button data-d="left">◀</button><span></span><button data-d="right">▶</button><span></span><button data-d="down">▼</button><span></span></div><div id="abtns"><button id="tM">☰</button><button id="tB">B</button><button id="tA">A</button></div></div>
+</div>
+<script>// ===== NFL QUESTION BANK =====
+// [category, difficulty 1-3, question, correct answer, [wrong answers], explanation]
+const RAW_Q = [
+// ---------------- RULES ----------------
+['rules',1,'How many points is a touchdown worth?','6',['3','7','2'],'A touchdown is worth 6 points. The team then tries for 1 or 2 more points.'],
+['rules',1,'How many points is a field goal worth?','3',['2','1','6'],'A field goal (kicking the ball through the uprights during a play) is worth 3 points.'],
+['rules',1,'How many points does the defense get for a safety?','2',['1','3','6'],'A safety happens when the ball carrier is tackled in his own end zone. The defense scores 2 points and also gets the ball back by a kick.'],
+['rules',1,'After a touchdown, a kick through the uprights is worth how many points?','1',['2','3','6'],'The "extra point" (point after touchdown) kick is worth 1 point.'],
+['rules',1,'After a touchdown, running or passing into the end zone again is worth...','2 points',['1 point','3 points','6 points'],'A two-point conversion is a single play from close range. Succeed and you get 2 points instead of 1.'],
+['rules',1,'How many downs (tries) does the offense get to gain 10 yards?','4',['3','5','6'],'The offense gets 4 downs. Gain 10 yards and you earn a fresh set of downs, called a "first down."'],
+['rules',1,'How many yards does the offense need to earn a new first down?','10',['5','15','20'],'Ten yards. The officials use the "chains" on the sideline to measure it.'],
+['rules',1,'How many players does each team have on the field at one time?','11',['9','10','12'],'Each side plays with 11 players. Having 12 on the field is a penalty!'],
+['rules',1,'How long is the field from goal line to goal line?','100 yards',['80 yards','120 yards','50 yards'],'The playing field is 100 yards long, plus a 10-yard end zone at each end (120 yards total).'],
+['rules',1,'How many quarters are in an NFL game?','4',['2','3','5'],'An NFL game has four quarters, with halftime after the second quarter.'],
+['rules',1,'How long is each quarter in an NFL game?','15 minutes',['10 minutes','12 minutes','20 minutes'],'NFL quarters are 15 minutes of game clock. (High school quarters are usually 12.)'],
+['rules',1,'How deep is each end zone?','10 yards',['5 yards','15 yards','20 yards'],'Each end zone is 10 yards deep. Getting the ball into it scores a touchdown.'],
+['rules',1,'What color is the penalty flag officials throw?','Yellow',['Red','White','Blue'],'Officials throw a yellow flag to signal a penalty. Coaches throw a red flag to challenge a call.'],
+['rules',1,'What color flag does a head coach throw to challenge a call?','Red',['Yellow','Green','Black'],'Coaches toss a red challenge flag to ask the officials to review a play on replay.'],
+['rules',1,'When a defender catches a pass thrown by the quarterback, it is called...','An interception',['A fumble','A safety','A touchback'],'An interception means the defense caught the pass, and now they get the ball.'],
+['rules',1,'When a ball carrier drops the ball before he is down, it is a...','Fumble',['Interception','Punt','Sack'],'A fumble is a loose ball. Either team can recover it.'],
+['rules',1,'What is it called when the defense tackles the QB behind the line of scrimmage before he throws?','A sack',['A blitz','A safety','A punt'],'Tackling the quarterback behind the line of scrimmage before he passes is a sack.'],
+['rules',1,'An interception returned for a touchdown is nicknamed a...','Pick-six',['Hail Mary','Pick-two','Touchback'],'"Pick" means interception, and "six" is the 6 points for the touchdown.'],
+['rules',1,'What happens to the game clock after an incomplete pass?','It stops',['It keeps running','It resets to 15:00','It adds 10 seconds'],'An incomplete pass stops the clock until the next snap.'],
+['rules',2,'How many feet must an NFL receiver get in bounds for a catch?','2',['1','3','None, just a hand'],'NFL receivers need two feet (or another body part like a knee) down in bounds. In college, one foot is enough.'],
+['rules',2,'Offensive holding is usually a penalty of how many yards?','10',['5','15','20'],'Offensive holding costs 10 yards. Linemen can block but cannot grab and hold defenders.'],
+['rules',2,'An offensive player moving before the snap is called a...','False start',['Offside','Holding','Delay of game'],'A false start is a 5-yard penalty on the offense for moving before the ball is snapped.'],
+['rules',2,'A defender crossing the line of scrimmage before the snap is called...','Offside',['False start','Clipping','Face mask'],'Offside is a 5-yard penalty on the defense.'],
+['rules',2,'Grabbing an opponent\'s face mask is a penalty of how many yards?','15',['5','10','20'],'Face mask penalties are 15 yards because they are dangerous.'],
+['rules',2,'Roughing the passer is a penalty of how many yards?','15',['5','10','25'],'Hitting the QB late or too hard is roughing the passer: 15 yards and an automatic first down.'],
+['rules',2,'If the offense does not snap the ball before the play clock hits 0, it is...','Delay of game',['False start','Intentional grounding','Encroachment'],'Delay of game is a 5-yard penalty on the offense.'],
+['rules',2,'How many timeouts does each team get per half?','3',['2','4','5'],'Each team gets three timeouts in each half.'],
+['rules',2,'When does the two-minute warning happen?','2:00 left in the 2nd and 4th quarters',['2:00 left in every quarter','At halftime','2:00 left in the game only'],'The game stops at the two-minute mark of the 2nd and 4th quarters.'],
+['rules',2,'What does a returner signal by waving his arm over his head on a punt?','A fair catch',['A timeout','A touchback','He wants a penalty'],'A fair catch means he will catch the ball, nobody may hit him, and he will not run it back.'],
+['rules',2,'On an onside kick, how far must the ball travel before the kicking team can recover it?','10 yards',['5 yards','15 yards','20 yards'],'The ball must go 10 yards (or be touched by the receiving team) before the kicking team can legally recover it.'],
+['rules',2,'What decides which team gets the ball first at the start of the game?','A coin toss',['Home team always chooses','The last game\'s winner','A rock-paper-scissors match'],'Team captains meet at midfield for the coin toss before kickoff.'],
+['rules',2,'What is the "line of scrimmage"?','The spot where the ball sits before each play',['The 50-yard line','The goal line','The sideline'],'The line of scrimmage is an imaginary line through the ball. Neither team may cross it before the snap.'],
+['rules',2,'Pass interference on the DEFENSE in the NFL gives the offense...','The ball at the spot of the foul and a first down',['5 yards only','A free touchdown','A replay of the down'],'Defensive pass interference is a "spot foul." The ball moves to where the foul happened, with a first down.'],
+['rules',3,'How wide is an NFL field?','53 1/3 yards',['50 yards','60 yards','45 yards'],'An NFL field is 160 feet wide, which is 53 1/3 yards.'],
+['rules',3,'How long is the NFL play clock after a normal play ends?','40 seconds',['25 seconds','30 seconds','60 seconds'],'After most plays the offense has 40 seconds to snap. After certain stoppages it is 25 seconds.'],
+['rules',3,'How many officials are on a standard NFL officiating crew?','7',['5','6','9'],'An NFL crew has 7 officials, led by the referee in the white hat.'],
+['rules',3,'How long is a regular-season NFL overtime period?','10 minutes',['15 minutes','5 minutes','Unlimited'],'Regular-season overtime is 10 minutes. Playoff overtime periods are 15 minutes.'],
+['rules',3,'A QB throwing the ball away to avoid a sack with no receiver nearby, while in the pocket, is called...','Intentional grounding',['Delay of game','Illegal forward pass','Spiking'],'Intentional grounding costs a loss of down plus yards, and it is a safety if the QB was in his own end zone.'],
+['rules',3,'How far apart are the NFL goalpost uprights?','18 feet, 6 inches',['10 feet','24 feet','30 feet'],'NFL uprights are 18 feet 6 inches apart, and the crossbar is 10 feet high.'],
+['rules',3,'How many challenges does a coach start each game with?','2',['1','3','Unlimited'],'Coaches get 2 challenges, plus a third if both of the first two are successful.'],
+['rules',3,'Who wears the WHITE hat on an NFL officiating crew?','The referee (crew chief)',['The umpire','The line judge','The back judge'],'The referee is the crew chief and wears a white hat. The others wear black hats.'],
+
+// ---------------- STRATEGY & POSITIONS ----------------
+['strategy',1,'Which player usually throws passes for the offense?','Quarterback',['Center','Linebacker','Punter'],'The quarterback (QB) leads the offense, calls plays in the huddle, and throws most passes.'],
+['strategy',1,'Which player snaps the ball to the quarterback?','Center',['Guard','Tight end','Fullback'],'The center is in the middle of the offensive line and snaps the ball to start each play.'],
+['strategy',1,'Whose main job is to catch passes and run fast routes?','Wide receiver',['Offensive tackle','Defensive end','Kicker'],'Wide receivers line up wide and run routes to get open for passes.'],
+['strategy',1,'Which position is mostly used to run the ball?','Running back',['Center','Safety','Long snapper'],'The running back (or halfback) takes handoffs and runs the ball.'],
+['strategy',1,'What is the main job of the offensive line?','Block to protect the QB and open running lanes',['Catch passes','Kick field goals','Intercept passes'],'The five offensive linemen (center, two guards, two tackles) block for the team.'],
+['strategy',1,'Which player usually kicks field goals and extra points?','Kicker',['Punter','Quarterback','Holder'],'The kicker (or "placekicker") kicks field goals, extra points, and kickoffs.'],
+['strategy',1,'On 4th down far from the end zone, teams usually...','Punt',['Kick an extra point','Take a safety','Spike the ball'],'Punting kicks the ball far away so the other team starts its drive deep in its own territory.'],
+['strategy',1,'Which defenders mainly cover wide receivers?','Cornerbacks',['Defensive tackles','Centers','Fullbacks'],'Cornerbacks line up across from receivers to cover them and break up passes.'],
+['strategy',1,'What is the "red zone"?','Inside the opponent\'s 20-yard line',['Your own end zone','The area behind the bench','Midfield'],'The red zone is from the opponent\'s 20-yard line to the goal line, where scoring chances are best.'],
+['strategy',1,'A long, desperate pass into the end zone at the end of a half is called a...','Hail Mary',['Screen pass','Draw play','Quarterback sneak'],'A Hail Mary is a deep heave hoping someone catches it. The name became famous in 1975 with Cowboys QB Roger Staubach.'],
+['strategy',1,'What is a "turnover"?','When the offense loses the ball by fumble or interception',['Switching sides at halftime','A punt','A coin toss'],'Turnovers (fumbles lost and interceptions) give the other team the ball and often decide games.'],
+['strategy',1,'Which defenders play in the middle of the defense and tackle runners or cover passes?','Linebackers',['Guards','Kickers','Wide receivers'],'Linebackers line up behind the defensive line. They tackle, cover, and sometimes rush the QB.'],
+['strategy',2,'What is a "blitz"?','Sending extra defenders to rush the QB',['A fake punt','A long pass','A type of penalty'],'A blitz sends linebackers or defensive backs after the QB, hoping for a sack.'],
+['strategy',2,'When the QB changes the play at the line of scrimmage, it is called an...','Audible',['Huddle','Option','Encroachment'],'An audible is a play change called out loud at the line after the QB reads the defense.'],
+['strategy',2,'What is "play action"?','Faking a handoff, then passing',['A trick kickoff','Running out of bounds','Spiking the ball'],'Play action fakes a run to fool the defense, then the QB throws.'],
+['strategy',2,'In the "shotgun" formation, the QB lines up...','Several yards behind the center',['Directly under center','As a wide receiver','In the backfield next to the kicker'],'In the shotgun the QB stands about 5 to 7 yards back, giving him more time to see the field.'],
+['strategy',2,'What is the "pocket"?','The protected area the O-line forms around the QB',['A trick play','The end zone','The kicker\'s practice net'],'The pocket is the space the blockers create so the quarterback can throw.'],
+['strategy',2,'A tight end usually...','Blocks AND catches passes',['Only kicks','Only plays defense','Only snaps the ball'],'Tight ends line up next to the offensive line. They are part blocker, part receiver.'],
+['strategy',2,'Which defenders are usually the deepest, protecting against long passes?','Safeties',['Nose tackles','Defensive ends','Guards'],'Safeties line up deep in the secondary as the last line of defense.'],
+['strategy',2,'What is "special teams"?','The units on the field for kicks and punts',['The best players only','The coaching staff','The team\'s practice squad'],'Special teams cover kickoffs, punts, field goals, and extra points.'],
+['strategy',2,'Kneeling on the ball to run out the clock is called the...','Victory formation',['Hail Mary','Wildcat','Prevent defense'],'When winning late, the QB takes a knee in the "victory formation" to safely run out the clock.'],
+['strategy',2,'Why do teams run a "two-minute drill"?','To move the ball quickly before time runs out',['To rest players','To practice punting','To warm up at halftime'],'The two-minute drill uses quick plays, the sidelines, and timeouts to score with little time left.'],
+['strategy',2,'Who usually holds the ball for the kicker on a field goal?','The punter (holder)',['The center','The quarterback\'s backup only','A referee'],'On most NFL teams, the punter serves as the holder on field goals and extra points.'],
+['strategy',3,'A "nickel" defense uses how many defensive backs?','5',['4','6','3'],'Nickel = 5 defensive backs (like a nickel is 5 cents). "Dime" defense uses 6.'],
+['strategy',3,'For a right-handed QB, which lineman protects his "blind side"?','Left tackle',['Right guard','Center','Right tackle'],'A right-handed QB faces right when he throws, so the left tackle guards the side he cannot see.'],
+['strategy',3,'What is a "screen pass"?','A short pass to a player behind a wall of blockers',['A pass thrown out of bounds','A deep pass down the sideline','A pass to the kicker'],'Linemen let rushers through, then the QB flips a short pass to a back with blockers out in front.'],
+['strategy',3,'Offenses that skip the huddle to go fast are running a...','No-huddle / hurry-up offense',['Prevent defense','Wishbone','Victory formation'],'No-huddle offense keeps the defense from substituting and catching its breath.'],
+['strategy',3,'A "QB sneak" is when the quarterback...','Takes the snap and pushes straight ahead for a short gain',['Throws a backward pass','Punts on 3rd down','Lines up as a receiver'],'The sneak is used on short-yardage downs. The Eagles\' "Tush Push" version became famous in the 2020s.'],
+['strategy',3,'What does a "long snapper" do?','Snaps the ball on punts and field goals',['Throws long passes','Kicks kickoffs','Returns punts'],'Long snappers are specialists who snap accurately 7 to 15 yards back on kicking plays.'],
+
+// ---------------- HISTORY ----------------
+['history',1,'Which team won the first Super Bowl in January 1967?','Green Bay Packers',['Kansas City Chiefs','New York Jets','Dallas Cowboys'],'The Packers beat the Chiefs 35-10 in Super Bowl I.'],
+['history',1,'The Super Bowl trophy is named after which famous coach?','Vince Lombardi',['George Halas','Don Shula','Bill Belichick'],'The Vince Lombardi Trophy honors the Packers coach who won the first two Super Bowls.'],
+['history',1,'Which QB has won the most Super Bowls (7)?','Tom Brady',['Joe Montana','Peyton Manning','Terry Bradshaw'],'Tom Brady won 6 with the Patriots and 1 with the Buccaneers.'],
+['history',1,'The Pro Football Hall of Fame is located in which city?','Canton, Ohio',['Green Bay, Wisconsin','Dallas, Texas','New York, New York'],'The Hall of Fame is in Canton, where the NFL was founded in 1920.'],
+['history',1,'Which two teams play at home on Thanksgiving Day every year?','Detroit Lions and Dallas Cowboys',['Bears and Packers','Giants and Jets','Chiefs and Raiders'],'The Lions (since 1934) and Cowboys (since 1966) host Thanksgiving games every year.'],
+['history',1,'In what month is the Super Bowl played now?','February',['January','December','March'],'The Super Bowl is now played on a Sunday in early February.'],
+['history',1,'Which team won Super Bowl LIX in February 2025?','Philadelphia Eagles',['Kansas City Chiefs','Buffalo Bills','San Francisco 49ers'],'The Eagles beat the Chiefs 40-22 in New Orleans. Jalen Hurts was named MVP.'],
+['history',1,'Which team won Super Bowl LX in February 2026?','Seattle Seahawks',['New England Patriots','Philadelphia Eagles','Kansas City Chiefs'],'Seattle beat New England 29-13 at Levi\'s Stadium. RB Kenneth Walker III was MVP.'],
+['history',2,'Which team had the only perfect season (17-0) including the Super Bowl?','1972 Miami Dolphins',['2007 New England Patriots','1985 Chicago Bears','1989 San Francisco 49ers'],'The 1972 Dolphins went 17-0. The 2007 Patriots went 16-0 but lost the Super Bowl.'],
+['history',2,'"The Immaculate Reception" (1972) was caught by which Steelers running back?','Franco Harris',['Jerome Bettis','Rocky Bleier','Lynn Swann'],'Franco Harris scooped a deflected pass off his shoe tops and scored to beat the Raiders.'],
+['history',2,'"The Catch" in the 1981 season NFC title game was Joe Montana to...','Dwight Clark',['Jerry Rice','Roger Craig','John Taylor'],'Dwight Clark\'s leaping catch beat the Cowboys and sent the 49ers to their first Super Bowl.'],
+['history',2,'Which Jets QB "guaranteed" a win before Super Bowl III, then delivered?','Joe Namath',['Joe Montana','Johnny Unitas','Ken Stabler'],'"Broadway Joe" Namath\'s Jets upset the Baltimore Colts, proving the AFL could compete.'],
+['history',2,'Which two franchises are tied for the most Super Bowl wins with 6 each?','Patriots and Steelers',['Cowboys and 49ers','Packers and Giants','Chiefs and Broncos'],'New England and Pittsburgh each have 6. The 49ers and Cowboys have 5.'],
+['history',2,'In Super Bowl LI, the Patriots came back from 28-3 down to beat which team?','Atlanta Falcons',['Seattle Seahawks','Philadelphia Eagles','Los Angeles Rams'],'It was the biggest comeback in Super Bowl history and the first Super Bowl to go to overtime.'],
+['history',2,'The "Helmet Catch" by David Tyree helped which team stop the 18-0 Patriots?','New York Giants',['New York Jets','Philadelphia Eagles','Baltimore Ravens'],'In Super Bowl XLII, Eli Manning escaped a sack and Tyree pinned the ball to his helmet.'],
+['history',2,'The "Philly Special" trick play, where QB Nick Foles caught a TD, happened in which Super Bowl?','Super Bowl LII',['Super Bowl LIX','Super Bowl XXXIX','Super Bowl LVII'],'The Eagles beat the Patriots 41-33 for their first Super Bowl title.'],
+['history',2,'Which team lost four Super Bowls in a row in the early 1990s?','Buffalo Bills',['Minnesota Vikings','Denver Broncos','Cincinnati Bengals'],'The Bills lost Super Bowls XXV through XXVIII.'],
+['history',2,'Who is the NFL\'s all-time leader in career rushing yards?','Emmitt Smith',['Walter Payton','Barry Sanders','Jim Brown'],'Emmitt Smith ran for 18,355 yards, mostly with the Cowboys.'],
+['history',2,'Who is the NFL\'s all-time leader in career receiving yards?','Jerry Rice',['Randy Moss','Larry Fitzgerald','Terrell Owens'],'Jerry Rice had 22,895 receiving yards, far ahead of everyone else.'],
+['history',2,'Which famous Packers coach led the team to wins in Super Bowls I and II?','Vince Lombardi',['Mike McCarthy','Curly Lambeau','Bart Starr'],'Lombardi\'s Packers won five NFL titles in the 1960s, including the first two Super Bowls.'],
+['history',2,'Which coach has the most wins in NFL history?','Don Shula',['Bill Belichick','George Halas','Tom Landry'],'Don Shula won 347 games coaching the Baltimore Colts and Miami Dolphins.'],
+['history',2,'Which team won back-to-back Super Bowls LVII and LVIII?','Kansas City Chiefs',['Philadelphia Eagles','San Francisco 49ers','Los Angeles Rams'],'The Chiefs beat the Eagles in LVII and the 49ers in overtime in LVIII.'],
+['history',2,'What color jacket do new Hall of Famers receive?','Gold',['Green','Red','Silver'],'Hall of Fame inductees receive the famous gold jacket.'],
+['history',3,'In what year was the NFL founded (originally the APFA)?','1920',['1869','1946','1966'],'The league was founded in Canton, Ohio, in 1920 and renamed the NFL in 1922.'],
+['history',3,'In what year did the AFL and NFL officially merge into one league?','1970',['1960','1967','1982'],'The merger created the AFC and NFC conferences we know today.'],
+['history',3,'The 1967 "Ice Bowl" NFL Championship was played in Green Bay against which team?','Dallas Cowboys',['Chicago Bears','Minnesota Vikings','Baltimore Colts'],'It was about -15°F at kickoff. Bart Starr\'s QB sneak won it for the Packers.'],
+['history',3,'Who was the MVP of Super Bowl I?','Bart Starr',['Joe Namath','Johnny Unitas','Len Dawson'],'Packers QB Bart Starr was MVP of both Super Bowls I and II.'],
+['history',3,'Which Chiefs owner came up with the name "Super Bowl"?','Lamar Hunt',['Al Davis','Art Rooney','Jerry Jones'],'Lamar Hunt reportedly got the idea from his kids\' Super Ball toy.'],
+['history',3,'"Monday Night Football" first aired in what year?','1970',['1955','1985','1999'],'MNF started on ABC in 1970 and is one of the longest-running shows in TV history.'],
+['history',3,'The "Minneapolis Miracle" (Jan 2018) was a walk-off TD catch by which Viking?','Stefon Diggs',['Adam Thielen','Randy Moss','Cris Carter'],'Diggs caught the pass, stayed in bounds, and scored on the final play to beat the Saints.'],
+['history',3,'The "Music City Miracle" kickoff-return lateral beat which team in January 2000?','Buffalo Bills',['Indianapolis Colts','Jacksonville Jaguars','Miami Dolphins'],'The Titans\' Frank Wycheck lateraled to Kevin Dyson, who ran it back for the win.'],
+['history',3,'Which team did Peyton Manning win his SECOND Super Bowl with?','Denver Broncos',['Indianapolis Colts','New York Giants','Tennessee Titans'],'He won Super Bowl XLI with the Colts and Super Bowl 50 with the Broncos.'],
+['history',3,'Which RB set the single-season rushing record of 2,105 yards in 1984?','Eric Dickerson',['Barry Sanders','Adrian Peterson','O.J. Simpson'],'Eric Dickerson set it with the Los Angeles Rams.'],
+['history',3,'Which QB threw a record 55 touchdown passes in the 2013 season?','Peyton Manning',['Tom Brady','Patrick Mahomes','Drew Brees'],'Peyton Manning threw 55 TD passes for the Broncos in 2013.'],
+
+// ---------------- PLAYERS ----------------
+['players',1,'Patrick Mahomes has won Super Bowls as QB of which team?','Kansas City Chiefs',['Buffalo Bills','Dallas Cowboys','Philadelphia Eagles'],'Mahomes has led the Chiefs to Super Bowl wins in LIV, LVII, and LVIII.'],
+['players',1,'Tom Brady won six of his Super Bowls with which team?','New England Patriots',['Tampa Bay Buccaneers','New York Giants','Miami Dolphins'],'Brady won 6 with the Patriots, then won Super Bowl LV with the Buccaneers.'],
+['players',1,'Travis Kelce became a superstar at which position for the Chiefs?','Tight end',['Quarterback','Kicker','Cornerback'],'Kelce is one of the greatest tight ends ever, known for his chemistry with Mahomes.'],
+['players',1,'Josh Allen won the 2024 MVP award as QB of which team?','Buffalo Bills',['Miami Dolphins','New York Jets','Detroit Lions'],'Allen won NFL MVP for the 2024 season with the Bills.'],
+['players',1,'Lamar Jackson, a two-time MVP, plays quarterback for which team?','Baltimore Ravens',['Pittsburgh Steelers','Cleveland Browns','Atlanta Falcons'],'Lamar Jackson won MVP in 2019 (unanimously) and 2023 with the Ravens.'],
+['players',1,'Jalen Hurts was Super Bowl LIX MVP for which team?','Philadelphia Eagles',['Kansas City Chiefs','Washington Commanders','Dallas Cowboys'],'Hurts ran and threw for touchdowns as the Eagles won 40-22.'],
+['players',1,'Jerry Rice is famous as a receiver for which team?','San Francisco 49ers',['Dallas Cowboys','Green Bay Packers','Chicago Bears'],'Rice won three Super Bowls with the 49ers and holds most major receiving records.'],
+['players',1,'Walter Payton, nicknamed "Sweetness," starred for which team?','Chicago Bears',['Detroit Lions','Green Bay Packers','Dallas Cowboys'],'Payton was a Bears legend. The NFL\'s Man of the Year award is named after him.'],
+['players',1,'What position did Peyton Manning play?','Quarterback',['Running back','Linebacker','Wide receiver'],'Peyton Manning was a 5-time MVP quarterback for the Colts and Broncos.'],
+['players',2,'Which team drafted QB Joe Burrow #1 overall in 2020?','Cincinnati Bengals',['Cleveland Browns','Detroit Lions','Miami Dolphins'],'Burrow won a national title at LSU, then led the Bengals to Super Bowl LVI.'],
+['players',2,'Which team drafted WR Justin Jefferson in 2020?','Minnesota Vikings',['Green Bay Packers','LSU Tigers','New Orleans Saints'],'Jefferson became one of the NFL\'s top receivers with the Vikings.'],
+['players',2,'Which team drafted QB C.J. Stroud in 2023?','Houston Texans',['Carolina Panthers','Indianapolis Colts','Chicago Bears'],'Stroud won Offensive Rookie of the Year with the Texans in 2023.'],
+['players',2,'Saquon Barkley ran for over 2,000 yards in 2024 for which team?','Philadelphia Eagles',['New York Giants','Dallas Cowboys','Detroit Lions'],'Barkley ran for 2,005 yards in his first Eagles season, then won the Super Bowl.'],
+['players',2,'Which 49ers QB was "Mr. Irrelevant," the final pick of the 2022 draft?','Brock Purdy',['Trey Lance','Jimmy Garoppolo','Sam Darnold'],'Purdy went from the last pick to leading the 49ers to Super Bowl LVIII.'],
+['players',2,'Which Lions RB retired suddenly in 1999 while near the top of the rushing record list?','Barry Sanders',['Emmitt Smith','Jamal Lewis','Curtis Martin'],'Barry Sanders, famous for his jukes, retired at age 30.'],
+['players',2,'Which Broncos QB led the famous comeback drive known as "The Drive"?','John Elway',['Peyton Manning','Tim Tebow','Craig Morton'],'In the 1986 season AFC title game, Elway led a 98-yard drive to tie the Browns.'],
+['players',2,'Dan Marino set many passing records with which team?','Miami Dolphins',['New York Jets','Buffalo Bills','San Diego Chargers'],'Marino played all 17 seasons with the Dolphins.'],
+['players',2,'Deion "Prime Time" Sanders also played which other pro sport?','Baseball',['Basketball','Hockey','Soccer'],'Deion played in both the NFL and Major League Baseball. Bo Jackson did too.'],
+['players',2,'Ray Lewis was a legendary linebacker for which team?','Baltimore Ravens',['Pittsburgh Steelers','New York Giants','Chicago Bears'],'Ray Lewis was MVP of Super Bowl XXXV and won another title in his final season.'],
+['players',2,'Lawrence Taylor ("LT") changed defense as a linebacker for which team?','New York Giants',['Dallas Cowboys','Washington','Los Angeles Rams'],'LT was so dominant at rushing the QB that teams changed how they blocked.'],
+['players',2,'Who caught the 2007 record of 23 touchdown passes in one season?','Randy Moss',['Jerry Rice','Calvin Johnson','Tyreek Hill'],'Moss caught 23 TDs from Tom Brady for the 16-0 Patriots.'],
+['players',2,'Which Lions receiver nicknamed "Megatron" set the single-season receiving record in 2012?','Calvin Johnson',['Herman Moore','Amon-Ra St. Brown','Barry Sanders'],'Calvin Johnson had 1,964 receiving yards in 2012.'],
+['players',2,'Drew Brees led which team to win Super Bowl XLIV?','New Orleans Saints',['San Diego Chargers','Indianapolis Colts','Atlanta Falcons'],'The Saints beat the Colts, and Brees was named MVP.'],
+['players',2,'Russell Wilson won Super Bowl XLVIII as QB of which team?','Seattle Seahawks',['Denver Broncos','Pittsburgh Steelers','New York Giants'],'The Seahawks crushed the Broncos 43-8.'],
+['players',2,'J.J. Watt, a three-time Defensive Player of the Year, starred for which team?','Houston Texans',['Pittsburgh Steelers','Arizona Cardinals','Wisconsin Badgers'],'J.J. Watt starred in Houston. His brother T.J. Watt plays for the Steelers.'],
+['players',2,'In what round was Tom Brady drafted in 2000?','6th round',['1st round','3rd round','Undrafted'],'Brady was pick #199, proof that great players can come from anywhere.'],
+['players',3,'Which Giants defensive end set the single-season sack record (22.5) in 2001?','Michael Strahan',['Reggie White','Bruce Smith','Lawrence Taylor'],'Strahan\'s record was tied by T.J. Watt in 2021.'],
+['players',3,'Which team drafted Micah Parsons in 2021?','Dallas Cowboys',['Philadelphia Eagles','Green Bay Packers','Penn State Nittany Lions'],'Parsons was the 2021 Defensive Rookie of the Year with the Cowboys.'],
+['players',3,'Derrick Henry ran for 2,027 yards in 2020 with which team?','Tennessee Titans',['Baltimore Ravens','Alabama Crimson Tide','Houston Texans'],'Henry became just the 8th player with a 2,000-yard season.'],
+['players',3,'Tyreek Hill is famous for his speed. What is his nickname?','Cheetah',['Megatron','Beast Mode','Prime Time'],'"Cheetah" Hill is one of the fastest players in NFL history.'],
+['players',3,'Which RB was nicknamed "Beast Mode"?','Marshawn Lynch',['Derrick Henry','Adrian Peterson','Jerome Bettis'],'Lynch\'s 2011 "Beast Quake" run for Seattle made fans shake the ground.'],
+['players',3,'Aaron Donald was a dominant defensive tackle for which team?','Los Angeles Rams',['Pittsburgh Steelers','Philadelphia Eagles','Arizona Cardinals'],'Donald won 3 Defensive Player of the Year awards and Super Bowl LVI with the Rams.'],
+['players',3,'Which Patriots tight end was nicknamed "Gronk"?','Rob Gronkowski',['Travis Kelce','Tony Gonzalez','Aaron Hernandez'],'Gronk won 4 Super Bowls, 3 with New England and 1 with Tampa Bay.'],
+['players',3,'Which RB was Super Bowl LX MVP for the Seahawks?','Kenneth Walker III',['Zach Charbonnet','Marshawn Lynch','Saquon Barkley'],'Walker ran for 135 yards. He was the first RB to win Super Bowl MVP in nearly 30 years.'],
+
+// ---------------- TEAMS & CITIES ----------------
+['teams',1,'How many teams are in the NFL?','32',['30','28','36'],'There are 32 NFL teams, split into the AFC and NFC.'],
+['teams',1,'What are the NFL\'s two conferences?','AFC and NFC',['East and West','NFL and AFL','National and American Leagues'],'AFC = American Football Conference, NFC = National Football Conference.'],
+['teams',1,'Which city do the Packers play in?','Green Bay',['Milwaukee','Chicago','Minneapolis'],'Green Bay, Wisconsin, is the NFL\'s smallest market, and the team is owned by its fans!'],
+['teams',1,'Which team plays in Kansas City?','Chiefs',['Royals','Broncos','Rams'],'The Kansas City Chiefs play at Arrowhead Stadium in Missouri.'],
+['teams',1,'What is the name of Pittsburgh\'s NFL team?','Steelers',['Pirates','Penguins','Eagles'],'The Steelers are named after the city\'s steel industry.'],
+['teams',1,'What is the name of Philadelphia\'s NFL team?','Eagles',['Phillies','Falcons','Ravens'],'The Philadelphia Eagles play at Lincoln Financial Field.'],
+['teams',1,'What is the name of Chicago\'s NFL team?','Bears',['Bulls','Cubs','Lions'],'The Chicago Bears are one of the NFL\'s founding franchises.'],
+['teams',1,'What is the name of Dallas\'s NFL team?','Cowboys',['Texans','Mavericks','Rangers'],'The Cowboys are nicknamed "America\'s Team."'],
+['teams',1,'The Bills play near which city?','Buffalo, New York',['Boston','New York City','Cleveland'],'The Bills play in Orchard Park, just outside Buffalo.'],
+['teams',1,'Which team plays in Seattle?','Seahawks',['Sounders','Ravens','Mariners'],'Seattle fans are called the "12th Man" because they are so loud.'],
+['teams',1,'Which team plays in Miami?','Dolphins',['Marlins','Heat','Jaguars'],'The Dolphins have the NFL\'s only perfect season (1972).'],
+['teams',1,'Which team plays in Detroit?','Lions',['Tigers','Pistons','Bears'],'The Detroit Lions host a game every Thanksgiving.'],
+['teams',2,'The Patriots play in Foxborough, in which state?','Massachusetts',['Connecticut','Rhode Island','New Hampshire'],'The New England Patriots play at Gillette Stadium in Foxborough, MA.'],
+['teams',2,'The New York Giants and Jets actually play their home games in which state?','New Jersey',['New York','Connecticut','Pennsylvania'],'Both teams share MetLife Stadium in East Rutherford, New Jersey.'],
+['teams',2,'The Raiders moved to Las Vegas in 2020 from which city?','Oakland',['Los Angeles','San Diego','Phoenix'],'The Raiders played in Oakland (twice) and Los Angeles before Las Vegas.'],
+['teams',2,'Which team plays in Charlotte, North Carolina?','Carolina Panthers',['Atlanta Falcons','Jacksonville Jaguars','Tennessee Titans'],'The Panthers started play in 1995.'],
+['teams',2,'Which team plays in Nashville?','Tennessee Titans',['Memphis Grizzlies','Atlanta Falcons','Houston Texans'],'The Titans used to be the Houston Oilers before moving to Tennessee.'],
+['teams',2,'Which team plays in Tampa?','Buccaneers',['Dolphins','Jaguars','Rays'],'The Bucs won Super Bowls XXXVII and LV.'],
+['teams',2,'Which team plays in Minneapolis?','Minnesota Vikings',['Green Bay Packers','Minnesota Twins','Chicago Bears'],'The Vikings play at U.S. Bank Stadium.'],
+['teams',2,'The Colts moved to Indianapolis in 1984 from which city?','Baltimore',['Cleveland','St. Louis','Houston'],'The Colts famously moved overnight. Baltimore later got the Ravens.'],
+['teams',2,'The Baltimore Ravens are named after a poem by which author?','Edgar Allan Poe',['Mark Twain','Robert Frost','Walt Whitman'],'Poe wrote "The Raven" and is buried in Baltimore.'],
+['teams',2,'The San Francisco 49ers are named after...','The 1849 Gold Rush',['49 original players','Highway 49','The year they were founded'],'"Forty-niners" were miners who rushed to California in 1849.'],
+['teams',2,'Which division are the Dallas Cowboys in?','NFC East',['NFC South','AFC East','NFC West'],'The NFC East has the Cowboys, Eagles, Giants, and Commanders.'],
+['teams',2,'Which division are the Kansas City Chiefs in?','AFC West',['AFC North','NFC West','AFC South'],'The AFC West has the Chiefs, Broncos, Raiders, and Chargers.'],
+['teams',2,'Which division are the Green Bay Packers in?','NFC North',['NFC East','AFC North','NFC Central'],'The NFC North has the Packers, Bears, Lions, and Vikings.'],
+['teams',2,'Which division are the Pittsburgh Steelers in?','AFC North',['AFC East','NFC North','AFC Central'],'The AFC North has the Steelers, Ravens, Browns, and Bengals.'],
+['teams',2,'The Green Bay Packers are special because they are...','Owned by their fans (community-owned)',['Owned by the city of Chicago','The oldest team in sports','Never moved to a new stadium'],'The Packers are the only major U.S. pro team owned by its community shareholders.'],
+['teams',3,'Which team is the oldest continuously run franchise, founded in Chicago in 1898?','Arizona Cardinals',['Chicago Bears','Green Bay Packers','Detroit Lions'],'The Cardinals started in Chicago, moved to St. Louis, then to Arizona in 1988.'],
+['teams',3,'Before moving to Tennessee, the Titans were called the...','Houston Oilers',['Memphis Showboats','Houston Texans','Nashville Kats'],'The Oilers moved in 1997 and became the Titans in 1999.'],
+['teams',3,'The Rams moved back to Los Angeles in 2016 from which city?','St. Louis',['Anaheim','Oakland','San Diego'],'The Rams won Super Bowl XXXIV in St. Louis and Super Bowl LVI back in LA.'],
+['teams',3,'The Chargers moved to Los Angeles in 2017 from which city?','San Diego',['Oakland','Phoenix','Sacramento'],'The Chargers now share SoFi Stadium with the Rams.'],
+['teams',3,'Which division are the Houston Texans in?','AFC South',['AFC West','NFC South','AFC North'],'The AFC South has the Texans, Colts, Jaguars, and Titans.'],
+['teams',3,'Which team was formerly known as the "Washington Football Team"?','Washington Commanders',['Baltimore Ravens','Philadelphia Eagles','New York Giants'],'The team became the Commanders in 2022.'],
+['teams',3,'How many divisions are in the NFL?','8',['4','6','10'],'Each conference has 4 divisions (East, North, South, West) of 4 teams.'],
+['teams',3,'Which team\'s famous 1970s defense was called the "Steel Curtain"?','Pittsburgh Steelers',['Chicago Bears','Minnesota Vikings','Dallas Cowboys'],'The Steel Curtain helped Pittsburgh win four Super Bowls in six years.'],
+['teams',3,'Which team\'s defense was called the "Legion of Boom" in the 2010s?','Seattle Seahawks',['Denver Broncos','Baltimore Ravens','New England Patriots'],'Richard Sherman, Earl Thomas, and Kam Chancellor led the Legion of Boom.'],
+
+// ---------------- STADIUMS ----------------
+['stadiums',1,'Which team plays at Lambeau Field?','Green Bay Packers',['Chicago Bears','Minnesota Vikings','Detroit Lions'],'Lambeau Field opened in 1957. Players celebrate TDs with the "Lambeau Leap" into the stands.'],
+['stadiums',1,'Which team plays at Soldier Field?','Chicago Bears',['Detroit Lions','Chicago Cardinals','Buffalo Bills'],'Soldier Field sits on Lake Michigan and first opened in 1924.'],
+['stadiums',1,'Which team plays at Arrowhead Stadium?','Kansas City Chiefs',['Atlanta Falcons','Washington Commanders','Denver Broncos'],'Arrowhead is famous for being one of the loudest stadiums in the world.'],
+['stadiums',1,'Which team plays at AT&T Stadium, nicknamed "Jerry World"?','Dallas Cowboys',['Houston Texans','Arizona Cardinals','Atlanta Falcons'],'The Cowboys\' stadium in Arlington, Texas, has a gigantic video board.'],
+['stadiums',1,'Which team plays at Gillette Stadium?','New England Patriots',['New York Jets','Buffalo Bills','Philadelphia Eagles'],'Gillette Stadium is in Foxborough, Massachusetts.'],
+['stadiums',1,'Which two teams share MetLife Stadium?','Giants and Jets',['Rams and Chargers','Eagles and Steelers','Bills and Jets'],'MetLife Stadium in New Jersey is home to both New York teams.'],
+['stadiums',1,'Which two teams share SoFi Stadium?','Rams and Chargers',['Raiders and 49ers','Giants and Jets','Cardinals and Rams'],'SoFi Stadium in Inglewood, California, opened in 2020.'],
+['stadiums',1,'Which team plays at Allegiant Stadium in Las Vegas?','Raiders',['Chargers','Cardinals','49ers'],'The Raiders\' sleek black stadium also hosted Super Bowl LVIII.'],
+['stadiums',2,'Which team plays at Lincoln Financial Field ("The Linc")?','Philadelphia Eagles',['Pittsburgh Steelers','Baltimore Ravens','New York Giants'],'The Linc opened in 2003 in South Philadelphia.'],
+['stadiums',2,'Which team plays at Lumen Field?','Seattle Seahawks',['San Francisco 49ers','Denver Broncos','Minnesota Vikings'],'Lumen Field\'s crowd has set records for stadium noise.'],
+['stadiums',2,'Which team plays at Levi\'s Stadium?','San Francisco 49ers',['Las Vegas Raiders','Los Angeles Rams','Seattle Seahawks'],'Levi\'s Stadium is in Santa Clara, California, and hosted Super Bowls 50 and LX.'],
+['stadiums',2,'Which team plays in the Superdome?','New Orleans Saints',['Houston Texans','Atlanta Falcons','Tampa Bay Buccaneers'],'The Caesars Superdome has hosted more Super Bowls than almost any stadium.'],
+['stadiums',2,'Which team plays at Mercedes-Benz Stadium?','Atlanta Falcons',['Carolina Panthers','Tennessee Titans','Miami Dolphins'],'Its roof opens like a camera lens (a "pinwheel" design).'],
+['stadiums',2,'Which team plays at Ford Field?','Detroit Lions',['Cleveland Browns','Indianapolis Colts','Cincinnati Bengals'],'Ford Field is an indoor dome in downtown Detroit.'],
+['stadiums',2,'Which team plays at U.S. Bank Stadium?','Minnesota Vikings',['Green Bay Packers','Kansas City Chiefs','Chicago Bears'],'The Vikings\' stadium has a see-through roof to let in light during snowy winters.'],
+['stadiums',2,'Which team plays at Lucas Oil Stadium?','Indianapolis Colts',['Houston Texans','Tennessee Titans','Jacksonville Jaguars'],'Lucas Oil Stadium has a retractable roof and hosted Super Bowl XLVI.'],
+['stadiums',2,'Which team plays at M&T Bank Stadium?','Baltimore Ravens',['Buffalo Bills','Washington Commanders','Pittsburgh Steelers'],'M&T Bank Stadium is in downtown Baltimore near Camden Yards.'],
+['stadiums',2,'Which team plays at Raymond James Stadium, famous for its pirate ship?','Tampa Bay Buccaneers',['Miami Dolphins','Jacksonville Jaguars','Carolina Panthers'],'The ship fires cannons whenever the Bucs score!'],
+['stadiums',2,'The Broncos\' stadium is named for Denver\'s high elevation. It is called...','Empower Field at Mile High',['Rocky Mountain Dome','Summit Field','Altitude Arena'],'Denver is about one mile above sea level, so the thin air can tire out visiting teams.'],
+['stadiums',2,'Which team plays at Hard Rock Stadium?','Miami Dolphins',['Tampa Bay Buccaneers','Jacksonville Jaguars','Houston Texans'],'Hard Rock Stadium is in Miami Gardens, Florida.'],
+['stadiums',3,'The Steelers played at Heinz Field until 2022. What is it called now?','Acrisure Stadium',['PNC Park','Three Rivers Stadium','Highmark Stadium'],'The name changed in 2022, but the stadium is the same one on Pittsburgh\'s North Shore.'],
+['stadiums',3,'Which team plays at NRG Stadium?','Houston Texans',['Dallas Cowboys','Tennessee Titans','New Orleans Saints'],'NRG Stadium in Houston was the first NFL stadium with a retractable roof.'],
+['stadiums',3,'Which stadium has been home to the same NFL team the longest?','Lambeau Field',['Soldier Field','Arrowhead Stadium','Superdome'],'The Packers have played at Lambeau since 1957.'],
+['stadiums',3,'Where was Super Bowl LVIII (Chiefs vs. 49ers) played?','Allegiant Stadium, Las Vegas',['SoFi Stadium, Los Angeles','Superdome, New Orleans','State Farm Stadium, Arizona'],'It was the first Super Bowl played in Las Vegas.'],
+['stadiums',3,'Where was Super Bowl LIX (Eagles vs. Chiefs) played?','Caesars Superdome, New Orleans',['Allegiant Stadium, Las Vegas','Hard Rock Stadium, Miami','Lincoln Financial Field'],'New Orleans hosted its 11th Super Bowl.'],
+['stadiums',3,'Which stadium is scheduled to host Super Bowl LXI in February 2027?','SoFi Stadium',['MetLife Stadium','Mercedes-Benz Stadium','Levi\'s Stadium'],'SoFi Stadium in Inglewood, CA, also hosted Super Bowl LVI.'],
+['stadiums',3,'Which team plays at Highmark Stadium in Orchard Park?','Buffalo Bills',['Pittsburgh Steelers','Cleveland Browns','New York Jets'],'Buffalo\'s cold, snowy home games are legendary.'],
+];
+const QB = RAW_Q.map((r,i)=>({id:i,cat:r[0],d:r[1],q:r[2],a:r[3],w:r[4],x:r[5]}));
+
+const TIPS = [
+ "A touchdown is 6 points, a field goal is 3, and a safety is 2!",
+ "The offense gets 4 downs to go 10 yards. If they make it, they get a new set of downs.",
+ "The yellow flag means a penalty. The red flag means a coach is challenging the call.",
+ "The quarterback calls the play in the huddle, then the center snaps him the ball.",
+ "On 4th down, most teams punt unless they're close enough for a field goal.",
+ "The Super Bowl trophy is named after Vince Lombardi, coach of the 1960s Packers.",
+ "The Packers are owned by their fans. Pretty cool, right?",
+ "Each team has 11 players on the field. Count 'em next time you watch!",
+ "Holding is 10 yards. A false start is 5. A face mask is 15!",
+ "The Hall of Fame is in Canton, Ohio, where the NFL started in 1920.",
+ "Tom Brady has 7 Super Bowl rings, more than any NFL team has!",
+ "The 1972 Dolphins are the only team to go undefeated and win the Super Bowl.",
+ "Cornerbacks cover wide receivers. Safeties play deep as the last line of defense.",
+ "The 'red zone' is inside your opponent's 20-yard line. Time to score!",
+ "A 'pick-six' is an interception returned for a touchdown.",
+ "Detroit and Dallas host a football game every single Thanksgiving.",
+ "NFL receivers need TWO feet in bounds. In college, it's only one!",
+ "A blitz sends extra defenders after the QB. Watch out for the sack!",
+ "The NFL has 32 teams: 16 in the AFC and 16 in the NFC.",
+ "Each conference has 4 divisions: East, North, South, and West.",
+ "The Giants and Jets both play in New Jersey at MetLife Stadium!",
+ "Lambeau Field fans love the 'Lambeau Leap' after a touchdown.",
+ "The left tackle protects a right-handed QB's 'blind side.'",
+ "Play action means faking a handoff, then throwing the ball.",
+ "Each team gets 3 timeouts per half. Use 'em wisely!",
+ "Jerry Rice holds the records for career catches and receiving yards.",
+ "Emmitt Smith ran for more yards than anyone in NFL history.",
+ "The Bills went to four straight Super Bowls in the early '90s.",
+ "The Seahawks won Super Bowl LX, beating the Patriots 29-13.",
+ "The Eagles beat the Chiefs 40-22 in Super Bowl LIX.",
+ "A two-point conversion is one play from close range. Score it for 2 points!",
+ "The referee wears a white hat. The other officials wear black hats.",
+ "The field is 100 yards long, with a 10-yard end zone at each end.",
+ "An onside kick has to travel 10 yards before the kicking team can grab it.",
+ "Waving your arm on a punt means 'fair catch.' Nobody can hit you!",
+ "Tip: Wrong answers show up in the Film Room so you can study them.",
+ "Tip: Answer fast for a 'Quick Snap' damage bonus!",
+ "Tip: Get answers right in a row to build a streak and hit harder.",
+ "Tip: Hydration Stations in each town heal you fully and save your game.",
+ "Tip: Pep Rally Totems around the world give you free buffs!",
+ "Tip: An Air Horn scares away wild dinos for a while.",
+];
+</script>
+<script>'use strict';
+// =====================================================================
+//  BRADY'S GRIDIRON DINO QUEST
+// =====================================================================
+const $ = s => document.querySelector(s);
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+let R = Math.random;
+const rint=(a,b)=>a+Math.floor(R()*(b-a+1));
+const pick=a=>a[Math.floor(R()*a.length)];
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function hexToRgb(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+function rgbToHex(r,g,b){return'#'+[r,g,b].map(v=>clamp(Math.round(v),0,255).toString(16).padStart(2,'0')).join('')}
+function shade(h,f){const[r,g,b]=hexToRgb(h);return f>=0?rgbToHex(r+(255-r)*f,g+(255-g)*f,b+(255-b)*f):rgbToHex(r*(1+f),g*(1+f),b*(1+f))}
+function hsl(h,s,l){h=((h%360)+360)%360;s/=100;l/=100;const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,9-k(n),1));return rgbToHex(255*f(0),255*f(8),255*f(4))}
+function makeNoise(seed){const r=mulberry32(seed);const P=new Float32Array(65536);for(let i=0;i<P.length;i++)P[i]=r();
+ const g=(x,y)=>P[((y&255)<<8)|(x&255)],sm=t=>t*t*(3-2*t);
+ const n=(x,y)=>{const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,a=g(xi,yi),b=g(xi+1,yi),c=g(xi,yi+1),d=g(xi+1,yi+1),u=sm(xf),v=sm(yf);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v};
+ return(x,y,o=3)=>{let s=0,amp=1,f=1,t=0;for(let i=0;i<o;i++){s+=n(x*f,y*f)*amp;t+=amp;amp*=.5;f*=2}return s/t}}
+
+// ---------------- CONSTANTS ----------------
+const TS=16, VW=20, VH=13, CW=320, CH=208;
+const MW=150, MH=110, WORLD_SEED=1120;
+const T={GRASS:0,TALL:1,PATH:2,WATER:3,SAND:4,TREE:5,ROCK:6,FLOWER:7,FLOOR:8,WALL:9,ROOF:10,DOOR:11,FENCE:12,BRIDGE:13,LAVA:14,JUNGLE:15,FOUNTAIN:16,BRUSH:17,SIGN:18,GATE:19,FIELD:20,TOTEM:21,CACTUS:22,MFLOOR:23,VFLOOR:24,ROOFB:25,COLUMN:26,GOAL:27,PINE:28,FIELDLINE:29,WINDOW:30};
+const SOLID=new Set([T.WATER,T.TREE,T.ROCK,T.WALL,T.ROOF,T.FENCE,T.LAVA,T.FOUNTAIN,T.SIGN,T.GATE,T.TOTEM,T.CACTUS,T.ROOFB,T.COLUMN,T.GOAL,T.PINE,T.DOOR,T.WINDOW]);
+const OBJ=new Set([T.TREE,T.PINE,T.ROCK,T.CACTUS,T.COLUMN,T.TOTEM,T.SIGN,T.FLOWER,T.TALL,T.JUNGLE,T.BRUSH,T.GOAL,T.FENCE]);
+const ENC={[T.TALL]:.10,[T.JUNGLE]:.13,[T.BRUSH]:.10,[T.GRASS]:.012,[T.SAND]:.012,[T.MFLOOR]:.014,[T.FLOWER]:.012,[T.PATH]:.006,[T.VFLOOR]:.02};
+const DX={up:0,down:0,left:-1,right:1}, DY={up:-1,down:1,left:0,right:0};
+const CATS={rules:{name:'Rules',c:'#e8443a'},strategy:{name:'Positions & Strategy',c:'#159a86'},history:{name:'History',c:'#8e44ad'},players:{name:'Players',c:'#2f6fd6'},teams:{name:'Teams & Cities',c:'#2e9e50'},stadiums:{name:'Stadiums',c:'#e67e22'}};
+
+const POIS=[
+ {id:'kickoff',name:'Kickoff Town',region:'Kickoff Plains',x:75,y:86,biome:'plains',lv:[1,3],diff:[1,1]},
+ {id:'harbor',name:'Huddle Harbor',region:'Huddle Coast',x:24,y:84,biome:'coast',cat:'teams',lv:[3,6],diff:[1,2],
+  boss:{name:'Captain Longneck',fam:'sauro',lv:8,pal:{B:'#3f8fb0',L:'#d8f0f0',P:'#1f4d6b',K:'#e8dcc0'},pattern:'spots',trophy:'Compass Trophy',
+   intro:["Ahoy, Brady! I'm Captain Longneck, Head Coach of TEAMS & CITIES!","I've sailed to every NFL city. Do you know where all 32 teams play? Let's find out!"],
+   outro:["Shiver my shoulder pads! You know your teams!","Take the COMPASS TROPHY. Now, onward!"]}},
+ {id:'dunes',name:'Draft Day Dunes',region:'Draft Day Desert',x:120,y:88,biome:'desert',cat:'players',lv:[3,6],diff:[1,2],
+  boss:{name:'Scout Raptor',fam:'raptor',lv:8,pal:{B:'#c98a3a',L:'#f4dfb0',P:'#6b3a1a',K:'#f4f4f4'},pattern:'stripes',trophy:'Draft Trophy',
+   intro:["Hssss... I'm Scout Raptor, Head Coach of PLAYERS!","I've scouted every superstar from Montana to Mahomes. Let's see your scouting report!"],
+   outro:["Impressive! You'd make a great GM someday.","The DRAFT TROPHY is yours!"]}},
+ {id:'rulebook',name:'Rulebook Ridge',region:'Rulebook Woods',x:30,y:46,biome:'forest',cat:'rules',lv:[6,9],diff:[1,2],
+  boss:{name:'Referee Rex',fam:'rex',lv:11,pal:{B:'#f2f2f2',L:'#dcdcdc',P:'#1b1b1b',K:'#f4f4f4'},pattern:'vstripes',trophy:'Whistle Trophy',
+   intro:["TWEEEEET! I'm Referee Rex, Head Coach of RULES!","Downs, scoring, penalties... One wrong answer and that's a FLAG on you!"],
+   outro:["After review... the ruling stands: YOU WIN!","Take the WHISTLE TROPHY."]}},
+ {id:'springs',name:'Stadium Springs',region:'Stadium Springs',x:126,y:52,biome:'springs',cat:'stadiums',lv:[6,9],diff:[1,2],
+  boss:{name:'Groundskeeper Stego',fam:'stego',lv:11,pal:{B:'#4d9a4a',L:'#cfe8a8',P:'#f5c542',K:'#f4f4f4'},pattern:'none',trophy:'Turf Trophy',
+   intro:["Hey! Stay off my turf! I'm Groundskeeper Stego, Head Coach of STADIUMS!","From Lambeau to SoFi, I've mowed 'em all. Do you know where every team plays?"],
+   outro:["Well, I'll be. You know your stadiums!","Here's the TURF TROPHY. Wipe your cleats!"]}},
+ {id:'peak',name:'Playbook Peak',region:'Playbook Mountains',x:46,y:16,biome:'mountain',cat:'strategy',lv:[9,12],diff:[2,3],
+  boss:{name:'Coordinator Ankylo',fam:'ankylo',lv:14,pal:{B:'#7a6a8a',L:'#c8bcd8',P:'#3a2a4a',K:'#d8c070'},pattern:'none',trophy:'Playbook Trophy',
+   intro:["I'm Coordinator Ankylo, Head Coach of POSITIONS & STRATEGY.","Blitzes, audibles, nickel packages... Can you read my defense?"],
+   outro:["You read that coverage perfectly.","The PLAYBOOK TROPHY is yours, Coach Brady."]}},
+ {id:'canton',name:'Canton Ruins',region:'Canton Ruins',x:106,y:18,biome:'ruins',cat:'history',lv:[9,12],diff:[2,3],
+  boss:{name:'Curator Trike',fam:'trike',lv:14,pal:{B:'#b5654a',L:'#f0d0b0',P:'#f5c542',K:'#fff6d8'},pattern:'spots',trophy:'Legacy Trophy',
+   intro:["Welcome to the Ruins. I'm Curator Trike, Head Coach of HISTORY.","The Ice Bowl, The Catch, the Immaculate Reception... History remembers. Do you?"],
+   outro:["You honor the legends of the game.","Take the LEGACY TROPHY. Your gold jacket awaits!"]}},
+ {id:'champ',name:'Championship Stadium',region:'Championship Volcano',x:76,y:46,biome:'volcano',cat:null,lv:[12,15],diff:[2,3],
+  boss:{name:'Commissioner Spino',fam:'spino',lv:20,pal:{B:'#d4a017',L:'#fff0b0',P:'#8a1c1c',K:'#ffffff'},pattern:'stripes',trophy:"Champion's Ring",final:true,
+   intro:["So... the kid with the freckles made it to the Championship.","I am COMMISSIONER SPINO. Every category. Every era. Every rule.","Win this, and you're a true Gridiron Legend. KICKOFF!"],
+   outro:["Incredible... You know this game like a true pro.","Brady, you are the CHAMPION of the Gridiron Isles!"]}},
+];
+const BOSS_ORDER=['harbor','dunes','rulebook','springs','peak','canton'];
+const poiById=id=>POIS.find(p=>p.id===id);
+
+// ---------------- ITEMS ----------------
+const CONS={
+ water:{name:'Water Bottle',icon:'💧',desc:'Heal 30 HP',heal:30,price:15},
+ orange:{name:'Orange Slices',icon:'🍊',desc:'Heal 20 HP',heal:20,price:10},
+ sports:{name:'Sports Drink',icon:'🥤',desc:'Heal 60 HP',heal:60,price:35},
+ icepack:{name:'Ice Pack',icon:'🧊',desc:'Fully heal',heal:9999,price:90},
+ hint:{name:"Coach's Clipboard",icon:'📋',desc:'Battle: remove 2 wrong answers',battle:true,price:25},
+ timeout:{name:'Timeout Card',icon:'⏱️',desc:'Battle: skip a question, no damage',battle:true,price:30},
+ horn:{name:'Air Horn',icon:'📯',desc:'No wild dinos for 150 steps',buff:['horn',150],price:40},
+ pep:{name:'Pep Talk Card',icon:'📣',desc:'+30% damage for 3 battles',buff:['pep',3],price:40},
+ guard:{name:'Mouthguard',icon:'🦷',desc:'-35% damage taken for 3 battles',buff:['guard',3],price:40},
+ bar:{name:'Energy Bar',icon:'🍫',desc:'Heal 6 HP per correct answer for 3 battles',buff:['regen',3],price:45},
+ film:{name:'Game Film',icon:'🎞️',desc:'+50% XP for 3 battles',buff:['film',3],price:50},
+ coin:{name:'Lucky Coin',icon:'🪙',desc:'+50% coins for 3 battles',buff:['lucky',3],price:35},
+};
+const BUFFS={pep:{name:'Pumped Up',icon:'📣'},guard:{name:'Mouthguard',icon:'🦷'},regen:{name:'Second Wind',icon:'🍫'},film:{name:'Film Study',icon:'🎞️'},lucky:{name:'Lucky',icon:'🪙'},horn:{name:'Air Horn',icon:'📯',steps:true}};
+const RAR=[{n:'Common',c:'#8a9096'},{n:'Uncommon',c:'#2e9e50'},{n:'Rare',c:'#2f6fd6'},{n:'Epic',c:'#9b40c6'},{n:'Legendary',c:'#e8900c'}];
+const GEAR={
+ // weapons
+ foamball:{name:'Foam Football',slot:'weapon',r:0,atk:2,icon:'🏈',proj:'ball'},
+ practiceball:{name:'Practice Football',slot:'weapon',r:0,atk:4,icon:'🏈',proj:'ball'},
+ bottle:{name:'Water Bottle Slinger',slot:'weapon',r:0,atk:3,heal:2,icon:'🧴',proj:'bottle'},
+ yflag:{name:'Yellow Penalty Flag',slot:'weapon',r:1,atk:5,crit:5,icon:'🚩',proj:'yflag'},
+ pigskin:{name:'Leather Pigskin',slot:'weapon',r:1,atk:7,icon:'🏈',proj:'ball'},
+ squeeze:{name:'Squeeze Bottle Blaster',slot:'weapon',r:1,atk:6,heal:4,icon:'🧴',proj:'bottle'},
+ rflag:{name:'Red Challenge Flag',slot:'weapon',r:2,atk:9,crit:10,icon:'🚩',proj:'rflag'},
+ spiral:{name:'Tight Spiral',slot:'weapon',r:2,atk:11,icon:'🏈',proj:'ball'},
+ whistle:{name:"Coach's Whistle",slot:'weapon',r:2,atk:10,crit:8,icon:'📢',proj:'whistle'},
+ cooler:{name:'Victory Ice Bucket',slot:'weapon',r:3,atk:14,heal:8,icon:'🪣',proj:'cooler'},
+ hailmary:{name:'Hail Mary Ball',slot:'weapon',r:3,atk:17,crit:12,icon:'🏈',proj:'ball'},
+ sigflags:{name:"Referee's Signal Flags",slot:'weapon',r:3,atk:15,crit:15,icon:'🚩',proj:'yflag'},
+ goldball:{name:'Golden Football',slot:'weapon',r:4,atk:24,crit:15,icon:'🏆',proj:'gold'},
+ hose:{name:'Hydration Hose',slot:'weapon',r:4,atk:19,heal:14,icon:'🚿',proj:'cooler'},
+ // helmets
+ leatherhelm:{name:'Leather Helmet',slot:'helmet',r:0,def:2,icon:'⛑️'},
+ practicehelm:{name:'Practice Helmet',slot:'helmet',r:0,def:3,icon:'⛑️'},
+ visorhelm:{name:'Visor Helmet',slot:'helmet',r:1,def:5,dodge:3,icon:'⛑️'},
+ prohelm:{name:'Pro Helmet',slot:'helmet',r:2,def:8,icon:'⛑️'},
+ titanhelm:{name:'Titanium Facemask Helmet',slot:'helmet',r:3,def:12,hp:10,icon:'⛑️'},
+ goldhelm:{name:'Golden Helmet',slot:'helmet',r:4,def:16,hp:25,icon:'👑'},
+ // pads
+ jersey:{name:'Practice Jersey',slot:'pads',r:0,def:1,hp:10,icon:'👕'},
+ mesh:{name:'Mesh Jersey',slot:'pads',r:0,def:2,hp:15,icon:'👕'},
+ shoulder:{name:'Shoulder Pads',slot:'pads',r:1,def:5,hp:20,icon:'🛡️'},
+ ribs:{name:'Rib Protector',slot:'pads',r:1,def:4,hp:30,icon:'🛡️'},
+ probowl:{name:'Pro Bowl Pads',slot:'pads',r:2,def:8,hp:35,icon:'🛡️'},
+ dinoscale:{name:'Dino-Scale Armor',slot:'pads',r:3,def:12,hp:50,icon:'🦖'},
+ goldjacket:{name:'Hall of Fame Gold Jacket',slot:'pads',r:4,def:15,hp:80,icon:'🧥'},
+ // cleats
+ sneakers:{name:'Sneakers',slot:'cleats',r:0,dodge:3,icon:'👟'},
+ turf:{name:'Turf Shoes',slot:'cleats',r:0,dodge:5,icon:'👟'},
+ molded:{name:'Molded Cleats',slot:'cleats',r:1,dodge:8,icon:'👟'},
+ speed:{name:'Speed Cleats',slot:'cleats',r:2,dodge:12,crit:3,icon:'👟'},
+ raptorcleats:{name:'Raptor-Claw Cleats',slot:'cleats',r:3,dodge:16,crit:5,icon:'🦶'},
+ goldcleats:{name:'Golden Cleats',slot:'cleats',r:4,dodge:20,crit:8,atk:3,icon:'✨'},
+};
+const SLOTS=['weapon','helmet','pads','cleats'], SLOTN={weapon:'Weapon',helmet:'Helmet',pads:'Armor',cleats:'Cleats'};
+const GEAR_PRICE=[40,90,180,400,1000];
+function gearDesc(g){const p=[];if(g.atk)p.push('ATK+'+g.atk);if(g.def)p.push('DEF+'+g.def);if(g.hp)p.push('HP+'+g.hp);if(g.crit)p.push('CRIT+'+g.crit+'%');if(g.dodge)p.push('JUKE+'+g.dodge+'%');if(g.heal)p.push('Heal '+g.heal+'/correct');return p.join('  ')}
+function rollGear(lv,minR=0){const w=[50,30,14,5,1].map((v,i)=>i<minR?0:v*Math.pow(1+lv/8,i));let s=w.reduce((a,b)=>a+b,0),r=R()*s,ri=0;for(;ri<w.length;ri++){r-=w[ri];if(r<=0)break}ri=Math.min(ri,4);const ids=Object.keys(GEAR).filter(k=>GEAR[k].r===ri);return pick(ids)}
+function rollCons(){const w={water:30,orange:20,sports:12,hint:10,timeout:8,bar:5,pep:5,guard:5,horn:4,film:3,coin:3,icepack:2};let s=0;for(const k in w)s+=w[k];let r=R()*s;for(const k in w){r-=w[k];if(r<=0)return k}return'water'}
+
+// ---------------- SAVE STATE ----------------
+const SAVE_KEY='bradyDinoQuest_v1';
+let S=null; // save
+function newSave(diff){return{v:1,x:POIS[0].x,y:POIS[0].y+3,dir:'down',lv:1,xp:0,hp:72,coins:30,
+ inv:{water:3,orange:2,hint:1,timeout:1},gear:['foamball','jersey','sneakers'],equip:{weapon:'foamball',helmet:null,pads:'jersey',cleats:'sneakers'},
+ buffs:{},trophies:[],taken:{},bosses:{},npc:{},totem:{},seen:{},missed:{},dex:{},names:{},
+ st:{ans:0,cor:0,cat:{},best:0,streak:0,battles:0,wins:0},respawn:{x:POIS[0].x,y:POIS[0].y+3},steps:0,visited:{kickoff:1},diff:diff||'pro',sound:true,gateOpen:false,champion:false,intro:false}}
+function saveGame(silent){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));if(!silent)toast('💾 Game saved')}catch(e){if(!silent)toast('Could not save in this browser')}}
+function loadSave(){try{const s=localStorage.getItem(SAVE_KEY);return s?JSON.parse(s):null}catch(e){return null}}
+
+// ---------------- WORLD GEN ----------------
+let map,base,region,town;
+const items=[], npcs=[], bosses=[], totems=[];
+function idx(x,y){return y*MW+x}
+function inb(x,y){return x>=0&&y>=0&&x<MW&&y<MH}
+function genWorld(){
+ const rr=mulberry32(WORLD_SEED);
+ const nA=makeNoise(WORLD_SEED+1),nB=makeNoise(WORLD_SEED+2),nC=makeNoise(WORLD_SEED+3),nD=makeNoise(WORLD_SEED+4);
+ map=new Uint8Array(MW*MH);base=new Uint8Array(MW*MH);region=new Uint8Array(MW*MH);town=new Uint8Array(MW*MH);
+ const champ=poiById('champ'),ci=POIS.indexOf(champ);
+ for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){
+  const i=idx(x,y);let best=0,bd=1e9;
+  POIS.forEach((p,k)=>{if(p.id==='champ')return;const d=Math.hypot(x-p.x,y-p.y)+(nD(x/10,y/10)-.5)*16;if(d<bd){bd=d;best=k}});
+  const dc=Math.hypot(x-champ.x,y-champ.y);
+  if(dc<12.6)best=ci;
+  region[i]=best;
+  const edge=Math.min(x,y,MW-1-x,MH-1-y)+(nB(x/5,y/5)-.5)*5;
+  const e=nA(x/13,y/13,4),m=nB(x/7+50,y/7+50,3),g=nC(x/5,y/5,2);
+  const b=POIS[best].biome;let t=T.GRASS,bs=T.GRASS;
+  if(b==='desert')bs=T.SAND;else if(b==='mountain')bs=T.MFLOOR;else if(b==='volcano')bs=T.VFLOOR;
+  t=bs;
+  if(b==='volcano'){
+   if(dc>=9&&dc<12)t=T.LAVA;else t=T.VFLOOR;
+  }else if(edge<3)t=T.WATER;else if(edge<4.6){t=T.SAND;bs=T.SAND}
+  else switch(b){
+   case'plains':t=e<.3?T.WATER:m>.64?T.TREE:g>.6?T.TALL:g<.28&&m<.4?T.FLOWER:T.GRASS;break;
+   case'forest':t=e<.29?T.WATER:m>.55?(rr()<.5?T.TREE:T.PINE):g>.52?T.JUNGLE:m<.3&&g<.3?T.FLOWER:T.GRASS;break;
+   case'mountain':t=e>.63?T.ROCK:m>.62?T.PINE:g>.6?T.TALL:T.MFLOOR;break;
+   case'coast':t=e<.35?T.WATER:e<.39?(bs=T.SAND,T.SAND):m>.66?T.TREE:g>.56?T.TALL:T.GRASS;break;
+   case'desert':t=e<.26?T.WATER:e<.29?(bs=T.GRASS,T.GRASS):m>.65?(rr()<.6?T.CACTUS:T.ROCK):g>.56?T.BRUSH:T.SAND;break;
+   case'springs':t=e<.37?T.WATER:m>.67?T.TREE:g>.56?T.TALL:g<.3?T.FLOWER:T.GRASS;break;
+   case'ruins':t=e<.27?T.WATER:m>.66?(rr()<.55?T.COLUMN:T.ROCK):g>.55?T.TALL:T.GRASS;break;
+  }
+  map[i]=t;base[i]=bs;
+ }
+ // volcano interior: stadium field
+ for(let dy=-4;dy<=4;dy++)for(let dx=-7;dx<=7;dx++){const x=champ.x+dx,y=champ.y+dy,i=idx(x,y);map[i]=Math.abs(dx)===7?(dy===0?T.GOAL:T.FIELD):(dx===0?T.FIELDLINE:T.FIELD);base[i]=T.FIELD;town[i]=ci+1}
+ // towns
+ POIS.forEach((p,k)=>{if(p.id!=='champ')stampTown(p,k)});
+ // last-chance camp south of the volcano
+ const cx=champ.x,cy=champ.y+16;
+ for(let dy=-2;dy<=2;dy++)for(let dx=-5;dx<=5;dx++){const i=idx(cx+dx,cy+dy);map[i]=T.FLOOR;base[i]=T.FLOOR;town[i]=ci+1}
+ map[idx(cx+3,cy)]=T.FOUNTAIN;map[idx(cx-1,cy-2)]=T.SIGN;
+ // paths
+ const ent=(p,ox,oy)=>{let best=null,bd=1e9;[[-10,1],[10,1],[0,8]].forEach(([ex,ey])=>{const d=Math.hypot(p.x+ex-ox,p.y+ey-oy);if(d<bd){bd=d;best=[p.x+ex,p.y+ey]}});return best};
+ const link=(a,b)=>{const A=poiById(a),B=poiById(b);const ea=ent(A,B.x,B.y),eb=ent(B,A.x,A.y);carve(ea[0],ea[1],eb[0],eb[1])};
+ link('kickoff','harbor');link('kickoff','dunes');link('harbor','rulebook');link('rulebook','peak');link('peak','canton');link('canton','springs');link('springs','dunes');
+ const kk=poiById('kickoff');carve(kk.x,kk.y+8,kk.x,kk.y+12);carve(kk.x-10,kk.y+1,kk.x-14,kk.y+1);
+ // kickoff -> camp -> gate
+ const ek=ent(kk,cx,cy);carve(ek[0],ek[1],cx,cy+3);carve(cx,cy+3,cx,cy+2);
+ carve(cx,cy-2,cx,champ.y+12);
+ for(let y=champ.y+12;y>=champ.y+5;y--)for(const x of[cx,cx+1]){const i=idx(x,y);if(map[i]===T.LAVA)map[i]=T.BRIDGE;else if(map[i]!==T.FIELD&&map[i]!==T.FIELDLINE)map[i]=T.PATH;base[i]=T.VFLOOR}
+ for(const x of[cx,cx+1]){map[idx(x,champ.y+11)]=T.GATE}
+ // reachability
+ const reach=flood(kk.x,kk.y+3);
+ // totems
+ const prr=mulberry32(WORLD_SEED+9);
+ const cand=[];for(let y=2;y<MH-2;y++)for(let x=2;x<MW-2;x++){const i=idx(x,y);if(reach[i]&&!town[i]&&!SOLID.has(map[i])&&map[i]!==T.PATH&&map[i]!==T.BRIDGE&&region[i]!==ci)cand.push(i)}
+ const open4=i=>{const x=i%MW,y=(i/MW)|0;return[[1,0],[-1,0],[0,1],[0,-1]].every(([a,b])=>{const j=idx(x+a,y+b);return!SOLID.has(map[j])&&!town[j]})};
+ const nearPath=i=>{const x=i%MW,y=(i/MW)|0;for(let b=-2;b<=2;b++)for(let a=-2;a<=2;a++){if(map[idx(x+a,y+b)]===T.PATH)return true}return false};
+ const used=new Set();const far=i=>{for(const u of used){const dx=(u%MW)-(i%MW),dy=((u/MW)|0)-((i/MW)|0);if(dx*dx+dy*dy<16)return false}return true};
+ let tries=0;while(totems.length<8&&tries++<5000){const i=cand[(prr()*cand.length)|0];if(open4(i)&&nearPath(i)&&far(i)){map[i]=T.TOTEM;base[i]=base[i]===T.FLOOR?T.GRASS:base[i];totems.push({id:'t'+totems.length,x:i%MW,y:(i/MW)|0});used.add(i)}}
+ // chests & sparkles
+ const dist=i=>Math.hypot((i%MW)-kk.x,((i/MW)|0)-kk.y);
+ tries=0;let n=0;while(n<42&&tries++<8000){const i=cand[(prr()*cand.length)|0];if(map[i]===T.TOTEM||!open4(i)||!far(i)||dist(i)<10)continue;items.push({id:'c'+n,x:i%MW,y:(i/MW)|0,kind:'chest',tier:Math.min(4,Math.floor(dist(i)/18))});used.add(i);n++}
+ n=0;tries=0;while(n<34&&tries++<8000){const i=cand[(prr()*cand.length)|0];if(map[i]===T.TOTEM||!far(i))continue;items.push({id:'s'+n,x:i%MW,y:(i/MW)|0,kind:'sparkle'});used.add(i);n++}
+ // legendary chests in far corners
+ const corners=[[8,8,'goldball'],[MW-9,8,'goldhelm'],[8,MH-9,'goldjacket'],[MW-9,MH-9,'goldcleats'],[MW/2|0,6,'hose']];
+ corners.forEach(([tx,ty,g],k)=>{let bi=-1,bd=1e9;for(const i of cand){if(!open4(i)||used.has(i))continue;const d=Math.hypot((i%MW)-tx,((i/MW)|0)-ty);if(d<bd){bd=d;bi=i}}if(bi>=0){items.push({id:'L'+k,x:bi%MW,y:(bi/MW)|0,kind:'chest',legend:g});used.add(bi)}});
+ // NPCs
+ genNPCs(prr,reach,cand,used);
+ // bosses
+ POIS.forEach(p=>{if(!p.boss)return;const bx=p.x,by=p.id==='champ'?p.y:p.y-7;bosses.push({poi:p.id,x:bx,y:by,def:p.boss,spr:null})});
+}
+function flood(sx,sy){const r=new Uint8Array(MW*MH),q=[idx(sx,sy)];r[q[0]]=1;while(q.length){const i=q.pop(),x=i%MW,y=(i/MW)|0;for(const[a,b]of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+a,ny=y+b;if(!inb(nx,ny))continue;const j=idx(nx,ny);if(r[j])continue;const t=map[j];if(SOLID.has(t)&&t!==T.GATE)continue;r[j]=1;q.push(j)}}return r}
+function carve(ax,ay,bx,by){const r=mulberry32(ax*7919+ay*31+bx*13+by);let x=ax,y=ay,g=0;
+ while((x!==bx||y!==by)&&g++<3000){setPath(x,y);const dx=bx-x,dy=by-y;
+  if(dx!==0&&(dy===0||r()<Math.abs(dx)/(Math.abs(dx)+Math.abs(dy))*1.0+(r()-.5)*.3))x+=Math.sign(dx);else y+=Math.sign(dy)}
+ setPath(bx,by)}
+function setPath(x,y){for(let oy=0;oy<2;oy++)for(let ox=0;ox<2;ox++){const tx=x+ox,ty=y+oy;if(!inb(tx,ty))continue;const i=idx(tx,ty);if(town[i])continue;const t=map[i];if(t===T.WATER||t===T.LAVA)map[i]=T.BRIDGE;else if(t!==T.BRIDGE&&t!==T.GATE)map[i]=T.PATH}}
+function stampTown(p,k){
+ const set=(dx,dy,t,b)=>{const x=p.x+dx,y=p.y+dy;if(!inb(x,y))return;const i=idx(x,y);map[i]=t;base[i]=b||T.FLOOR;town[i]=k+1};
+ for(let dy=-11;dy<=7;dy++)for(let dx=-9;dx<=9;dx++){const edge=Math.abs(dx)===9||dy===-11||dy===7;set(dx,dy,edge?T.GRASS:T.FLOOR,edge?T.GRASS:T.FLOOR)}
+ // field with fence
+ for(let dy=-10;dy<=-6;dy++)for(let dx=-6;dx<=6;dx++){const f=dy===-10||Math.abs(dx)===6;set(dx,dy,f?T.FENCE:(dx===0?T.FIELDLINE:T.FIELD),f?T.FLOOR:T.FIELD)}
+ set(-5,-8,T.GOAL,T.FIELD);set(5,-8,T.GOAL,T.FIELD);
+ // shop (left, red roof) & house (right, blue roof)
+ const bld=(x0,roof)=>{for(let dx=0;dx<5;dx++){set(x0+dx,-4,roof);set(x0+dx,-3,roof);set(x0+dx,-2,dx===1||dx===3?T.WINDOW:T.WALL);set(x0+dx,-1,dx===2?T.DOOR:T.WALL)}};
+ bld(-8,T.ROOF);bld(4,T.ROOFB);
+ set(0,2,T.FOUNTAIN);set(-2,6,T.SIGN);
+ // flowers decor
+ for(const[dx,dy]of[[-8,5],[-7,5],[8,5],[7,5],[-8,0],[8,0]])set(dx,dy,T.FLOWER,T.FLOOR);
+ // town paths out to west/east/south
+ for(let dx=-9;dx<=9;dx++){set(dx,1,T.PATH,T.PATH)}for(let dy=1;dy<=7;dy++){set(0,dy,dy===2?T.FOUNTAIN:T.PATH,T.PATH)}set(0,2,T.FOUNTAIN,T.PATH);
+}
+const NAMES=['Ava','Leo','Maya','Eli','Zoe','Jack','Nora','Owen','Lily','Mason','Ruby','Caleb','Ivy','Luke','Aria','Finn','Gus','Hazel','Jude','Kai','Mia','Nico','Quinn','Rosa','Sam','Tess','Wes','Yara','Coach Dale','Grandpa Joe','Aunt Bev','Ranger Tom','Hiker Sue','Fan Freddie','Mr. Patel','Ms. Kim','Big Lou','Dr. Ortiz'];
+const SKINS=['#f6d3b3','#eab88e','#c98d5e','#9a6337','#6b4226'],HAIRS=['#2a1c14','#5b3a1f','#c9922e','#141414','#9c3a20','#d8d8d8','#e8c070'];
+function genNPCs(prr,reach,cand,used){
+ const P=a=>a[(prr()*a.length)|0];
+ const mk=(x,y,kind,o={})=>{const n=Object.assign({id:'n'+npcs.length,x,y,tx:x,ty:y,prog:0,moving:false,dir:P(['down','left','right','up']),home:{x,y},rad:o.rad??2,kind,name:o.name||P(NAMES),
+  look:{s:P(SKINS),h:P(HAIRS),t:hsl(prr()*360,55+prr()*25,48),p:hsl(prr()*360,25,30+prr()*20),hat:prr()<.35?hsl(prr()*360,60,45):null,fr:prr()<.2},timer:60+prr()*180,tip:(prr()*TIPS.length)|0},o);npcs.push(n);return n};
+ POIS.forEach((p,k)=>{
+  if(p.id==='champ'){const cx=p.x,cy=p.y+16;mk(cx-3,cy,'shop',{rad:0,name:'Camp Vendor',tier:3,dir:'down'});mk(cx,cy+1,'tip',{rad:1,name:'Old Scout'});return}
+  mk(p.x-6,p.y+0,'shop',{rad:0,name:'Pro Shop',tier:{kickoff:0,harbor:1,dunes:1,rulebook:2,springs:2,peak:3,canton:3}[p.id],dir:'down'});
+  for(let j=0;j<3;j++){const kind=P(['tip','tip','quiz','quiz','giver']);mk(p.x+((prr()*10)|0)-5,p.y+3+((prr()*3)|0),kind,{rad:3})}
+ });
+ const kk=POIS[0];
+ mk(kk.x+6,kk.y,'mom',{rad:0,name:'Mom',dir:'down',look:{s:'#f2c9a0',h:'#3a2418',t:'#c0506a',p:'#3b4a6b',hat:null,fr:true}});
+ mk(kk.x+2,kk.y-7,'coach',{rad:0,name:'Coach Dale',dir:'down',look:{s:'#c98d5e',h:'#141414',t:'#e8443a',p:'#2a2a2a',hat:'#1a3a8a',fr:false}});
+ // roadside
+ const path=[];for(let i=0;i<map.length;i++)if(map[i]===T.PATH&&!town[i])path.push(i);
+ let tries=0,n=0;while(n<22&&tries++<4000){const i=path[(prr()*path.length)|0],x=i%MW,y=(i/MW)|0;
+  const opts=[[1,0],[-1,0],[0,1],[0,-1]].map(([a,b])=>[x+a*2,y+b*2]).filter(([a,b])=>inb(a,b)&&reach[idx(a,b)]&&!SOLID.has(map[idx(a,b)])&&map[idx(a,b)]!==T.PATH&&!town[idx(a,b)]&&!used.has(idx(a,b)));
+  if(!opts.length)continue;const[a,b]=opts[0];if(npcs.some(o=>Math.abs(o.x-a)+Math.abs(o.y-b)<8))continue;used.add(idx(a,b));
+  mk(a,b,P(['tip','quiz','quiz','giver']),{rad:0});n++}
+}
+
+// ---------------- SPRITES: CHARACTERS ----------------
+const OUT='#1a1230';
+const CHR={
+ down:["................",".....hhhhhh.....","...hhhhHHhhhh...","..hhhhhhhhhhhh..","..hhhhhhhhhhhh..","..hhhshhhhshhh..","..hssssssssssh..","..hssessssessh..","..hssessssessh..","..hsfsfssfsfsh..","...ssssmmssss...","...tttttttttt...","..tttttttttttt..","..sTttttttttTs.."],
+ up:["................",".....hhhhhh.....","...hhhhHHhhhh...","..hhhhhhhhhhhh..","..hhhhHhhhhhhh..","..hhhhhhhhhhhh..","..hhhhhhhhhhhh..","..hhhhhhhhhhhh..","..shhhhhhhhhhs..","...hhhhhhhhhh...","....ssssssss....","...tttttttttt...","..tttttwwttttt..","..sTttttttttTs.."],
+ left:["................",".....hhhhhh.....","....hhhhHHhhh...","...hhhhhhhhhhh..","...hhhhhhhhhhhh.","..hhshhhhhhhhhh.","..sssssshhhhhhh.",".ssesssshhhhhh..","..sesssssshhhh..","..sfsfsssssshh..","...smsssssss....","....tttttttt....","....tttttttt....","....ttssttTT...."],
+};
+const LEGS={
+ down:[["....pppppppp....","....bbb..bbb...."],["....ppp..ppp....","....bbb...bb...."],["....ppp..ppp....","....bb...bbb...."]],
+ up:[["....pppppppp....","....bbb..bbb...."],["....ppp..ppp....","....bbb...bb...."],["....ppp..ppp....","....bb...bbb...."]],
+ left:[[".....pppppp.....",".....bbb.bbb...."],["....ppp..ppp....","...bbb....bbb..."],["......pppp......","......bbbb......"]],
+};
+function charPal(l){return{h:l.hat?l.h:l.h,H:shade(l.h,.25),s:l.s,S:shade(l.s,-.15),f:l.fr?'#b5633a':l.s,e:'#1b1b2a',m:'#b5534a',t:l.t,T:shade(l.t,-.25),w:'#ffffff',p:l.p,b:'#f0f0f0'}}
+function renderGrid(rows,pal,flip,hat){const h=rows.length,w=rows[0].length;const c=document.createElement('canvas');c.width=w+2;c.height=h+2;const g=c.getContext('2d');
+ const grid=[];for(let y=0;y<h;y++){grid.push([]);for(let x=0;x<w;x++){let ch=rows[y][flip?w-1-x:x];let col=ch==='.'?null:pal[ch];if(hat&&y<=3&&(ch==='h'||ch==='H'))col=ch==='H'?shade(hat,.25):hat;if(hat&&y===4&&ch==='h')col=shade(hat,-.2);grid[y].push(col)}}
+ for(let y=-1;y<=h;y++)for(let x=-1;x<=w;x++){const own=grid[y]&&grid[y][x];if(own){g.fillStyle=own;g.fillRect(x+1,y+1,1,1)}else{const n=[[1,0],[-1,0],[0,1],[0,-1]].some(([a,b])=>grid[y+b]&&grid[y+b][x+a]);if(n){g.fillStyle=OUT;g.fillRect(x+1,y+1,1,1)}}}
+ return c}
+function makeCharSprites(look){const pal=charPal(look);const out={};
+ for(const d of['down','up','left','right']){const src=d==='right'?'left':d;out[d]=LEGS[src].map(l=>renderGrid(CHR[src].concat(l),pal,d==='right',look.hat))}
+ return out}
+const BRADY_LOOK={s:'#f2c9a0',h:'#2a1c14',t:'#2f6fd6',p:'#3b4a6b',hat:null,fr:true};
+let bradySpr,bradyRed;
+
+// ---------------- SPRITES: DINOSAURS ----------------
+const FAMS=['rex','raptor','sauro','trike','stego','ankylo','ptero','spino'];
+const FAMN={rex:'Rex-type',raptor:'Raptor-type',sauro:'Longneck-type',trike:'Horned-type',stego:'Plated-type',ankylo:'Armored-type',ptero:'Flyer-type',spino:'Sail-type'};
+const PREF=['Blitz','Punt','Fumble','Huddle','Snap','Gridiron','Tackle','Spiral','Endzone','Sack','Hike','Kickoff','Pylon','Audible','Scramble','Lateral','Shotgun','Redzone','Touchback','Flag','Chain','Pigskin','Hashmark','Goalpost','Juke','Stiffarm','Nickel','Wildcat','Dropkick','Onside'];
+const SUF={rex:['osaurus','rex','tyrant'],raptor:['raptor','nychus','ripper'],sauro:['osaurus','otitan','neck'],trike:['tops','ceratops','horn'],stego:['stego','oplates','odon'],ankylo:['ankylus','oshell','club'],ptero:['dactyl','odon','wing'],spino:['spinus','osail','ospino']};
+function dinoName(f){let p=pick(PREF),s=pick(SUF[f]);if(s[0]==='o'&&/[aeiou]$/i.test(p))s=s.slice(1);return p+s}
+function randPal(){const h=R()*360;return{B:hsl(h,40+R()*30,42+R()*12),L:hsl(h+30,45,78),P:hsl(h+(R()<.5?180:-35),50,28+R()*10),K:R()<.5?'#f0e6cc':'#6b6b78'}}
+function makeDino(fam,pal,pattern,seed){
+ const W=56,H=48,px=new Array(W*H).fill(null),rr=mulberry32(seed||1);
+ const set=(x,y,c)=>{x=Math.floor(x);y=Math.floor(y);if(x>=0&&y>=0&&x<W&&y<H)px[y*W+x]=c};
+ const get=(x,y)=>x>=0&&y>=0&&x<W&&y<H?px[y*W+x]:null;
+ const ell=(cx,cy,rx,ry,c,cond)=>{for(let y=Math.floor(cy-ry);y<=Math.ceil(cy+ry);y++)for(let x=Math.floor(cx-rx);x<=Math.ceil(cx+rx);x++){const a=(x+.5-cx)/rx,b=(y+.5-cy)/ry;if(a*a+b*b<=1&&(!cond||cond(x,y)))set(x,y,c)}};
+ const poly=(pts,c)=>{let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;pts.forEach(([x,y])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)});for(let y=Math.floor(y0);y<=y1;y++)for(let x=Math.floor(x0);x<=x1;x++){let ins=false;const X=x+.5,Y=y+.5;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const[xi,yi]=pts[i],[xj,yj]=pts[j];if((yi>Y)!==(yj>Y)&&X<(xj-xi)*(Y-yi)/(yj-yi)+xi)ins=!ins}if(ins)set(x,y,c)}};
+ const line=(x0,y0,x1,y1,r0,r1,c)=>{const n=Math.ceil(Math.hypot(x1-x0,y1-y0))*2+1;for(let i=0;i<=n;i++){const t=i/n,r=r0+(r1-r0)*t;ell(x0+(x1-x0)*t,y0+(y1-y0)*t,r,r,c)}};
+ const B=pal.B,D=shade(pal.B,-.3),L=pal.L,P=pal.P,K=pal.K,E='#111018',Wt='#ffffff';
+ const eye=(x,y)=>{set(x,y,Wt);set(x+1,y,E);set(x,y+1,Wt);set(x+1,y+1,E)};
+ const belly=(cx,cy,rx,ry,minY)=>ell(cx,cy,rx,ry,L,(x,y)=>y>=minY&&get(x,y)===B);
+ if(fam==='rex'||fam==='spino'){
+  if(fam==='spino'){ell(32,17,11,10,P,(x,y)=>y<25);for(let x=23;x<42;x+=3)line(x,26,x+1,11+Math.abs(32-x)/2,.6,.4,shade(P,-.3))}
+  line(35,34,37,44,3.5,2.5,D);ell(36,45,4,1.6,D);
+  poly([[38,23],[55,17],[55,21],[41,34]],B);
+  ell(32,29,11,9,B);
+  line(26,25,18,17,6,5,B);
+  if(fam==='spino'){ell(12,15,10,4.5,B);ell(8,18,7,2.5,B)}else{ell(14,13,9,6,B);ell(12,18,8,3,B)}
+  for(let x=5;x<18;x++)set(x,17,E);for(let x=6;x<17;x+=2)set(x,18,Wt);
+  belly(29,34,8,6,30);
+  line(24,30,20,33,1.6,1.1,D);set(19,34,Wt);
+  ell(33,35,6,6,B);line(32,36,30,44,4,3,B);ell(28,45,5,1.7,B);set(23,46,Wt);set(25,46,Wt);
+  eye(11,11);set(6,12,D);
+ }else if(fam==='raptor'){
+  line(32,32,34,44,2.5,1.5,D);ell(35,45,3.5,1.3,D);
+  line(36,26,55,21,4,1,B);
+  ell(30,27,9,6,B);line(23,24,16,16,3.6,3,B);ell(12,14,7,4.2,B);ell(6,15.5,4.5,2.4,B);
+  for(let x=3;x<13;x++)set(x,17,E);for(let x=4;x<12;x+=2)set(x,18,Wt);
+  line(13,10,22,8,1.6,.6,P);line(16,11,24,11,1.2,.5,P);
+  belly(29,30,6,3,28);
+  line(23,28,18,32,1.5,1,D);set(17,33,Wt);
+  ell(31,32,4.5,4.5,B);line(31,32,28,39,3.5,2.4,B);line(28,39,30,44,2,1.5,B);ell(28,45,4,1.3,B);set(24,43,Wt);set(25,44,Wt);
+  eye(10,12);
+ }else if(fam==='sauro'){
+  line(26,36,26,45,3,3,D);line(42,36,42,45,3,3,D);
+  line(44,30,55,41,5,1,B);
+  ell(34,32,13,9,B);line(24,28,11,9,5,3,B);ell(8,8,5.5,3.5,B);
+  for(let x=4;x<9;x++)set(x,10,E);
+  belly(34,37,10,4,34);
+  line(28,37,28,45,3.6,3.6,B);line(40,37,40,45,3.6,3.6,B);set(26,46,Wt);set(29,46,Wt);set(38,46,Wt);set(41,46,Wt);
+  eye(6,6);
+ }else if(fam==='trike'){
+  line(24,36,24,45,3,3,D);line(40,36,40,45,3,3,D);
+  poly([[44,27],[55,33],[44,37]],B);
+  ell(33,31,13,9,B);
+  ell(21,23,8.5,10.5,P);ell(21,23,6.5,8.5,shade(P,.3));for(let a=0;a<6;a++){const an=-1.9+a*.65;set(21+Math.cos(an)*9.5,23+Math.sin(an)*11.5,K)}
+  ell(13,30,9,6.5,B);poly([[2,31],[8,26],[8,35]],shade(K,-.4));
+  poly([[11,25],[14,25],[5,13]],K);poly([[16,24],[19,25],[13,12]],K);poly([[5,27],[8,27],[3,22]],K);
+  belly(33,36,10,4,33);
+  line(27,37,27,45,4,4,B);line(38,37,38,45,4,4,B);
+  eye(11,27);
+ }else if(fam==='stego'){
+  for(let i=0;i<6;i++){const x=19+i*5,y=24-Math.sin(i/5*Math.PI)*4;poly([[x-3.5,y+3],[x+3.5,y+3],[x,y-7]],P)}
+  line(24,36,24,45,3,3,D);line(39,36,39,45,3,3,D);
+  line(43,32,55,27,4,1.2,B);poly([[51,27],[53,27],[54,20]],K);poly([[48,29],[50,29],[49,22]],K);
+  ell(31,32,14,8.5,B);line(19,35,10,37,4,3,B);ell(8,37,4.5,3,B);for(let x=4;x<9;x++)set(x,39,E);
+  belly(31,37,11,4,35);
+  line(27,37,27,45,3.6,3.6,B);line(37,37,37,45,3.6,3.6,B);
+  eye(6,35);
+ }else if(fam==='ankylo'){
+  line(22,38,22,45,3,3,D);line(39,38,39,45,3,3,D);
+  line(44,36,52,34,3,2,B);ell(52,34,4,3.5,K);ell(52,33,2,1.5,shade(K,.3));
+  ell(30,35,16,8,B);
+  for(let y=29;y<38;y+=4)for(let x=18+(y%8?2:0);x<44;x+=5)if(get(x,y)===B)ell(x,y,1.6,1.4,K,(a,b)=>get(a,b)===B);
+  for(let x=16;x<46;x+=5)poly([[x,39],[x+3,39],[x+1.5,43]],Wt);
+  ell(12,37,5.5,4.5,B);set(9,33,K);set(10,33,K);set(10,32,K);for(let x=7;x<12;x++)set(x,40,E);
+  line(26,40,26,45,3.4,3.4,B);line(36,40,36,45,3.4,3.4,B);
+  eye(10,35);
+ }else if(fam==='ptero'){
+  poly([[30,21],[53,8],[42,27]],D);
+  ell(28,25,6,4.5,B);
+  poly([[26,22],[3,7],[11,18],[24,29]],L);line(26,22,3,7,1.2,.5,B);
+  ell(22,17,4.5,3.5,B);poly([[23,14],[35,8],[26,18]],P);poly([[19,16],[6,20],[19,19]],shade(K,-.2));
+  belly(28,27,4,2,26);
+  line(29,28,31,33,1,1,D);line(26,28,25,33,1,1,D);
+  eye(20,16);
+ }
+ // patterns
+ if(pattern==='stripes'){for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(px[y*W+x]===B&&((x+Math.floor(y*.4))%7)<2&&y<38)px[y*W+x]=P}
+ else if(pattern==='vstripes'){for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(px[y*W+x]===B&&(x%5)<2)px[y*W+x]=P}
+ else if(pattern==='spots'){for(let k=0;k<14;k++){let tries=0;while(tries++<40){const x=(rr()*W)|0,y=(rr()*H)|0;if(px[y*W+x]===B){ell(x,y,1.3+rr()*1.2,1.2+rr(),P,(a,b)=>get(a,b)===B);break}}}}
+ // shading + outline
+ const c=document.createElement('canvas');c.width=W+2;c.height=H+2;const g=c.getContext('2d');
+ for(let y=-1;y<=H;y++)for(let x=-1;x<=W;x++){const v=get(x,y);if(v){let col=v;if(!get(x,y-1))col=shade(v,.22);else if(!get(x,y+1)||!get(x,y+2))col=shade(v,-.18);else if(!get(x+1,y))col=shade(v,-.1);g.fillStyle=col;g.fillRect(x+1,y+1,1,1)}else if(get(x+1,y)||get(x-1,y)||get(x,y+1)||get(x,y-1)){g.fillStyle=OUT;g.fillRect(x+1,y+1,1,1)}}
+ return c}
+
+function tint(c,col){const t=document.createElement('canvas');t.width=c.width;t.height=c.height;const g=t.getContext('2d');g.drawImage(c,0,0);g.globalCompositeOperation='source-in';g.fillStyle=col;g.fillRect(0,0,t.width,t.height);return t}
+// ---------------- TILES ----------------
+const tileCache={};
+let tseed=77;
+function mkT(fn){const c=document.createElement('canvas');c.width=c.height=16;const g=c.getContext('2d');fn(g,mulberry32(tseed++));return c}
+const P_=(g,x,y,c,w=1,h=1)=>{g.fillStyle=c;g.fillRect(x,y,w,h)};
+function circ(g,cx,cy,r,c){for(let y=-r;y<=r;y++)for(let x=-r;x<=r;x++)if(x*x+y*y<=r*r+r*.8)P_(g,cx+x,cy+y,c)}
+function dots(g,r,cols,n){for(let i=0;i<n;i++)P_(g,(r()*16)|0,(r()*16)|0,cols[(r()*cols.length)|0])}
+function buildTiles(){
+ const tc=tileCache;
+ tc[T.GRASS]=[0,1,2].map(()=>mkT((g,r)=>{P_(g,0,0,'#6cc04a',16,16);dots(g,r,['#5cae3e','#7ed05a'],18);for(let i=0;i<3;i++){const x=(r()*14)|0,y=(r()*13+2)|0;P_(g,x,y,'#4e9a36');P_(g,x+1,y-1,'#4e9a36')}}));
+ tc[T.SAND]=[0,1].map(()=>mkT((g,r)=>{P_(g,0,0,'#f0da9a',16,16);dots(g,r,['#e2c47c','#fff0c4','#d9b86a'],16)}));
+ tc[T.PATH]=[0,1].map(()=>mkT((g,r)=>{P_(g,0,0,'#d8b77a',16,16);dots(g,r,['#c49e5f','#e8cf9a'],16);P_(g,(r()*12)|0,(r()*12)|0,'#a98a5a',2,1)}));
+ tc[T.MFLOOR]=[0,1].map(()=>mkT((g,r)=>{P_(g,0,0,'#a8957a',16,16);dots(g,r,['#968468','#bba98d'],18);const x=(r()*10)|0,y=(r()*10)|0;P_(g,x,y,'#7d6c54',3,1);P_(g,x+2,y+1,'#7d6c54',1,2)}));
+ tc[T.VFLOOR]=[0,1].map(()=>mkT((g,r)=>{P_(g,0,0,'#4a3838',16,16);dots(g,r,['#5c4646','#3a2a2a'],18);if(r()<.5)P_(g,(r()*14)|0,(r()*14)|0,'#c0392b');P_(g,(r()*10)|0,(r()*12)|0,'#2a1c1c',4,1)}));
+ tc[T.FLOOR]=[0,1].map(v=>mkT((g,r)=>{P_(g,0,0,'#d9cfb8',16,16);P_(g,0,0,'#bcae92',16,1);P_(g,0,8,'#bcae92',16,1);P_(g,0,0,'#bcae92',1,8);P_(g,8,8,'#bcae92',1,8);P_(g,1,1,'#e8e0cc',7,1);P_(g,9,9,'#e8e0cc',7,1);dots(g,r,['#cfc4aa'],5)}));
+ tc[T.FIELD]=[0,1].map(v=>mkT((g,r)=>{P_(g,0,0,v?'#4caf50':'#43a047',16,16);dots(g,r,[v?'#55b859':'#3d9641'],10)}));
+ tc[T.FIELDLINE]=[mkT((g,r)=>{P_(g,0,0,'#4caf50',16,16);P_(g,7,0,'#ffffff',2,16)})];
+ tc[T.WATER]=[0,1].map(f=>mkT((g,r)=>{P_(g,0,0,'#3a7bd5',16,16);dots(g,r,['#336fc4'],10);for(let i=0;i<3;i++){const y=2+i*5,x=(i*5+f*4)%16;P_(g,x,y,'#7fb6ff',4,1);P_(g,(x+4)%16,y+1,'#7fb6ff',2,1)}}));
+ tc[T.LAVA]=[0,1].map(f=>mkT((g,r)=>{P_(g,0,0,'#d8431c',16,16);for(let i=0;i<5;i++){const x=((r()*13)|0),y=((r()*13)|0);P_(g,x,y,f?'#ff8a1e':'#f06a1a',3,2)}dots(g,r,['#ffd23a'],f?4:2);dots(g,r,['#a82e10'],8)}));
+ tc[T.BRIDGE]=[mkT((g,r)=>{P_(g,0,0,'#b07a45',16,16);for(let y=0;y<16;y+=4){P_(g,0,y+3,'#7a4f28',16,1);P_(g,0,y,'#c99260',16,1)}P_(g,0,0,'#5e3a1c',1,16);P_(g,15,0,'#5e3a1c',1,16)})];
+ tc[T.WALL]=[mkT((g,r)=>{P_(g,0,0,'#efe3c6',16,16);for(let y=3;y<16;y+=4)P_(g,0,y,'#d4c29b',16,1);P_(g,0,15,'#a89670',16,1)})];
+ tc[T.WINDOW]=[mkT((g,r)=>{P_(g,0,0,'#efe3c6',16,16);for(let y=3;y<16;y+=4)P_(g,0,y,'#d4c29b',16,1);P_(g,3,3,'#5a4630',10,9);P_(g,4,4,'#8fc4f0',8,7);P_(g,4,4,'#c8e4ff',3,2);P_(g,7,4,'#5a4630',1,7);P_(g,4,7,'#5a4630',8,1)})];
+ tc[T.DOOR]=[mkT((g,r)=>{P_(g,0,0,'#efe3c6',16,16);P_(g,3,2,'#4a2e18',10,14);P_(g,4,3,'#8a5530',8,13);P_(g,4,8,'#7a4a26',8,1);P_(g,10,9,'#f5c542',1,2)})];
+ const roof=(c1,c2,c3)=>mkT((g,r)=>{P_(g,0,0,c1,16,16);for(let y=0;y<16;y+=4){P_(g,0,y+3,c2,16,1);for(let x=(y/4%2)*4;x<16;x+=8)P_(g,x,y,c2,1,3)}P_(g,0,0,c3,16,1)});
+ tc[T.ROOF]=[roof('#c8423a','#9a2e28','#e0605a')];tc[T.ROOFB]=[roof('#3f6fc8','#2c509a','#6a92e0')];
+ // objects (transparent overlays)
+ tc[T.TALL]=[0,1].map(()=>mkT((g,r)=>{for(const[x,y]of[[1,6],[8,6],[4,14],[11,14]]){P_(g,x,y-5,'#2f7a28',1,5);P_(g,x+2,y-6,'#2f7a28',1,6);P_(g,x+4,y-4,'#2f7a28',1,4);P_(g,x+1,y-4,'#7fd05a',1,4);P_(g,x+3,y-5,'#5fb848',1,5);P_(g,x,y,'#3a8a30',6,1)}}));
+ tc[T.JUNGLE]=[0,1].map(()=>mkT((g,r)=>{P_(g,0,0,'#3f8f3a',16,16);for(const[x,y]of[[0,7],[7,6],[3,15],[10,15]]){P_(g,x,y-6,'#1d5a25',1,6);P_(g,x+2,y-7,'#1d5a25',1,7);P_(g,x+4,y-5,'#1d5a25',1,5);P_(g,x+1,y-5,'#5bb04e',1,5);P_(g,x+3,y-6,'#3a8a35',1,6)}}));
+ tc[T.BRUSH]=[0,1].map(()=>mkT((g,r)=>{for(const[x,y]of[[2,6],[9,7],[5,14],[11,14]]){P_(g,x,y-3,'#8a7a3a',5,3);P_(g,x+1,y-4,'#a89448',3,1);P_(g,x,y-1,'#6a5a28',5,1);P_(g,x+2,y-5,'#6a5a28',1,1)}}));
+ tc[T.FLOWER]=[0,1,2].map(()=>mkT((g,r)=>{for(let i=0;i<4;i++){const x=1+((r()*12)|0),y=1+((r()*12)|0),c=['#ff5a6e','#ffd84a','#ffffff','#c07aff'][(r()*4)|0];P_(g,x,y+1,'#3f8a2a',1,2);P_(g,x-1,y,c);P_(g,x+1,y,c);P_(g,x,y-1,c);P_(g,x,y+1,c);P_(g,x,y,'#ffe08a')}}));
+ tc[T.TREE]=[0,1].map(()=>mkT((g,r)=>{P_(g,5,10,'#3a2414',6,6);P_(g,6,10,'#6b4226',4,6);circ(g,8,7,7,'#174d22');circ(g,8,7,6,'#2f8a3a');circ(g,6,5,3,'#4fb04a');P_(g,5,3,'#7fd06a',2,1);dots(g,r,['#24732e'],6)}));
+ tc[T.PINE]=[0,1].map(()=>mkT((g,r)=>{P_(g,6,12,'#5a3a1e',4,4);for(let i=0;i<3;i++){const y=1+i*4,w=4+i*2;for(let k=0;k<5;k++){P_(g,8-w/2-k*.5+.5,y+k,'#1d5a2e',w+k,1)}}for(let i=0;i<3;i++){const y=2+i*4;P_(g,6,y,'#3f8f4a',2,2)}}));
+ tc[T.ROCK]=[0,1].map(()=>mkT((g,r)=>{for(let y=0;y<16;y++)for(let x=0;x<16;x++){const a=(x-8)/7.2,b=(y-9)/6.2;const d=a*a+b*b;if(d<=1)P_(g,x,y,d>.75?'#3b3e46':(y<7?'#b5bac4':y>12?'#5d616b':'#8a8f99'))}P_(g,5,6,'#d8dce4',2,1)}));
+ tc[T.CACTUS]=[mkT((g,r)=>{P_(g,6,2,'#1f5a26',4,14);P_(g,7,2,'#3fa04a',2,14);P_(g,2,6,'#1f5a26',3,2);P_(g,2,4,'#1f5a26',2,4);P_(g,11,8,'#1f5a26',3,2);P_(g,12,5,'#1f5a26',2,5);P_(g,3,4,'#3fa04a',1,3);P_(g,12,6,'#3fa04a',1,3);P_(g,8,1,'#ff6a9a')})];
+ tc[T.COLUMN]=[mkT((g,r)=>{P_(g,3,1,'#5a5650',10,3);P_(g,4,2,'#ece8dc',8,1);P_(g,4,4,'#5a5650',8,10);P_(g,5,4,'#e8e4d8',6,10);P_(g,6,4,'#c8c2b0',1,10);P_(g,9,4,'#c8c2b0',1,10);P_(g,3,13,'#5a5650',10,3);P_(g,4,14,'#d8d2c2',8,1);if(r()<.5)P_(g,10,6,'#6cc04a',2,2)})];
+ tc[T.FENCE]=[mkT((g,r)=>{P_(g,0,5,'#5e3a1c',16,3);P_(g,0,6,'#c08a4a',16,1);P_(g,0,10,'#5e3a1c',16,3);P_(g,0,11,'#c08a4a',16,1);for(const x of[2,12]){P_(g,x-1,3,'#5e3a1c',4,12);P_(g,x,4,'#d8a060',2,10)}})];
+ tc[T.SIGN]=[mkT((g,r)=>{P_(g,7,9,'#4a2e18',2,7);P_(g,2,3,'#4a2e18',12,8);P_(g,3,4,'#c99260',10,6);P_(g,4,5,'#7a4f28',8,1);P_(g,4,7,'#7a4f28',6,1)})];
+ tc[T.GOAL]=[mkT((g,r)=>{P_(g,7,8,'#c9a227',2,8);P_(g,2,7,'#f5d142',12,2);P_(g,2,0,'#f5d142',2,8);P_(g,12,0,'#f5d142',2,8);P_(g,2,0,'#fff0a0',1,8)})];
+ tc[T.TOTEM]=[mkT((g,r)=>{P_(g,3,11,'#4a4a58',10,5);P_(g,4,12,'#8a8a98',8,3);for(let y=0;y<9;y++)for(let x=0;x<16;x++){const a=(x-8)/6,b=(y-5.5)/4;if(a*a+b*b<=1)P_(g,x,y,a*a+b*b>.7?'#8a5a10':'#f5c542')}P_(g,6,5,'#ffffff',4,1);for(let x=6;x<10;x+=2)P_(g,x,4,'#ffffff',1,3);P_(g,4,3,'#fff6c0',2,1)})];
+ tc[T.FOUNTAIN]=[0,1].map(f=>mkT((g,r)=>{for(let y=0;y<16;y++)for(let x=0;x<16;x++){const a=(x-7.5)/7.5,b=(y-8)/7;const d=a*a+b*b;if(d<=1)P_(g,x,y,d>.62?(y<8?'#d8d8e0':'#9a9aa8'):'#4a90e8')}P_(g,6,4,'#c8e4ff',4,8);P_(g,7,1,'#c8e4ff',2,4);if(f){P_(g,4,5,'#ffffff');P_(g,11,9,'#ffffff')}else{P_(g,10,4,'#ffffff');P_(g,5,10,'#ffffff')}}));
+ tc[T.GATE]=[mkT((g,r)=>{P_(g,0,0,'#b07a45',16,16);P_(g,0,0,'#2a2a38',16,3);for(let x=1;x<16;x+=3){P_(g,x,0,'#3a3a48',2,16);P_(g,x,0,'#f5c542',2,2)}P_(g,0,8,'#3a3a48',16,2)})];
+}
+const BASE_OF={[T.TALL]:T.GRASS,[T.JUNGLE]:T.GRASS,[T.FLOWER]:T.GRASS,[T.TREE]:T.GRASS,[T.PINE]:T.GRASS,[T.ROCK]:T.GRASS,[T.CACTUS]:T.SAND,[T.BRUSH]:T.SAND,[T.COLUMN]:T.GRASS,[T.TOTEM]:T.GRASS,[T.SIGN]:T.GRASS,[T.GOAL]:T.FIELD,[T.FENCE]:T.GRASS};
+const hash=(x,y)=>((x*73856093)^(y*19349663))>>>0;
+
+// ---------------- MINI ITEM SPRITES ----------------
+let chestSpr,chestGoldSpr,chestOpen;
+function buildMisc(){
+ const ch=(body,band)=>mkT(g=>{P_(g,1,4,OUT,14,11);P_(g,2,5,body,12,9);P_(g,2,5,shade(body,.2),12,2);P_(g,2,8,band,12,2);P_(g,7,7,'#f5c542',2,4);P_(g,7,8,OUT,2,1);P_(g,1,14,'rgba(0,0,0,.25)',14,2)});
+ chestSpr=ch('#9a5a2a','#5e3a1c');chestGoldSpr=ch('#f5c542','#b8860b');
+ chestOpen=mkT(g=>{P_(g,1,7,OUT,14,8);P_(g,2,8,'#5e3a1c',12,6);P_(g,1,3,OUT,14,5);P_(g,2,4,'#7a4a20',12,3)});
+}
+
+// ---------------- CANVAS & RENDER ----------------
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');ctx.imageSmoothingEnabled=false;
+let camX=0,camY=0,frame=0,now=0;
+const player={x:0,y:0,tx:0,ty:0,prog:0,moving:false,dir:'down',anim:0,bump:0};
+function walkable(x,y,self){if(!inb(x,y))return false;const t=map[idx(x,y)];if(SOLID.has(t))return false;
+ for(const n of npcs){if(n===self)continue;if((n.x===x&&n.y===y)||(n.moving&&n.tx===x&&n.ty===y))return false}
+ if(self&&((player.x===x&&player.y===y)||(player.moving&&player.tx===x&&player.ty===y)))return false;
+ for(const it of items)if(it.kind==='chest'&&it.x===x&&it.y===y)return false;
+ for(const b of bosses)if(x>=b.x-1&&x<=b.x+1&&y>=b.y-1&&y<=b.y)return false;
+ return true}
+function drawTile(t,x,y,sx,sy){
+ const tc=tileCache;const ab=(frame>>5)&1;
+ if(OBJ.has(t)){const b=base[idx(x,y)];drawTile(OBJ.has(b)?T.GRASS:b,x,y,sx,sy)}
+ let arr=tc[t];if(!arr){arr=tc[T.GRASS]}
+ let img;if(t===T.WATER||t===T.LAVA||t===T.FOUNTAIN)img=arr[ab];else if(t===T.FIELD)img=arr[x&1];else img=arr[hash(x,y)%arr.length];
+ if(t===T.FOUNTAIN){ctx.drawImage(tc[base[idx(x,y)]===T.PATH?T.PATH:T.FLOOR][0],sx,sy)}
+ ctx.drawImage(img,sx,sy);
+ if(t===T.WATER){if(y>0&&map[idx(x,y-1)]!==T.WATER&&map[idx(x,y-1)]!==T.BRIDGE){ctx.fillStyle='#b8dcff';ctx.fillRect(sx,sy,16,1)}if(x>0&&map[idx(x-1,y)]!==T.WATER&&map[idx(x-1,y)]!==T.BRIDGE){ctx.fillStyle='#9cc9ff';ctx.fillRect(sx,sy,1,16)}}
+}
+function drawWorld(){
+ const ppx=player.px,ppy=player.py;
+ camX=Math.round(clamp(ppx+8-CW/2,0,MW*TS-CW));camY=Math.round(clamp(ppy+8-CH/2,0,MH*TS-CH));
+ const x0=Math.floor(camX/TS),y0=Math.floor(camY/TS);
+ for(let ty=y0;ty<=y0+VH+1;ty++)for(let tx=x0;tx<=x0+VW+1;tx++){if(!inb(tx,ty))continue;drawTile(map[idx(tx,ty)],tx,ty,tx*TS-camX,ty*TS-camY)}
+ const ents=[];
+ for(const it of items){if(Math.abs(it.x*16-ppx)>200||Math.abs(it.y*16-ppy)>140)continue;if(it.kind==='sparkle'&&S.taken[it.id])continue;ents.push({y:it.y*16,d:()=>drawItem(it)})}
+ for(const n of npcs){if(Math.abs(n.px-ppx)>200||Math.abs(n.py-ppy)>140)continue;ents.push({y:n.py,d:()=>drawChar(n.spr,n.dir,n.moving?1+((n.prog/8)|0)%2:0,n.px,n.py)})}
+ for(const b of bosses){if(Math.abs(b.x*16-ppx)>240||Math.abs(b.y*16-ppy)>160)continue;ents.push({y:b.y*16,d:()=>drawBossMap(b)})}
+ if(state!=='title')ents.push({y:ppy,d:()=>drawChar(bradySpr,player.dir,player.moving?1+((player.anim/8)|0)%2:0,ppx,ppy)});
+ ents.sort((a,b)=>a.y-b.y).forEach(e=>e.d());
+ if(excl>0){const sx=ppx-camX+5,sy=ppy-camY-16;ctx.fillStyle=OUT;ctx.fillRect(sx-1,sy-1,8,12);ctx.fillStyle='#fff';ctx.fillRect(sx,sy,6,10);ctx.fillStyle='#e8443a';ctx.fillRect(sx+2,sy+1,2,5);ctx.fillRect(sx+2,sy+7,2,2)}
+}
+function drawChar(spr,dir,f,px,py){const sx=Math.round(px-camX),sy=Math.round(py-camY);
+ ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(sx+3,sy+14,10,2);ctx.fillRect(sx+4,sy+15,8,2);
+ ctx.drawImage(spr[dir][f],sx-1,sy-3-(f?1:0))}
+function drawItem(it){const sx=it.x*16-camX,sy=it.y*16-camY;
+ if(it.kind==='chest'){ctx.drawImage(S.taken[it.id]?chestOpen:(it.legend?chestGoldSpr:chestSpr),sx,sy);if(it.legend&&!S.taken[it.id]&&(frame>>3)%4===0){ctx.fillStyle='#fff';ctx.fillRect(sx+12,sy+3,1,3);ctx.fillRect(sx+11,sy+4,3,1)}}
+ else{const p=(frame>>3)%4,c=['#ffffff','#fff6a0','#f5c542','#fff6a0'][p];const s=p===2?3:2;ctx.fillStyle=c;ctx.fillRect(sx+8,sy+8-s,1,s*2+1);ctx.fillRect(sx+8-s,sy+8,s*2+1,1);ctx.fillStyle='rgba(255,255,255,.6)';ctx.fillRect(sx+7,sy+7,3,3)}}
+function drawBossMap(b){if(!b.spr)b.spr=makeDino(b.def.fam,b.def.pal,b.def.pattern,7);const s=b.spr;const sx=b.x*16+8-s.width/2-camX,sy=b.y*16+16-s.height-camY+Math.round(Math.sin(frame/20)*1);
+ ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(sx+8,sy+s.height-3,s.width-16,4);ctx.drawImage(s,sx,sy);
+ if(!S.bosses[b.poi]&&(frame>>4)%2===0){ctx.fillStyle=OUT;ctx.fillRect(sx+s.width/2-3,sy-12,7,11);ctx.fillStyle='#f5c542';ctx.fillRect(sx+s.width/2-2,sy-11,5,9);ctx.fillStyle=OUT;ctx.fillRect(sx+s.width/2,sy-10,1,4);ctx.fillRect(sx+s.width/2,sy-5,1,1)}}
+
+// ---------------- INPUT ----------------
+const held={up:0,down:0,left:0,right:0,run:0};const dirStack=[];
+const KEYMAP={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};
+function setDir(d,v){held[d]=v;const i=dirStack.indexOf(d);if(i>=0)dirStack.splice(i,1);if(v)dirStack.push(d)}
+function curDir(){return dirStack.length?dirStack[dirStack.length-1]:null}
+window.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const d=KEYMAP[e.code];
+ if(d){e.preventDefault();if(!e.repeat){setDir(d,1);if(state!=='world')press('DIR',d)}return}
+ if(e.key==='Shift'){held.run=1;return}
+ if(e.repeat)return;
+ if(['Space','Enter','KeyZ'].includes(e.code)){e.preventDefault();press('A')}
+ else if(['Escape','Backspace','KeyX'].includes(e.code)){e.preventDefault();press('B')}
+ else if(['KeyI','Tab'].includes(e.code)){e.preventDefault();press('MENU')}
+ else if(e.code==='KeyM'){press('MAP')}
+ else if(/^Digit[1-4]$/.test(e.code)){press('ANS',+e.code.slice(5)-1)}
+});
+window.addEventListener('keyup',e=>{const d=KEYMAP[e.code];if(d)setDir(d,0);if(e.key==='Shift')held.run=0});
+window.addEventListener('blur',()=>{for(const d of['up','down','left','right'])setDir(d,0);held.run=0});
+
+// ---------------- AUDIO ----------------
+let AC=null;
+function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume().catch(()=>{});return AC}
+function tone(f,d,type='square',v=.05,when=0,f2){if(!S||!S.sound)return;const a=ac();if(!a)return;try{const t=a.currentTime+when,o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.02)}catch(e){}}
+const SFX={blip:()=>tone(880,.04,'square',.03),
+ correct:()=>{tone(523,.09);tone(659,.09,'square',.05,.08);tone(784,.16,'square',.05,.16)},
+ wrong:()=>{tone(220,.12,'sawtooth',.05);tone(150,.25,'sawtooth',.05,.1)},
+ hit:()=>tone(300,.12,'square',.05,0,80),
+ item:()=>{tone(784,.07);tone(1047,.12,'square',.05,.07)},
+ level:()=>{[523,659,784,1047].forEach((f,i)=>tone(f,.12,'square',.05,i*.1))},
+ encounter:()=>{[440,554,440,554,659].forEach((f,i)=>tone(f,.08,'square',.05,i*.07))},
+ heal:()=>{[523,784,1047].forEach((f,i)=>tone(f,.1,'triangle',.07,i*.08))},
+ bump:()=>tone(90,.06,'square',.03),
+ win:()=>{[523,523,523,659,784,659,784,1047].forEach((f,i)=>tone(f,.12,'square',.05,i*.11))}};
+
+// ---------------- GAME STATE ----------------
+let state='title',excl=0,graceSteps=0,lastRegion=-1,lastTown=0,titleT=0;
+function stats(){const s={atk:12+(S.lv-1)*3,def:S.lv-1,hp:60+(S.lv-1)*12,crit:.08,dodge:0,heal:0};
+ for(const k of SLOTS){const id=S.equip[k];if(!id)continue;const g=GEAR[id];s.atk+=g.atk||0;s.def+=g.def||0;s.hp+=g.hp||0;s.crit+=(g.crit||0)/100;s.dodge+=(g.dodge||0)/100;s.heal+=g.heal||0}
+ return s}
+const xpNeed=lv=>20+lv*18;
+function regionPoi(x,y){return POIS[region[idx(x,y)]]}
+
+// ---------------- WORLD UPDATE ----------------
+function startPlayer(){player.x=player.tx=S.x;player.y=player.ty=S.y;player.dir=S.dir||'down';player.prog=0;player.moving=false;player.px=S.x*16;player.py=S.y*16}
+function updateWorld(){
+ if(excl>0){excl--;if(excl===0)beginWild();return}
+ const p=player;
+ if(p.moving){p.prog+=p.spd;p.anim+=p.spd/1.6;if(p.prog>=16){p.prog=0;p.moving=false;p.x=p.tx;p.y=p.ty;onStep()}}
+ if(!p.moving&&state==='world'){const d=curDir();if(d){p.dir=d;const nx=p.x+DX[d],ny=p.y+DY[d];if(walkable(nx,ny)){p.tx=nx;p.ty=ny;p.moving=true;p.spd=held.run?3.2:1.6}else if(p.bump--<=0){p.bump=18;SFX.bump()}}else p.anim=0}
+ p.px=(p.x+(p.tx-p.x)*p.prog/16)*16;p.py=(p.y+(p.ty-p.y)*p.prog/16)*16;
+ for(const n of npcs){
+  if(n.moving){n.prog+=1;if(n.prog>=16){n.prog=0;n.moving=false;n.x=n.tx;n.y=n.ty}}
+  else if(n.rad>0&&--n.timer<=0){n.timer=90+R()*200;const d=pick(['up','down','left','right']);n.dir=d;const nx=n.x+DX[d],ny=n.y+DY[d];if(Math.abs(nx-n.home.x)<=n.rad&&Math.abs(ny-n.home.y)<=n.rad&&walkable(nx,ny,n)&&!town[idx(nx,ny)]===!town[idx(n.x,n.y)]){n.tx=nx;n.ty=ny;n.moving=true}}
+  else if(n.rad===0&&--n.timer<=0&&n.kind!=='shop'){n.timer=120+R()*240;n.dir=pick(['up','down','left','right'])}
+  n.px=(n.x+(n.tx-n.x)*n.prog/16)*16;n.py=(n.y+(n.ty-n.y)*n.prog/16)*16;
+ }
+}
+function onStep(){
+ S.x=player.x;S.y=player.y;S.dir=player.dir;S.steps++;
+ const i=idx(player.x,player.y);
+ // passive regen
+ if(S.steps%8===0){const mx=stats().hp;if(S.hp<mx){S.hp++;updHud()}}
+ if(S.buffs.horn){S.buffs.horn--;if(S.buffs.horn<=0){delete S.buffs.horn;toast('📯 Air Horn wore off')}updHud()}
+ // sparkle pickup
+ for(const it of items)if(it.kind==='sparkle'&&!S.taken[it.id]&&it.x===player.x&&it.y===player.y){S.taken[it.id]=1;if(R()<.3){const c=rint(15,40);S.coins+=c;toast(`✨ Found ${c} coins!`)}else{const k=rollCons();S.inv[k]=(S.inv[k]||0)+1;toast(`✨ Found ${CONS[k].icon} ${CONS[k].name}!`)}SFX.item();updHud()}
+ // region & town
+ const r=region[i];if(r!==lastRegion){lastRegion=r;banner(POIS[r].region)}
+ const tw=town[i];if(tw!==lastTown){lastTown=tw;if(tw){const p=POIS[tw-1];if(!S.visited[p.id]){S.visited[p.id]=1}banner(p.name);saveGame(true)}}
+ updObjective();
+ if(graceSteps>0){graceSteps--;return}
+ if(tw||S.buffs.horn)return;
+ const rate=ENC[map[i]]||0;
+ if(R()<rate){excl=30;SFX.encounter()}
+}
+function facing(){return[player.x+DX[player.dir],player.y+DY[player.dir]]}
+function interact(){if(player.moving)return;
+ const[fx,fy]=facing();if(!inb(fx,fy))return;
+ const n=npcs.find(n=>n.x===fx&&n.y===fy&&!n.moving);if(n){talk(n);return}
+ const it=items.find(it=>it.kind==='chest'&&it.x===fx&&it.y===fy);if(it){openChest(it);return}
+ const b=bosses.find(b=>fx>=b.x-1&&fx<=b.x+1&&fy>=b.y-1&&fy<=b.y);if(b){bossTalk(b);return}
+ const t=map[idx(fx,fy)];
+ if(t===T.FOUNTAIN){S.hp=stats().hp;S.respawn={x:player.x,y:player.y};SFX.heal();updHud();saveGame(true);dialog(['Brady takes a big drink at the Hydration Station.','HP fully restored! Respawn point set and game saved. 💾']);return}
+ if(t===T.SIGN){const p=POIS[(town[idx(fx,fy)]||1)-1];const lines=[p.id==='champ'?'LAST CHANCE CAMP. Championship Stadium lies north, past the lava gate.':`Welcome to ${p.name.toUpperCase()}!`];if(p.boss&&p.id!=='champ')lines.push(`Home of ${p.boss.name}, Head Coach of ${CATS[p.cat].name.toUpperCase()}. The coach waits on the practice field to the north.`);if(p.id==='kickoff')lines.push('Hydration Station (fountain): heal and save. Pro Shop: buy gear. Tall grass: wild dinos!');dialog(lines);return}
+ if(t===T.TOTEM){const tt=totems.find(o=>o.x===fx&&o.y===fy);const last=S.totem[tt.id];if(last!=null&&S.steps-last<300){dialog([`The Pep Rally Totem is quiet... Come back after ${300-(S.steps-last)} more steps.`]);return}
+  S.totem[tt.id]=S.steps;const k=pick(['pep','guard','regen','film','lucky','horn']);const amt=k==='horn'?150:3;S.buffs[k]=(S.buffs[k]||0)+amt;const heal=Math.round(stats().hp*.3);S.hp=Math.min(stats().hp,S.hp+heal);SFX.level();updHud();
+  dialog([`📣 The Pep Rally Totem ROARS with crowd noise!`,`Brady gains ${BUFFS[k].icon} ${BUFFS[k].name} ${k==='horn'?'(150 steps)':'(3 battles)'} and recovers ${heal} HP!`]);return}
+ if(t===T.GATE){if(S.trophies.length>=6){openGate();return}dialog([`A heavy gate guards Championship Stadium.`,`Only a player with all 6 Coach Trophies may enter. (You have ${S.trophies.length}/6)`]);return}
+ if(t===T.DOOR){dialog(['The door is locked. Everyone is outside watching football!']);return}
+}
+function openGate(){for(let i=0;i<map.length;i++)if(map[i]===T.GATE)map[i]=T.BRIDGE;S.gateOpen=true;SFX.win();dialog(['The six trophies glow... The Championship Gate swings open!','Commissioner Spino awaits in the stadium. Good luck, Brady!']);drawMiniMap(true)}
+function openChest(it){
+ if(S.taken[it.id]){dialog(['The chest is empty.']);return}
+ S.taken[it.id]=1;SFX.item();const lines=[];
+ if(it.legend){const g=GEAR[it.legend];S.gear.push(it.legend);lines.push(`✨ A LEGENDARY CHEST! ✨`,`Brady found the ${g.icon} ${g.name}! (${gearDesc(g)})`,'Equip it from the Menu → Gear.')}
+ else{const lv=4+it.tier*4;const r=R();
+  if(r<.35){const id=rollGear(lv);const g=GEAR[id];S.gear.push(id);lines.push(`Brady found ${g.icon} ${g.name}! [${RAR[g.r].n}]`,`${gearDesc(g)}. Equip it from the Menu → Gear.`)}
+  else if(r<.92){const k=rollCons(),n=rint(1,2);S.inv[k]=(S.inv[k]||0)+n;lines.push(`Brady found ${CONS[k].icon} ${CONS[k].name} x${n}!`,CONS[k].desc+'.')}
+  else{const c=rint(50,150);S.coins+=c;lines.push(`Brady found a bag of ${c} coins! 🪙`)}}
+ updHud();dialog(lines)}
+function talk(n){
+ const dd={up:'down',down:'up',left:'right',right:'left'};n.dir=dd[player.dir];
+ const key=n.id;
+ if(n.kind==='shop'){dialog([`${n.name}: Welcome! Need gear for the Gridiron?`],()=>openShop(n));return}
+ if(n.kind==='mom'){if(!S.npc.mom){S.npc.mom=1;S.inv.water=(S.inv.water||0)+3;SFX.item();dialog(["Mom: Brady! Be careful out there with all those dinosaurs.","Here, take 3 more Water Bottles. Stay hydrated!","And remember: the Hydration Station fountain heals you and saves your game."]);updHud()}else dialog([pick(["Mom: Don't forget your sunscreen, sweetie!","Mom: I'm so proud of you! Keep studying that playbook.","Mom: Dinner's at six. Finish your battles by then!"])]);return}
+ if(n.kind==='coach'){choice("Coach Dale: Hey Brady! Want a practice rep against a training dino? Questions are easy and it's a good warm-up.",['Let\'s go!','Not now'],i=>{if(i===0){startBattle(makeEnemy('raptor',1,{name:'Tackle Dummy-raptor',pal:{B:'#c8a060',L:'#f0e0c0',P:'#8a2a2a',K:'#f4f4f4'},pattern:'stripes'}),{practice:true,cat:null,diff:[1,1]})}else dialog(["Coach Dale: Remember: right answers hit hard, and answering in a row builds your streak!"])});return}
+ if(n.kind==='tip'){dialog([`${n.name}: ${TIPS[(n.tip+S.steps)%TIPS.length]}`]);return}
+ if(n.kind==='giver'){if(!S.npc[key]){S.npc[key]=1;const k=rollCons();S.inv[k]=(S.inv[k]||0)+1;SFX.item();updHud();dialog([`${n.name}: You look like you could use this!`,`Brady received ${CONS[k].icon} ${CONS[k].name}! (${CONS[k].desc})`])}else dialog([`${n.name}: ${TIPS[(n.tip+3)%TIPS.length]}`]);return}
+ if(n.kind==='quiz'){const reg=regionPoi(n.x,n.y);const q=pickQuestion(reg.cat&&R()<.6?reg.cat:null,1,reg.diff[1]);const opts=shuffle([q.a,...q.w]);const first=!S.npc[key];
+  choice(`${n.name}: POP QUIZ! ${first?'(Get it right for 25 coins!) ':''}${q.q}`,opts,i=>{const ok=opts[i]===q.a;recordAnswer(q,ok);
+   if(ok){SFX.correct();let l=[`✔ Correct! ${q.x}`];if(first){S.npc[key]=1;S.coins+=25;l.push('Brady earned 25 coins! 🪙')}updHud();dialog(l)}
+   else{SFX.wrong();dialog([`✘ Not quite. The answer is: ${q.a}.`,q.x,'(Added to your Film Room for review.)'])}});return}
+}
+function bossTalk(b){const d=b.def;const p=poiById(b.poi);
+ if(S.bosses[b.poi]){dialog([`${d.name}: Great game, Brady! Keep studying ${p.cat?CATS[p.cat].name:'everything'}!`]);return}
+ if(d.final&&S.trophies.length<6){dialog([`${d.name}: Come back with all six trophies.`]);return}
+ dialog(d.intro.map(l=>`${d.name}: ${l}`),()=>{const e=makeEnemy(d.fam,d.lv,{name:d.name,pal:d.pal,pattern:d.pattern,boss:true});startBattle(e,{boss:b,cat:p.cat,diff:p.cat?[1,3]:[2,3]})})}
+
+// ---------------- QUESTIONS ----------------
+const recent=[];
+function pickQuestion(cat,dmin,dmax,preferMissed){
+ if(S.diff==='rookie')dmax=Math.min(dmax,2);if(S.diff==='allpro')dmin=Math.max(dmin,Math.min(2,dmax));
+ let pool=QB.filter(q=>(!cat||q.cat===cat)&&q.d>=dmin&&q.d<=dmax);if(pool.length<4)pool=QB.filter(q=>!cat||q.cat===cat);
+ const avail=pool.filter(q=>!recent.includes(q.id));const P=avail.length?avail:pool;
+ const missed=P.filter(q=>S.missed[q.id]);let q;
+ if(missed.length&&(preferMissed||R()<.25))q=pick(missed);
+ else{const fresh=P.filter(q=>!S.seen[q.id]);q=pick(fresh.length?fresh:P)}
+ recent.push(q.id);if(recent.length>15)recent.shift();return q}
+function recordAnswer(q,ok){S.seen[q.id]=(S.seen[q.id]||0)+1;S.st.ans++;const c=S.st.cat[q.cat]||(S.st.cat[q.cat]=[0,0]);c[0]++;
+ if(ok){S.st.cor++;c[1]++;S.st.streak++;S.st.best=Math.max(S.st.best,S.st.streak);if(S.missed[q.id]){S.missed[q.id]--;if(S.missed[q.id]<=0)delete S.missed[q.id]}}
+ else{S.st.streak=0;S.missed[q.id]=2}}
+
+// ---------------- ENEMIES ----------------
+const BIOME_FAMS={plains:FAMS.slice(0,7),forest:['raptor','rex','stego','raptor'],coast:['sauro','ptero','trike','sauro'],desert:['raptor','ankylo','rex','spino'],mountain:['ptero','ankylo','trike','ptero'],ruins:['trike','sauro','stego','spino'],springs:['sauro','stego','ptero','trike'],volcano:['rex','spino','ankylo','ptero']};
+function makeEnemy(fam,lv,o={}){const shiny=!o.boss&&!o.name&&R()<.04;const pal=o.pal||(shiny?{B:'#e8b820',L:'#fff2b0',P:'#a86a00',K:'#ffffff'}:randPal());
+ const name=o.name||((shiny?'Golden ':'')+dinoName(fam));
+ const hp=o.boss?90+lv*16:24+lv*9;
+ const spr=makeDino(fam,pal,o.pattern||pick(['none','stripes','spots','none']),(R()*1e9)|0);return{fam,lv,name,maxHp:hp,hp,atk:(5+lv*2.6)*(o.boss?1.3:1),boss:!!o.boss,shiny,spr,white:tint(spr,'#ffffff')}}
+function beginWild(){const reg=regionPoi(player.x,player.y);const fams=BIOME_FAMS[reg.biome];const lv=rint(reg.lv[0],reg.lv[1]);const e=makeEnemy(pick(fams),lv);
+ const cat=reg.cat&&R()<.55?reg.cat:null;startBattle(e,{cat,diff:reg.diff,biome:reg.biome})}
+
+// ---------------- BATTLE ----------------
+let B=null;
+const BIOME_SKY={plains:['#8fd0ff','#d8f0ff','#7cc860'],forest:['#6fb89a','#c8ecd8','#3f8f3a'],coast:['#7ac8ff','#e0f6ff','#e8d690'],desert:['#ffb46a','#ffe6b0','#e0c080'],mountain:['#9ab0d0','#e0e8f4','#a8957a'],ruins:['#b8a8e0','#f0e8ff','#7cc860'],springs:['#80d8e8','#e0fcff','#6cc04a'],volcano:['#5a1a1a','#d8603a','#4a3838']};
+function startBattle(en,opts){
+ state='battle';B={en,opts,phase:'intro',q:null,streak:0,t:0,anim:null,pops:[],shake:0,trans:0,removed:new Set(),biome:opts.biome||(opts.boss?poiById(opts.boss.poi).biome:regionPoi(player.x,player.y).biome),qStart:0,sel:0,bag:false};
+ S.st.battles++;const fr=S.dex[en.fam]||(S.dex[en.fam]={seen:0,def:0});fr.seen++;S.names[en.name]=1;
+ $('#battle').classList.remove('hidden');$('#hud').classList.add('hidden');
+ updBattleBoxes(true);
+ const intro=opts.boss?`${en.name} wants to battle!`:opts.practice?`Practice time! ${en.name} (Lv ${en.lv}) steps up!`:`A wild ${en.shiny?'✨':''}${en.name} (Lv ${en.lv}) appeared!`;
+ setPanel(`<div class="qIntro">${esc(intro)}${opts.cat?`<br><small>Category: <b style="color:${CATS[opts.cat].c}">${CATS[opts.cat].name}</b></small>`:''}</div>`,`<button class="tool go" onclick="G.nextQ()">Ready! ▶</button>`);
+}
+function setPanel(main,tools){$('#qMain').innerHTML=main;$('#qTools').innerHTML=tools||'';$('#qFeedback').classList.add('hidden')}
+function updBattleBoxes(instant){const e=B.en,s=stats();
+ $('#enName').textContent=e.name;$('#enLv').textContent='Lv'+e.lv;$('#enTag').textContent=e.boss?'HEAD COACH':FAMN[e.fam]+(e.shiny?' ✨':'');
+ setBar('#enHp',e.hp/e.maxHp,instant);setBar('#plHp',S.hp/s.hp,instant);$('#plLv').textContent='Lv'+S.lv;$('#plHpT').textContent=`${Math.max(0,Math.ceil(S.hp))}/${s.hp}`;
+ $('#plXp').style.width=(S.xp/xpNeed(S.lv)*100)+'%';
+ const bf=Object.keys(S.buffs).filter(k=>k!=='horn').map(k=>BUFFS[k].icon).join('');
+ $('#streak').innerHTML=(B.streak>=2?`🔥 Streak x${B.streak}`:'')+(bf?` <span title="Active buffs">${bf}</span>`:'')}
+function setBar(sel,f,instant){const el=$(sel);f=clamp(f,0,1);if(instant){el.style.transition='none';requestAnimationFrame(()=>el.style.transition='')}el.style.width=(f*100)+'%';el.style.background=f>.5?'#3ccf5a':f>.2?'#f0c030':'#e84030'}
+function nextQ(){
+ if(!B)return;B.phase='question';B.bag=false;B.removed=new Set();
+ const o=B.opts;let d=o.diff||[1,2];if(B.en.boss&&B.en.hp<B.en.maxHp*.5)d=[Math.min(3,d[0]+1),3];
+ const q=pickQuestion(o.cat||(o.drill?null:null),d[0],d[1],o.drill);B.q=q;B.ans=shuffle([q.a,...q.w]);B.qStart=performance.now();B.sel=0;renderQ();}
+function renderQ(){B.bag=false;const q=B.q;const c=CATS[q.cat];
+ const main=`<div id="qHead"><span class="cat" style="background:${c.c}">${c.name}</span><span class="diff">${'★'.repeat(q.d)}${'☆'.repeat(3-q.d)}</span><span id="qTimer"></span></div>
+ <div id="qText">${esc(q.q)}</div>
+ <div id="qAns">${B.ans.map((a,i)=>`<button class="ans${B.removed.has(i)?' gone':''}${i===B.sel?' sel':''}" data-i="${i}" onclick="G.answer(${i})"><b>${i+1}</b> ${esc(a)}</button>`).join('')}</div>`;
+ const n=k=>S.inv[k]||0;
+ const tools=`<button class="tool" ${n('hint')&&!B.removed.size?'':'disabled'} onclick="G.useHint()">📋 Hint (${n('hint')})</button><button class="tool" ${n('timeout')?'':'disabled'} onclick="G.useTimeout()">⏱️ Timeout (${n('timeout')})</button><button class="tool" onclick="G.bag()">🎒 Bag</button><button class="tool" onclick="G.run()">🏃 Run</button>`;
+ setPanel(main,tools)}
+function answer(i){
+ if(!B||B.phase!=='question'||B.removed.has(i))return;
+ B.phase='feedback';const q=B.q,ok=B.ans[i]===q.a,s=stats();const secs=(performance.now()-B.qStart)/1000;
+ recordAnswer(q,ok);
+ document.querySelectorAll('#qAns .ans').forEach((el,k)=>{if(B.ans[k]===q.a)el.classList.add('right');else if(k===i)el.classList.add('wrong');el.disabled=true});
+ let msg='';
+ if(ok){B.streak++;const crit=R()<s.crit+(B.streak>=3?.05:0),quick=secs<7;
+  let dmg=s.atk*(.9+R()*.2)*(1+Math.min(B.streak-1,5)*.1)*(S.buffs.pep?1.3:1)*(quick?1.15:1)*(crit?1.6:1);dmg=Math.max(1,Math.round(dmg));
+  B.en.hp=Math.max(0,B.en.hp-dmg);let heal=s.heal+(S.buffs.regen?6:0);if(heal){S.hp=Math.min(s.hp,S.hp+heal)}
+  B.anim={type:'atk',t:0,dmg,crit,proj:GEAR[S.equip.weapon]?.proj||'ball'};SFX.correct();setTimeout(()=>SFX.hit(),380);
+  msg=`<b class="good">✔ CORRECT!</b> ${crit?'<b class="crit">CRITICAL HIT!</b> ':''}${quick?'<b class="quick">Quick Snap!</b> ':''}${B.streak>=3?`<b class="fire">🔥x${B.streak}</b> `:''}<b>${dmg} damage!</b>${heal?` <span class="good">+${heal} HP</span>`:''}<br>${esc(q.x)}`}
+ else{B.streak=0;const dodge=R()<s.dodge;let dmg=0;
+  if(!dodge){dmg=B.en.atk*(.9+R()*.2)*30/(30+s.def)*(S.buffs.guard?.65:1)*({rookie:.7,pro:1,allpro:1.25}[S.diff]);if(B.opts.practice)dmg*=.3;dmg=Math.max(1,Math.round(dmg));S.hp=Math.max(0,S.hp-dmg)}
+  B.anim={type:'hit',t:0,dmg,dodge};SFX.wrong();
+  msg=`<b class="bad">✘ ${dodge?'Wrong... but Brady JUKED the attack!':'WRONG!'}</b> ${dodge?'':`<b>Brady takes ${dmg} damage.</b>`}<br>Answer: <b>${esc(q.a)}</b>. ${esc(q.x)}`}
+ $('#qTools').innerHTML='';B.fbReady=false;
+ setTimeout(()=>{if(!B||B.phase!=='feedback')return;const fb=$('#qFeedback');fb.innerHTML=msg;fb.className=ok?'box ok':'box no';$('#qTools').innerHTML=`<button class="tool go" onclick="G.cont()">Continue ▶</button>`;B.fbReady=true},700);
+ setTimeout(()=>B&&updBattleBoxes(),400);
+}
+function cont(){if(!B)return;if(B.phase==='feedback'){if(B.fbReady===false)return;if(B.en.hp<=0)return victory();if(S.hp<=0)return defeat();return nextQ()}
+ if(B.phase==='end'){const cb=B.after;endBattle();cb&&cb()}}
+function useHint(){if(!B||B.phase!=='question'||!S.inv.hint||B.removed.size)return;S.inv.hint--;const wrong=B.ans.map((a,i)=>i).filter(i=>B.ans[i]!==B.q.a);shuffle(wrong);B.removed.add(wrong[0]);B.removed.add(wrong[1]);if(B.removed.has(B.sel))B.sel=B.ans.indexOf(B.q.a);SFX.blip();renderQ()}
+function useTimeout(){if(!B||B.phase!=='question'||!S.inv.timeout)return;S.inv.timeout--;SFX.blip();
+ setPanel(`<div class="qIntro">⏱️ TIMEOUT! Brady catches his breath. The answer was <b>${esc(B.q.a)}</b>.<br><small>${esc(B.q.x)}</small></div>`,`<button class="tool go" onclick="G.nextQ()">Next question ▶</button>`);B.phase='timeout'}
+function bag(){if(!B||B.phase!=='question')return;B.bag=true;const list=Object.keys(CONS).filter(k=>S.inv[k]&&CONS[k].heal);
+ setPanel(`<div class="qIntro">🎒 <b>Bag</b> (HP ${Math.ceil(S.hp)}/${stats().hp})<div class="bagList">${list.length?list.map(k=>`<button class="tool" onclick="G.useItem('${k}',true)">${CONS[k].icon} ${CONS[k].name} x${S.inv[k]}<br><small>${CONS[k].desc}</small></button>`).join(''):'<i>No healing items!</i>'}</div></div>`,`<button class="tool" onclick="G.back()">◀ Back to question</button>`)}
+function run(){if(!B||B.phase!=='question')return;
+ if(B.en.boss){toast("You can't run from a Head Coach!");return}
+ if(R()<.7+stats().dodge){B.phase='end';B.after=null;setPanel(`<div class="qIntro">🏃 Brady got away safely!</div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}
+ else{const dmg=Math.max(1,Math.round(B.en.atk*.6));S.hp=Math.max(0,S.hp-dmg);B.anim={type:'hit',t:0,dmg};SFX.wrong();updBattleBoxes();B.phase='feedback';B.fbReady=true;
+  setPanel(`<div class="qIntro">🏃 Brady tried to run... but ${esc(B.en.name)} cut him off! <b>-${dmg} HP</b></div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}}
+function victory(){const e=B.en;B.phase='end';SFX.win();S.st.wins++;S.dex[e.fam].def++;
+ const lines=[`<b>${esc(e.name)}</b> ${e.boss?'has been defeated!':'fainted!'}`];
+ if(B.opts.practice){lines.push('Nice practice rep! +5 XP. Coach Dale gives you a high five. ✋');S.xp+=5;}
+ else{
+  let xp=Math.round((10+e.lv*6)*(e.boss?3:1)*(S.buffs.film?1.5:1)*(e.shiny?2:1)),coins=Math.round((6+e.lv*3)*(e.boss?4:1)*(S.buffs.lucky?1.5:1)*(e.shiny?3:1));
+  S.xp+=xp;S.coins+=coins;lines.push(`+${xp} XP   +${coins} coins 🪙`);
+  const drops=[];if(e.boss){const p=poiById(B.opts.boss.poi);drops.push(['g',rollGear(e.lv+8,BOSS_ORDER.indexOf(p.id)>=2||p.id==='champ'?3:2)]);drops.push(['c',rollCons()],['c',rollCons()])}
+  else{if(R()<.45)drops.push(['c',rollCons()]);if(R()<.14||e.shiny)drops.push(['g',rollGear(e.lv)])}
+  drops.forEach(([t,k])=>{if(t==='c'){S.inv[k]=(S.inv[k]||0)+1;lines.push(`Loot: ${CONS[k].icon} ${CONS[k].name}`)}else{S.gear.push(k);const g=GEAR[k];lines.push(`Loot: <span style="color:${RAR[g.r].c}">${g.icon} ${g.name} [${RAR[g.r].n}]</span>`)}});
+  // buff countdown
+  for(const k of Object.keys(S.buffs)){if(k==='horn')continue;S.buffs[k]--;if(S.buffs[k]<=0){delete S.buffs[k];lines.push(`${BUFFS[k].icon} ${BUFFS[k].name} wore off.`)}}
+ }
+ while(S.xp>=xpNeed(S.lv)){S.xp-=xpNeed(S.lv);S.lv++;S.hp=stats().hp;lines.push(`<b class="good">⭐ LEVEL UP! Brady is now Lv ${S.lv}! HP fully restored.</b>`);setTimeout(SFX.level,600)}
+ let after=null;
+ if(e.boss){const b=B.opts.boss,d=b.def;S.bosses[b.poi]=1;if(!S.trophies.includes(d.trophy))S.trophies.push(d.trophy);lines.push(`🏆 Brady earned the <b>${d.trophy}</b>!`);
+  after=()=>{dialog(d.outro.map(l=>`${d.name}: ${l}`),()=>{if(d.final){S.champion=true;saveGame(true);showEnding()}else if(S.trophies.length>=6)dialog(['All 6 Coach Trophies collected! 🏆','Head to the Championship Gate in the volcano at the center of the map!'])})}}
+ B.after=after;updBattleBoxes();saveGame(true);
+ setPanel(`<div class="qIntro vic">${lines.join('<br>')}</div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}
+function defeat(){B.phase='end';const lost=Math.floor(S.coins*.25);S.coins-=lost;
+ B.after=()=>{S.hp=stats().hp;S.x=S.respawn.x;S.y=S.respawn.y;startPlayer();lastRegion=-1;updHud();dialog([`Brady is out of breath and heads back to the locker room...`,`He dropped ${lost} coins. Wrong answers were added to the Film Room. Study up and try again!`])};
+ setPanel(`<div class="qIntro">😵 Brady can't keep going!</div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}
+function endBattle(){B=null;state='world';graceSteps=4;$('#battle').classList.add('hidden');$('#hud').classList.remove('hidden');updHud()}
+function drawBattle(){
+ const sky=BIOME_SKY[B.biome]||BIOME_SKY.plains;const g=ctx.createLinearGradient(0,0,0,140);g.addColorStop(0,sky[0]);g.addColorStop(1,sky[1]);ctx.fillStyle=g;ctx.fillRect(0,0,CW,CH);
+ // stylized stripes
+ ctx.fillStyle='rgba(255,255,255,.15)';for(let i=0;i<6;i++)ctx.fillRect(0,20+i*18+((frame/2+i*7)%18),CW,2);
+ ctx.fillStyle=sky[2];ctx.fillRect(0,100,CW,108);ctx.fillStyle=shade(sky[2],-.12);for(let x=0;x<CW;x+=8)ctx.fillRect(x+((x/8)%2)*4,104+((x*7)%20),3,1);
+ const plat=(cx,cy,rx,ry)=>{ctx.fillStyle=shade(sky[2],-.25);ell(cx,cy+2,rx,ry);ctx.fillStyle=shade(sky[2],.15);ell(cx,cy,rx,ry);ctx.fillStyle=shade(sky[2],-.08);ell(cx,cy+1,rx-6,ry-3)};
+ plat(232,92,54,11);plat(78,124,58,12);
+ let sh=B.shake>0?(B.shake--,(R()-.5)*6):0;
+ const a=B.anim;let eox=0,eoy=0,pox=0,flashE=false,flashP=false;
+ if(a){a.t++;if(a.type==='atk'){if(a.t<10)pox=a.t*1.5;else if(a.t<20)pox=(20-a.t)*1.5;if(a.t>22&&a.t<40){flashE=(a.t>>1)%2===0;eox=(a.t%4<2?2:-2)}if(a.t===24){B.pops.push({x:232,y:40,t:0,txt:'-'+a.dmg,c:a.crit?'#ffd23a':'#ffffff'});B.shake=a.crit?10:5}}
+  else{if(a.t<10)eox=-a.t*2;else if(a.t<20)eox=-(20-a.t)*2;if(a.t>14&&a.t<34){flashP=(a.t>>1)%2===0;pox=(a.t%4<2?-2:2)}if(a.t===16){B.pops.push({x:84,y:66,t:0,txt:a.dodge?'JUKE!':'-'+a.dmg,c:a.dodge?'#7fffb0':'#ff6a5a'});if(!a.dodge)B.shake=6}}
+  if(a.t>50)B.anim=null}
+ // enemy
+ const es=B.en.spr,dead=B.en.hp<=0&&B.phase==='end';const bob=B.en.fam==='ptero'?Math.sin(frame/12)*3-8:Math.sin(frame/25)*1;
+ if(!dead||((frame>>2)%2)){ctx.save();if(dead)ctx.globalAlpha=.4;const ex=Math.round(232-es.width+eox+sh),ey=Math.round(96-es.height*2+bob);ctx.drawImage(es,ex,ey,es.width*2,es.height*2);if(flashE){ctx.globalAlpha=.75;ctx.drawImage(B.en.white,ex,ey,es.width*2,es.height*2)}ctx.restore()}
+ // projectile
+ if(a&&a.type==='atk'&&a.t>=8&&a.t<24){const t=(a.t-8)/16;const x=110+(222-110)*t,y=86-(Math.sin(t*Math.PI)*40)+(50-86)*t;drawProj(a.proj,x,y,a.t)}
+ // brady
+ const bs=bradySpr.right[B.anim&&B.anim.type==='atk'&&B.anim.t<20?1:0];
+ ctx.save();ctx.translate(Math.round(56+pox+sh),70);ctx.drawImage(bs,0,0,bs.width*3,bs.height*3);ctx.restore();
+ if(flashP){ctx.globalAlpha=.6;ctx.drawImage(bradyRed,Math.round(56+pox+sh),70,54,54);ctx.globalAlpha=1}
+ // weapon icon in hand
+ drawProj(GEAR[S.equip.weapon]?.proj||'ball',56+pox+44,70+38,0,true);
+ // pops
+ B.pops=B.pops.filter(p=>p.t<50);for(const p of B.pops){p.t++;ctx.font='bold 13px monospace';ctx.textAlign='center';ctx.fillStyle=OUT;const y=p.y-p.t*.6;ctx.fillText(p.txt,p.x+1,y+1);ctx.fillStyle=p.c;ctx.fillText(p.txt,p.x,y)}
+ // intro transition
+ if(B.trans<24){B.trans++;ctx.fillStyle=OUT;const h=(24-B.trans)/24*CH/2;ctx.fillRect(0,0,CW,h);ctx.fillRect(0,CH-h,CW,h)}
+}
+function ell(cx,cy,rx,ry){ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);ctx.fill()}
+function drawProj(k,x,y,t,small){x=Math.round(x);y=Math.round(y);const s=small?1:1.4;ctx.save();ctx.translate(x,y);if(!small)ctx.rotate(t*.5);ctx.scale(s,s);
+ if(k==='ball'||k==='gold'){ctx.fillStyle=OUT;ell(0,0,7,4.5);ctx.fillStyle=k==='gold'?'#f5c542':'#8a4a20';ell(0,0,6,3.5);ctx.fillStyle='#fff';ctx.fillRect(-3,-1,6,1);ctx.fillRect(-2,-2,1,3);ctx.fillRect(0,-2,1,3);ctx.fillRect(2,-2,1,3)}
+ else if(k==='yflag'||k==='rflag'){ctx.fillStyle=OUT;ctx.fillRect(-5,-5,10,10);ctx.fillStyle=k==='yflag'?'#f5d142':'#e8443a';ctx.fillRect(-4,-4,8,8);ctx.fillStyle='#fff';ctx.fillRect(-4,-4,3,3)}
+ else if(k==='bottle'){ctx.fillStyle=OUT;ctx.fillRect(-3,-7,7,14);ctx.fillStyle='#4a9af0';ctx.fillRect(-2,-4,5,10);ctx.fillStyle='#fff';ctx.fillRect(-1,-6,3,2);ctx.fillRect(-1,-2,1,6)}
+ else if(k==='whistle'){ctx.fillStyle=OUT;ell(0,0,5,4);ctx.fillStyle='#c8ccd8';ell(0,0,4,3);ctx.fillRect(2,-3,6,3);ctx.fillStyle='#e8443a';ctx.fillRect(-8,-1,4,1)}
+ else if(k==='cooler'){ctx.fillStyle=OUT;ctx.fillRect(-6,-5,12,11);ctx.fillStyle='#f07a1a';ctx.fillRect(-5,-4,10,9);ctx.fillStyle='#fff';ctx.fillRect(-5,-4,10,2);if(!small){ctx.fillStyle='#8fd0ff';for(let i=0;i<5;i++)ctx.fillRect(-10+i*4,-8-((t+i)%3)*2,2,2)}}
+ ctx.restore()}
+
+// ---------------- DIALOG ----------------
+let dq=null;
+function dialog(lines,cb){state='dialog';dq={lines:lines.slice(),cb,i:0,shown:0,full:'',choice:null};showLine()}
+function showLine(){$('#dialog').classList.remove('hidden');dq.full=dq.lines[dq.i];dq.shown=0;$('#dlgChoices').innerHTML='';$('#dlgNext').style.display='none'}
+function choice(text,opts,cb){state='dialog';dq={lines:[text],cb:null,i:0,shown:0,full:text,choice:{opts,cb,sel:0}};$('#dialog').classList.remove('hidden');$('#dlgChoices').innerHTML='';$('#dlgNext').style.display='none'}
+function renderChoices(){const c=dq.choice;$('#dlgChoices').innerHTML=c.opts.map((o,i)=>`<button class="ch${i===c.sel?' sel':''}" onclick="G.pickChoice(${i})">${c.opts.length>2?(i+1)+'. ':''}${esc(o)}</button>`).join('')}
+function updDialog(){if(!dq)return;if(dq.shown<dq.full.length){dq.shown=Math.min(dq.full.length,dq.shown+2);$('#dlgText').textContent=dq.full.slice(0,dq.shown);if(dq.shown>=dq.full.length){if(dq.choice)renderChoices();else $('#dlgNext').style.display='block'}}}
+function advDialog(){if(!dq)return;if(dq.shown<dq.full.length){dq.shown=dq.full.length;$('#dlgText').textContent=dq.full;if(dq.choice)renderChoices();else $('#dlgNext').style.display='block';return}
+ if(dq.choice){pickChoice(dq.choice.sel);return}
+ SFX.blip();dq.i++;if(dq.i<dq.lines.length){showLine();return}
+ const cb=dq.cb;dq=null;$('#dialog').classList.add('hidden');state='world';cb&&cb()}
+function pickChoice(i){if(!dq||!dq.choice)return;if(dq.shown<dq.full.length)return;const cb=dq.choice.cb;dq=null;$('#dialog').classList.add('hidden');state='world';SFX.blip();cb&&cb(i)}
+
+// ---------------- HUD ----------------
+function updHud(){if(!S)return;const s=stats();S.hp=Math.min(S.hp,s.hp);
+ $('#hudLv').textContent='Lv'+S.lv;setBar('#hudHp',S.hp/s.hp);$('#hudHpT').textContent=`${Math.ceil(S.hp)}/${s.hp}`;$('#hudCoins').textContent='🪙 '+S.coins;
+ $('#trophies').textContent=`🏆 ${S.trophies.length}/6`;
+ $('#buffs').innerHTML=Object.keys(S.buffs).map(k=>`<span class="buff" title="${BUFFS[k].name}">${BUFFS[k].icon}<small>${S.buffs[k]}${BUFFS[k].steps?'':''}</small></span>`).join('');
+ $('#btnSnd').textContent=S.sound?'🔊':'🔇';updObjective()}
+let objTarget=null;
+function updObjective(){let txt,tgt;
+ if(S.champion){txt='🏆 CHAMPION! Keep exploring & studying.';tgt=null}
+ else if(S.trophies.length>=6){const c=poiById('champ');txt='Final: Championship Stadium';tgt=c}
+ else{const id=BOSS_ORDER.find(i=>!S.bosses[i]);const p=poiById(id);txt=`Next: ${p.name} (${CATS[p.cat].name})`;tgt=p}
+ objTarget=tgt;$('#objective').textContent=txt}
+function drawCompass(){const c=$('#compass'),g=c.getContext('2d');g.clearRect(0,0,24,24);if(!objTarget)return;
+ const ty=objTarget.id==='champ'&&!S.gateOpen?objTarget.y+12:objTarget.y-5;const a=Math.atan2(ty-player.y,objTarget.x-player.x);const d=Math.hypot(objTarget.x-player.x,ty-player.y);
+ g.save();g.translate(12,12);g.fillStyle='#1a1230';g.beginPath();g.arc(0,0,11,0,7);g.fill();g.fillStyle='#fdf8ec';g.beginPath();g.arc(0,0,9,0,7);g.fill();
+ if(d<4){g.fillStyle='#e8443a';g.beginPath();g.arc(0,0,3,0,7);g.fill()}else{g.rotate(a);g.fillStyle='#e8443a';g.beginPath();g.moveTo(8,0);g.lineTo(-4,-5);g.lineTo(-1,0);g.lineTo(-4,5);g.closePath();g.fill()}g.restore()}
+let toastT=0;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2200)}
+let banT=0;function banner(m){const b=$('#banner');b.textContent=m;b.classList.add('show');clearTimeout(banT);banT=setTimeout(()=>b.classList.remove('show'),2200)}
+function drawFace(){const c=$('#face'),g=c.getContext('2d');g.imageSmoothingEnabled=false;g.clearRect(0,0,c.width,c.height);g.drawImage(bradySpr.down[0],0,0,18,13,0,0,36,26)}
+
+// ---------------- MENU ----------------
+let menuTab='bag';
+function openMenu(tab){state='menu';menuTab=tab||menuTab;$('#menu').classList.remove('hidden');renderMenu()}
+function closeMenu(){$('#menu').classList.add('hidden');$('#shop').classList.add('hidden');$('#mapView').classList.add('hidden');state=B?'battle':'world';updHud()}
+function renderMenu(){
+ const tabs=[['bag','🎒 Bag'],['gear','🏈 Gear'],['dex','🦖 Dino-Dex'],['film','🎬 Film Room'],['prog','🏆 Progress'],['opt','⚙️ Options']];
+ $('#menuTabs').innerHTML=tabs.map(([k,n])=>`<button class="${k===menuTab?'on':''}" onclick="G.tab('${k}')">${n}</button>`).join('')+`<button class="x" onclick="G.closeMenu()">✕</button>`;
+ const s=stats();let h='';
+ if(menuTab==='bag'){const ks=Object.keys(CONS).filter(k=>S.inv[k]);h=`<div class="sub">HP ${Math.ceil(S.hp)}/${s.hp} · 🪙 ${S.coins} coins</div><div class="grid">`+(ks.length?ks.map(k=>{const c=CONS[k];const usable=!c.battle;return`<div class="card"><div class="ic">${c.icon}</div><div><b>${c.name}</b> x${S.inv[k]}<br><small>${c.desc}</small></div>${usable?`<button onclick="G.useItem('${k}')">Use</button>`:'<small class="muted">battle only</small>'}</div>`}).join(''):'<i>Your bag is empty. Check chests ✨ and win battles for loot!</i>')+'</div>'}
+ else if(menuTab==='gear'){h=`<div class="stats">ATK <b>${s.atk}</b> · DEF <b>${s.def}</b> · Max HP <b>${s.hp}</b> · CRIT <b>${Math.round(s.crit*100)}%</b> · JUKE <b>${Math.round(s.dodge*100)}%</b>${s.heal?` · Heal <b>${s.heal}</b>/correct`:''}</div>`;
+  h+='<div class="slots">'+SLOTS.map(sl=>{const id=S.equip[sl],g=id&&GEAR[id];return`<div class="slot"><small>${SLOTN[sl]}</small><br>${g?`<span style="color:${RAR[g.r].c}">${g.icon} <b>${g.name}</b></span><br><small>${gearDesc(g)}</small>`:'<i>empty</i>'}</div>`}).join('')+'</div>';
+  const counts={};S.gear.forEach(id=>counts[id]=(counts[id]||0)+1);
+  h+='<div class="grid">'+Object.keys(counts).sort((a,b)=>GEAR[b].r-GEAR[a].r).map(id=>{const g=GEAR[id],eq=S.equip[g.slot]===id;return`<div class="card" style="border-color:${RAR[g.r].c}"><div class="ic">${g.icon}</div><div><b style="color:${RAR[g.r].c}">${g.name}</b>${counts[id]>1?' x'+counts[id]:''}<br><small>${RAR[g.r].n} ${SLOTN[g.slot]} · ${gearDesc(g)}</small></div>${eq?'<small class="good">equipped</small>':`<button onclick="G.equip('${id}')">Equip</button>`}</div>`}).join('')+'</div>'}
+ else if(menuTab==='dex'){const seen=Object.keys(S.names).length;h=`<div class="sub">Unique dinos met: <b>${seen}</b> · Families: <b>${Object.keys(S.dex).length}/8</b></div><div class="grid dex">`+FAMS.map(f=>{const d=S.dex[f];return`<div class="card"><canvas class="dexc" data-f="${f}" width="58" height="50"></canvas><div><b>${d?FAMN[f]:'???'}</b><br><small>${d?`Seen ${d.seen} · Beaten ${d.def}`:'Not discovered'}</small></div></div>`}).join('')+'</div>'}
+ else if(menuTab==='film'){const ids=Object.keys(S.missed).map(Number);const acc=S.st.ans?Math.round(S.st.cor/S.st.ans*100):0;
+  h=`<div class="sub">Accuracy: <b>${acc}%</b> (${S.st.cor}/${S.st.ans}) · Best streak: <b>${S.st.best}</b></div><div class="catbars">`+Object.keys(CATS).map(k=>{const c=S.st.cat[k]||[0,0];const p=c[0]?Math.round(c[1]/c[0]*100):0;return`<div class="cb"><span>${CATS[k].name}</span><div class="bar"><i style="width:${p}%;background:${CATS[k].c}"></i></div><small>${c[1]}/${c[0]}</small></div>`}).join('')+'</div>';
+  h+=`<h4>Plays to review (${ids.length}) ${ids.length?`<button onclick="G.drill()">🏋️ Practice Drill</button>`:''}</h4>`+(ids.length?ids.map(id=>{const q=QB[id];return`<div class="film"><span class="cat" style="background:${CATS[q.cat].c}">${CATS[q.cat].name}</span> ${esc(q.q)}<br><b class="good">✔ ${esc(q.a)}</b> <small>${esc(q.x)}</small></div>`}).join(''):'<i>No missed questions right now. Questions you miss show up here until you get them right twice.</i>')}
+ else if(menuTab==='prog'){h=`<div class="sub">Level <b>${S.lv}</b> · XP ${S.xp}/${xpNeed(S.lv)} · Battles ${S.st.battles} · Wins ${S.st.wins} · Steps ${S.steps}</div><div class="grid">`+BOSS_ORDER.concat(['champ']).map(id=>{const p=poiById(id),d=p.boss,done=S.bosses[id];return`<div class="card ${done?'won':''}"><div class="ic">${done?'🏆':'🔒'}</div><div><b>${done?d.trophy:'???'}</b><br><small>${p.name} · ${d.name}<br>${p.cat?CATS[p.cat].name:'All categories'} · Lv ${d.lv}</small></div></div>`}).join('')+'</div>'}
+ else if(menuTab==='opt'){h=`<div class="opt"><button onclick="G.save()">💾 Save game</button><button onclick="G.snd()">${S.sound?'🔊 Sound: ON':'🔇 Sound: OFF'}</button><button onclick="G.openMap()">🗺 World map</button></div>
+  <div class="sub">Difficulty: <b>${{rookie:'Rookie',pro:'Pro',allpro:'All-Pro'}[S.diff]}</b> <button onclick="G.cycleDiff()">Change</button></div>
+  <div class="help"><b>Controls</b><br>Move: Arrow keys / WASD · Run: hold Shift<br>Talk / Interact / Confirm: Space, Enter or Z<br>Back: Esc or X · Menu: I or Tab · Map: M<br>Battle answers: 1–4 keys or click/tap<br><br><b>Tips</b><br>Tall grass has the most wild dinos. Each region's dinos ask more questions from the local Head Coach's category.<br>Questions you miss come back later so you can master them.</div>
+  <div class="opt"><button class="danger" onclick="G.reset()">🗑 Start a new game</button></div>`}
+ $('#menuBody').innerHTML=h;
+ if(menuTab==='dex')document.querySelectorAll('.dexc').forEach(c=>{const f=c.dataset.f;const g=c.getContext('2d');g.imageSmoothingEnabled=false;if(S.dex[f]){g.drawImage(dexSpr(f),0,0)}else{g.globalAlpha=.25;g.drawImage(dexSpr(f),0,0);g.globalCompositeOperation='source-atop';g.globalAlpha=1;g.fillStyle='#1a1230';g.fillRect(0,0,58,50)}})}
+const dexCache={};function dexSpr(f){if(!dexCache[f]){const r=mulberry32(FAMS.indexOf(f)+3);const h=r()*360;dexCache[f]=makeDino(f,{B:hsl(h,50,48),L:hsl(h+30,45,78),P:hsl(h+180,50,30),K:'#f0e6cc'},'none',5)}return dexCache[f]}
+function useItem(k,inBattle){const c=CONS[k];if(!S.inv[k])return;const s=stats();
+ if(c.heal){if(S.hp>=s.hp){toast('HP is already full!');return}S.hp=Math.min(s.hp,S.hp+c.heal);SFX.heal();toast(`${c.icon} Used ${c.name}!`)}
+ else if(c.buff){const[b,n]=c.buff;S.buffs[b]=(S.buffs[b]||0)+n;SFX.item();toast(`${c.icon} ${BUFFS[b].name} active!`)}
+ else return;
+ S.inv[k]--;if(!S.inv[k])delete S.inv[k];updHud();
+ if(inBattle&&B){updBattleBoxes();renderQ()}else renderMenu()}
+function equip(id){const g=GEAR[id];S.equip[g.slot]=id;SFX.blip();updHud();renderMenu()}
+
+// ---------------- SHOP ----------------
+let shopN=null,shopTab='buy';
+function openShop(n){shopN=n;state='menu';$('#shop').classList.remove('hidden');
+ if(!n.stock){const rr=mulberry32(hash(n.x,n.y));const tier=n.tier||0;const pool=Object.keys(GEAR).filter(k=>GEAR[k].r===tier||GEAR[k].r===Math.max(0,tier-1));n.stock=[];for(let i=0;i<4&&pool.length;i++){const k=pool.splice((rr()*pool.length)|0,1)[0];n.stock.push(k)}}renderShop()}
+function renderShop(){const n=shopN;let h=`<div id="menuTabs"><button class="${shopTab==='buy'?'on':''}" onclick="G.shopTab('buy')">🛒 Buy</button><button class="${shopTab==='sell'?'on':''}" onclick="G.shopTab('sell')">💰 Sell gear</button><span class="coins">🪙 ${S.coins}</span><button class="x" onclick="G.closeMenu()">✕</button></div><div id="menuBody2">`;
+ if(shopTab==='buy'){h+='<div class="grid">'+Object.keys(CONS).map(k=>{const c=CONS[k];return`<div class="card"><div class="ic">${c.icon}</div><div><b>${c.name}</b> <small>(have ${S.inv[k]||0})</small><br><small>${c.desc}</small></div><button ${S.coins>=c.price?'':'disabled'} onclick="G.buy('${k}')">${c.price}🪙</button></div>`}).join('')+n.stock.map(k=>{const g=GEAR[k],p=GEAR_PRICE[g.r];return`<div class="card" style="border-color:${RAR[g.r].c}"><div class="ic">${g.icon}</div><div><b style="color:${RAR[g.r].c}">${g.name}</b><br><small>${SLOTN[g.slot]} · ${gearDesc(g)}</small></div><button ${S.coins>=p?'':'disabled'} onclick="G.buyGear('${k}')">${p}🪙</button></div>`}).join('')+'</div>'}
+ else{const sellable=S.gear.map((id,i)=>({id,i})).filter(o=>!(S.equip[GEAR[o.id].slot]===o.id&&S.gear.filter(x=>x===o.id).length===1));
+  h+='<div class="grid">'+(sellable.length?sellable.map(o=>{const g=GEAR[o.id];return`<div class="card"><div class="ic">${g.icon}</div><div><b style="color:${RAR[g.r].c}">${g.name}</b><br><small>${gearDesc(g)}</small></div><button onclick="G.sell(${o.i})">+${Math.round(GEAR_PRICE[g.r]/2)}🪙</button></div>`}).join(''):'<i>No spare gear to sell. (Equipped items can\'t be sold.)</i>')+'</div>'}
+ $('#shop').innerHTML=h+'</div>'}
+
+// ---------------- MAP VIEW ----------------
+let miniMap=null;
+const MAPC={[T.GRASS]:'#6cc04a',[T.TALL]:'#3f9a35',[T.PATH]:'#e0c080',[T.WATER]:'#3a7bd5',[T.SAND]:'#f0da9a',[T.TREE]:'#26703a',[T.PINE]:'#1d5a2e',[T.ROCK]:'#7a7f88',[T.FLOWER]:'#8fd070',[T.FLOOR]:'#e8e0cc',[T.WALL]:'#efe3c6',[T.ROOF]:'#c8423a',[T.ROOFB]:'#3f6fc8',[T.DOOR]:'#7a4a26',[T.WINDOW]:'#efe3c6',[T.FENCE]:'#a8743f',[T.BRIDGE]:'#b07a45',[T.LAVA]:'#e8501c',[T.JUNGLE]:'#2f7d36',[T.FOUNTAIN]:'#4a90e8',[T.BRUSH]:'#c8b070',[T.SIGN]:'#a8743f',[T.GATE]:'#f5c542',[T.FIELD]:'#43a047',[T.FIELDLINE]:'#ffffff',[T.TOTEM]:'#f5c542',[T.CACTUS]:'#2f8a3a',[T.MFLOOR]:'#a8957a',[T.VFLOOR]:'#4a3838',[T.COLUMN]:'#e8e4d8',[T.GOAL]:'#f5d142'};
+function drawMiniMap(force){if(miniMap&&!force)return;miniMap=document.createElement('canvas');miniMap.width=MW*3;miniMap.height=MH*3;const g=miniMap.getContext('2d');for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){g.fillStyle=MAPC[map[idx(x,y)]]||'#000';g.fillRect(x*3,y*3,3,3)}}
+function openMap(){drawMiniMap();state='menu';$('#menu').classList.add('hidden');$('#mapView').classList.remove('hidden');renderMap()}
+function renderMap(){const c=$('#mapCv'),g=c.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(miniMap,0,0);
+ for(const it of items)if(it.legend&&!S.taken[it.id]){g.fillStyle='#f5c542';g.fillRect(it.x*3-1,it.y*3-1,4,4)}
+ g.font='bold 11px monospace';g.textAlign='center';
+ for(const p of POIS){const done=S.bosses[p.id];g.fillStyle=OUT;g.fillRect(p.x*3-5,p.y*3-5,10,10);g.fillStyle=p.id==='kickoff'?'#fff':done?'#3ccf5a':'#e8443a';g.fillRect(p.x*3-4,p.y*3-4,8,8);
+  const lab=p.name+(done?' ✔':'');g.lineWidth=3;g.strokeStyle=OUT;g.strokeText(lab,p.x*3,p.y*3-9);g.fillStyle='#fff';g.fillText(lab,p.x*3,p.y*3-9)}
+ if((frame>>4)%2===0){g.fillStyle='#fff';g.fillRect(player.x*3-3,player.y*3-3,7,7);g.fillStyle='#2f6fd6';g.fillRect(player.x*3-2,player.y*3-2,5,5)}}
+
+// ---------------- TITLE / ENDING ----------------
+function showTitle(){state='title';$('#title').classList.remove('hidden');const sv=loadSave();$('#btnCont').style.display=sv?'':'none';
+ const c=$('#titleBrady'),g=c.getContext('2d');g.imageSmoothingEnabled=false;g.clearRect(0,0,c.width,c.height);g.drawImage(bradySpr.right[0],0,0,72,72);
+ const d=$('#titleDino'),gd=d.getContext('2d');gd.imageSmoothingEnabled=false;gd.save();gd.translate(116,0);gd.scale(-1,1);gd.drawImage(makeDino('rex',{B:'#4fae5a',L:'#d8f0b0',P:'#1f5a2a',K:'#f4f4f4'},'stripes',3),0,0,116,100);gd.restore()}
+function startGame(sv,isNew){S=sv;
+ for(const k of['buffs','taken','bosses','npc','totem','seen','missed','dex','names','visited'])S[k]=S[k]||{};
+ $('#title').classList.add('hidden');$('#hud').classList.remove('hidden');
+ if(S.gateOpen)for(let i=0;i<map.length;i++)if(map[i]===T.GATE)map[i]=T.BRIDGE;
+ startPlayer();state='world';lastRegion=region[idx(S.x,S.y)];lastTown=town[idx(S.x,S.y)];updHud();drawFace();ac();
+ if(isNew){dialog(["🦖 THE GRIDIRON ISLES are overrun by DINOSAURS!","These dinos only respect one thing: FOOTBALL KNOWLEDGE.","In battle, a question pops up. Answer RIGHT and Brady attacks. Answer WRONG and the dino attacks Brady!","Beat the 6 Head Coach dinos to earn their trophies, then face COMMISSIONER SPINO in the volcano at the center of the isles.","Follow the red compass (top-right) to your next goal. Talk to people with Space/Enter. Press M for the map and I for your menu.","Ready, Brady? Let's go! 🏈"],()=>{S.intro=true;saveGame(true)})}
+ else{banner(POIS[lastRegion].region);toast('Welcome back, Brady!')}}
+function showEnding(){state='menu';const acc=S.st.ans?Math.round(S.st.cor/S.st.ans*100):0;$('#ending').classList.remove('hidden');
+ $('#endStats').innerHTML=`Level <b>${S.lv}</b> · Questions answered <b>${S.st.ans}</b> · Accuracy <b>${acc}%</b><br>Best streak <b>${S.st.best}</b> · Dinos battled <b>${S.st.battles}</b> · Steps <b>${S.steps}</b>`;SFX.win()}
+
+// ---------------- PRESS ROUTER ----------------
+function press(k,v){
+ if(state==='title'){if(k==='A'){const sv=loadSave();if(sv)startGame(sv,false);else $('#newGameBox').classList.remove('hidden')}return}
+ if(state==='world'){if(excl>0)return;if(k==='A')interact();else if(k==='MENU')openMenu();else if(k==='MAP')openMap();return}
+ if(state==='dialog'){if(k==='A')advDialog();else if(k==='DIR'&&dq&&dq.choice&&dq.shown>=dq.full.length){const n=dq.choice.opts.length;dq.choice.sel=(dq.choice.sel+(v==='up'||v==='left'?n-1:1))%n;renderChoices();SFX.blip()}else if(k==='ANS'&&dq&&dq.choice&&v<dq.choice.opts.length&&dq.shown>=dq.full.length)pickChoice(v);return}
+ if(state==='battle'){if(!B)return;
+  if(B.phase==='question'&&!B.bag){if(k==='ANS')answer(v);else if(k==='DIR'){const m={left:-1,right:1,up:-2,down:2}[v];let s=B.sel;for(let t=0;t<4;t++){s=(s+m+4)%4;if(!B.removed.has(s))break}B.sel=s;document.querySelectorAll('#qAns .ans').forEach((el,i)=>el.classList.toggle('sel',i===s));SFX.blip()}else if(k==='A')answer(B.sel)}
+  else if(k==='A'||k==='B'){if(B.phase==='feedback'||B.phase==='end')cont();else if(B.phase==='intro'||B.phase==='timeout')nextQ();else if(B.bag)renderQ()}
+  return}
+ if(state==='menu'){if(k==='B'||k==='MENU'||k==='MAP'){if(!$('#ending').classList.contains('hidden'))return;closeMenu()}return}
+}
+
+// ---------------- MAIN LOOP ----------------
+let acc=0,lastT=0;
+function loop(t){requestAnimationFrame(loop);const dt=Math.min(100,t-lastT||16);lastT=t;acc+=dt;
+ while(acc>=1000/60){acc-=1000/60;frame++;
+  if(state==='world'||state==='dialog'||(state==='menu'&&!B))updateWorld();
+  if(state==='dialog'&&(frame%1===0))updDialog();
+  if(state==='title'){titleT++;player.px=((Math.sin(titleT/900)*.5+.5)*(MW-24)+12)*16;player.py=((Math.cos(titleT/1300)*.5+.5)*(MH-16)+8)*16}
+ }
+ ctx.imageSmoothingEnabled=false;
+ if(state==='battle'||(B&&state==='menu')){drawBattle();if(B&&B.phase==='question'){const el=$('#qTimer');if(el){const s=(performance.now()-B.qStart)/1000;el.textContent=s<7?`⚡ ${Math.ceil(7-s)}s`:''}}}
+ else{drawWorld();if(state!=='title')drawCompass()}
+ if(!$('#mapView').classList.contains('hidden'))renderMap();
+}
+
+// ---------------- LAYOUT / TOUCH ----------------
+const isTouch=('ontouchstart' in window)||matchMedia('(pointer:coarse)').matches;
+function fit(){const holder=$('#holder'),g=$('#game');const portrait=innerHeight>innerWidth;const tc=isTouch?(portrait?200:0):0;
+ const s=Math.min((innerWidth-8)/640,(innerHeight-tc-8)/416);g.style.transform=`scale(${s})`;holder.style.width=640*s+'px';holder.style.height=416*s+'px';
+ document.body.classList.toggle('touch',isTouch);document.body.classList.toggle('portrait',portrait)}
+window.addEventListener('resize',fit);
+function bindTouch(){document.querySelectorAll('[data-d]').forEach(b=>{const d=b.dataset.d;const on=e=>{e.preventDefault();setDir(d,1);if(state!=='world')press('DIR',d)},off=e=>{e.preventDefault();setDir(d,0)};b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointerleave',off);b.addEventListener('pointercancel',off)});
+ const tb=(id,fn)=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();fn()});
+ tb('#tA',()=>press('A'));tb('#tB',()=>{held.run=1;press('B')});$('#tB').addEventListener('pointerup',()=>held.run=0);tb('#tM',()=>press('MENU'))}
+
+// ---------------- PUBLIC API (for onclick) ----------------
+window.G={nextQ,answer,cont,useHint,useTimeout,bag,run,back:()=>renderQ(),useItem,equip,pickChoice,closeMenu,openMap,
+ tab:t=>{menuTab=t;renderMenu()},save:()=>saveGame(),snd:()=>{S.sound=!S.sound;updHud();renderMenu()},
+ cycleDiff:()=>{S.diff={rookie:'pro',pro:'allpro',allpro:'rookie'}[S.diff];renderMenu()},
+ reset:()=>{const b=$('#menuBody');b.innerHTML=`<div class="help"><b>Start over?</b> Your current progress will be erased.<br><br><button class="danger" onclick="G.doReset()">Yes, erase and start over</button> <button onclick="G.tab('opt')">Cancel</button></div>`},
+ doReset:()=>{try{localStorage.removeItem(SAVE_KEY)}catch(e){}location.reload()},
+ drill:()=>{closeMenu();startBattle(makeEnemy('stego',Math.max(1,S.lv-2),{name:'Film Room Dummy-stego',pal:{B:'#8a8a9a',L:'#d8d8e0',P:'#e8443a',K:'#f4f4f4'},pattern:'spots'}),{practice:true,drill:true,cat:null,diff:[1,3]})},
+ shopTab:t=>{shopTab=t;renderShop()},
+ buy:k=>{const c=CONS[k];if(S.coins<c.price)return;S.coins-=c.price;S.inv[k]=(S.inv[k]||0)+1;SFX.item();updHud();renderShop()},
+ buyGear:k=>{const p=GEAR_PRICE[GEAR[k].r];if(S.coins<p)return;S.coins-=p;S.gear.push(k);SFX.item();toast(`Bought ${GEAR[k].name}! Equip it in Menu → Gear.`);updHud();renderShop()},
+ sell:i=>{const id=S.gear[i];if(!id)return;S.gear.splice(i,1);S.coins+=Math.round(GEAR_PRICE[GEAR[id].r]/2);SFX.item();updHud();renderShop()},
+ newGame:d=>{$('#newGameBox').classList.add('hidden');startGame(newSave(d),true)},
+ cont:cont,
+ continueGame:()=>{const sv=loadSave();if(sv)startGame(sv,false)},
+ showNew:()=>$('#newGameBox').classList.remove('hidden'),
+ endContinue:()=>{$('#ending').classList.add('hidden');state='world';updHud()},
+};
+
+// ---------------- BOOT ----------------
+function boot(){
+ genWorld();buildTiles();buildMisc();bradySpr=makeCharSprites(BRADY_LOOK);bradyRed=tint(bradySpr.right[0],'#ff3030');
+ npcs.forEach(n=>{n.spr=makeCharSprites(n.look);n.px=n.x*16;n.py=n.y*16});
+ S=newSave();S.sound=false;player.px=POIS[0].x*16;player.py=POIS[0].y*16;
+ $('#btnMenu').onclick=()=>{if(state==='world')openMenu()};$('#btnMap').onclick=()=>{if(state==='world')openMap()};$('#btnSnd').onclick=()=>{S.sound=!S.sound;updHud()};
+ fit();bindTouch();showTitle();requestAnimationFrame(loop);
+}
+boot();
+</script>
+</body></html>
