@@ -105,7 +105,7 @@ h4{margin:6px 0 4px;font-size:12px;display:flex;align-items:center;gap:8px}
 .help{font-size:11px;line-height:1.5;background:#fffdf6;border:2px solid #cbbd98;border-radius:6px;padding:7px 9px}
 .danger{background:#ffd0cc}
 #mapView{align-items:center}
-#mapCv{width:450px;height:330px;image-rendering:pixelated;border:3px solid #1a1230;border-radius:4px;margin-top:4px}
+#mapCv{width:424px;height:312px;image-rendering:pixelated;border:3px solid #1a1230;border-radius:4px;margin-top:4px}
 .mapLeg{font-size:10px;margin-top:4px}
 /* title */
 #title{position:absolute;inset:0;z-index:25;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(rgba(16,11,30,.35),rgba(16,11,30,.7))}
@@ -118,7 +118,7 @@ h4{margin:6px 0 4px;font-size:12px;display:flex;align-items:center;gap:8px}
 #titleBtns{display:flex;gap:10px}
 #titleBtns button{font-size:14px;padding:8px 18px;background:#ffd84a}
 #titleFoot{color:#d8cff0;font-size:10px;margin-top:10px;text-align:center;text-shadow:1px 1px 0 #000}
-#newGameBox{inset:60px 110px;justify-content:center;align-items:center;text-align:center;gap:8px}
+#newGameBox{inset:44px 100px;justify-content:center;align-items:center;text-align:center;gap:8px}
 #newGameBox .dbtn{width:330px;text-align:left;font-size:12px;padding:7px 10px}
 #ending{justify-content:center;align-items:center;text-align:center;gap:8px;background:#fff8dc}
 #ending h2{margin:0;font-size:24px}
@@ -151,7 +151,7 @@ body.touch:not(.portrait) #touch{position:fixed;left:0;right:0;bottom:10px;max-w
   <div id="dialog" class="box hidden"><div id="dlgText"></div><div id="dlgChoices"></div><div id="dlgNext">▼</div></div>
   <div id="menu" class="box hidden"><div id="menuTabs"></div><div id="menuBody"></div></div>
   <div id="shop" class="box hidden"></div>
-  <div id="mapView" class="box hidden"><div id="menuTabs" style="width:100%"><b style="font-size:13px">🗺 The Gridiron Isles</b><button class="x" onclick="G.closeMenu()">✕</button></div><canvas id="mapCv" width="450" height="330"></canvas><div class="mapLeg">🟥 Head Coach (not beaten) · 🟩 beaten · ⬜ Kickoff Town · 🟨 legendary chest · 🔵 you (blinking)</div></div>
+  <div id="mapView" class="box hidden"><div id="menuTabs" style="width:100%"><b style="font-size:13px">🗺 The Gridiron Isles</b><button class="x" onclick="G.closeMenu()">✕</button></div><canvas id="mapCv" width="424" height="312"></canvas><div class="mapLeg">🟥 Head Coach (not beaten) · 🟩 beaten · ⬜ Kickoff Town · 🟨 legendary chest (guarded!) · 🔵 you (blinking)</div></div>
   <div id="ending" class="box hidden"><div style="font-size:44px">🏆🦖🏈</div><h2>GRIDIRON LEGEND!</h2><div>Brady beat all seven Head Coaches and became Champion of the Gridiron Isles!</div><div id="endStats" class="help"></div><div><small>Keep exploring to find every legendary chest, fill your Dino-Dex, and clear your Film Room.</small></div><button onclick="G.endContinue()" style="font-size:13px;padding:7px 16px;background:#ffd84a">Keep Exploring ▶</button></div>
   <div id="title">
    <div id="logo"><div class="l1">★ BRADY'S ★</div><div class="l2">GRIDIRON</div><div class="l3">DINO QUEST</div></div>
@@ -162,6 +162,7 @@ body.touch:not(.portrait) #touch{position:fixed;left:0;right:0;bottom:10px;max-w
     <button class="dbtn" onclick="G.newGame('rookie')">🟢 ROOKIE: easier questions, dinos hit softer. Great for learning!</button>
     <button class="dbtn" onclick="G.newGame('pro')">🟡 PRO: the standard experience.</button>
     <button class="dbtn" onclick="G.newGame('allpro')">🔴 ALL-PRO: harder questions, dinos hit harder.</button>
+    <button class="dbtn" onclick="G.newGame('superfan')">🟣 SUPERFAN: deep-cut history, records &amp; classic games. Dinos hit HARD.</button>
     <small>You can change this later in Menu → Options.</small></div>
   </div>
   <div id="toast"></div><div id="banner"></div>
@@ -384,7 +385,8 @@ const RAW_Q = [
 ['stadiums',3,'Which stadium is scheduled to host Super Bowl LXI in February 2027?','SoFi Stadium',['MetLife Stadium','Mercedes-Benz Stadium','Levi\'s Stadium'],'SoFi Stadium in Inglewood, CA, also hosted Super Bowl LVI.'],
 ['stadiums',3,'Which team plays at Highmark Stadium in Orchard Park?','Buffalo Bills',['Pittsburgh Steelers','Cleveland Browns','New York Jets'],'Buffalo\'s cold, snowy home games are legendary.'],
 ];
-const QB = RAW_Q.map((r,i)=>({id:i,cat:r[0],d:r[1],q:r[2],a:r[3],w:r[4],x:r[5]}));
+const QB_DEFER = 1;
+//(r,i)=>({id:i,cat:r[0],d:r[1],q:r[2],a:r[3],w:r[4],x:r[5]}));
 
 const TIPS = [
  "A touchdown is 6 points, a field goal is 3, and a safety is 2!",
@@ -429,6 +431,147 @@ const TIPS = [
  "Tip: Pep Rally Totems around the world give you free buffs!",
  "Tip: An Air Horn scares away wild dinos for a while.",
 ];
+
+// ---------------- SUPERFAN TIER (difficulty 4) ----------------
+const SUPER_Q = [
+// History: famous games
+['history',4,'"The Greatest Game Ever Played" (1958 NFL Championship) went to overtime. Who won?','Baltimore Colts',['New York Giants','Cleveland Browns','Green Bay Packers'],'The Colts beat the Giants 23-17 at Yankee Stadium on Alan Ameche\'s OT touchdown. It was the first sudden-death game in NFL title history.'],
+['history',4,'The 1968 "Heidi Game" got its name because NBC cut away to a movie. Which teams were playing?','Jets and Raiders',['Packers and Cowboys','Colts and Giants','Chiefs and Raiders'],'Viewers missed the Raiders scoring two TDs in the final minute to win 43-32.'],
+['history',4,'The 1978 "Holy Roller" play, which led to a rule change on fumbles, helped which team win?','Oakland Raiders',['San Diego Chargers','Pittsburgh Steelers','Denver Broncos'],'Ken Stabler fumbled the ball forward on purpose and the Raiders "rolled" it into the end zone vs. the Chargers.'],
+['history',4,'The 1974 playoff "Sea of Hands" catch by Clarence Davis eliminated which team?','Miami Dolphins',['Pittsburgh Steelers','Minnesota Vikings','Baltimore Colts'],'The Raiders\' win ended the Dolphins\' run of two straight Super Bowl titles.'],
+['history',4,'The "Epic in Miami" (Jan. 1982) was a 41-38 overtime playoff classic won by which team?','San Diego Chargers',['Miami Dolphins','Oakland Raiders','Cincinnati Bengals'],'An exhausted Kellen Winslow blocked a field goal and had to be helped off the field.'],
+['history',4,'The "Freezer Bowl" AFC Championship (Jan. 1982) had a wind chill of about -59°F. Which team hosted it?','Cincinnati Bengals',['Green Bay Packers','Buffalo Bills','Chicago Bears'],'The Bengals beat the Chargers just one week after the Chargers won the "Epic in Miami."'],
+['history',4,'In "The Comeback" (Jan. 1993), the Bills rallied from 35-3 down. Which backup QB led them?','Frank Reich',['Jim Kelly','Doug Flutie','Rob Johnson'],'Reich, filling in for Jim Kelly, led a 32-point comeback against the Houston Oilers.'],
+['history',4,'In Dec. 2022, which team made the largest comeback in NFL history, from 33-0 down?','Minnesota Vikings',['Buffalo Bills','Indianapolis Colts','Kansas City Chiefs'],'The Vikings beat the Colts 39-36 in overtime.'],
+['history',4,'The "Miracle at the Meadowlands" (1978) led teams to start using which formation?','Victory formation (QB kneel)',['Shotgun','Wildcat','I-formation'],'The Giants fumbled a handoff while trying to run out the clock, and the Eagles\' Herm Edwards scored.'],
+['history',4,'The 2002 "Tuck Rule" playoff game in the snow was between the Patriots and which team?','Oakland Raiders',['Pittsburgh Steelers','Indianapolis Colts','New York Jets'],'Charles Woodson\'s hit on Tom Brady was ruled an incomplete pass. The tuck rule was abolished in 2013.'],
+['history',4,'The "Fail Mary" (2012), decided by replacement referees, was a Seahawks win over which team?','Green Bay Packers',['San Francisco 49ers','Dallas Cowboys','Chicago Bears'],'Golden Tate\'s disputed catch helped end the 2012 referee lockout.'],
+['history',4,'"13 Seconds" refers to which team tying a playoff game late, then winning in OT, in Jan. 2022?','Kansas City Chiefs',['Buffalo Bills','Cincinnati Bengals','Tennessee Titans'],'Mahomes moved the Chiefs into field goal range in 13 seconds, then beat the Bills in overtime.'],
+['history',4,'The "Double Doink" missed field goal (Jan. 2019) ended which team\'s season?','Chicago Bears',['Minnesota Vikings','Dallas Cowboys','Philadelphia Eagles'],'Cody Parkey\'s kick hit the upright and the crossbar against the Eagles.'],
+['history',4,'The 1977 "Ghost to the Post" double-overtime playoff win belonged to which team?','Oakland Raiders',['Baltimore Colts','Denver Broncos','Pittsburgh Steelers'],'Tight end Dave "The Ghost" Casper made the key catch against the Colts.'],
+['history',4,'"The Fumble" in the 1987 season AFC Championship was by which Browns running back?','Earnest Byner',['Kevin Mack','Jim Brown','Leroy Kelly'],'Byner was stripped near the goal line, and Denver beat Cleveland again.'],
+['history',4,'The Jets\' "Monday Night Miracle" (Oct. 2000) came back from 30-7 down against which team?','Miami Dolphins',['New England Patriots','Buffalo Bills','Indianapolis Colts'],'Vinny Testaverde led the Jets to a 40-37 overtime win.'],
+['history',4,'The 1940 NFL Championship had the most lopsided score in NFL history. What was it?','Bears 73, Washington 0',['Packers 56, Giants 0','Browns 56, Lions 10','Lions 59, Browns 14'],'The Bears\' T-formation offense crushed Washington.'],
+['history',4,'The highest-scoring game in NFL history (113 points, 1966) was Washington vs. which team?','New York Giants',['Dallas Cowboys','Philadelphia Eagles','Pittsburgh Steelers'],'Washington won 72-41.'],
+['history',4,'Who coached the Packers to victory in the 1967 "Ice Bowl"?','Vince Lombardi',['Tom Landry','Don Shula','George Halas'],'Lombardi\'s Packers beat Tom Landry\'s Cowboys 21-17.'],
+// History: Super Bowls
+['history',4,'Who is the only player from a LOSING team to be named Super Bowl MVP?','Chuck Howley',['Joe Namath','Lynn Swann','Larry Csonka'],'Cowboys linebacker Chuck Howley won MVP in Super Bowl V despite losing to the Colts.'],
+['history',4,'Which Super Bowl was the highest-scoring ever, with 75 total points?','Super Bowl XXIX',['Super Bowl LVII','Super Bowl LII','Super Bowl XXVII'],'The 49ers beat the Chargers 49-26. Steve Young threw a record 6 TD passes.'],
+['history',4,'Super Bowl LIII was the lowest-scoring Super Bowl. What was the final score?','Patriots 13, Rams 3',['Dolphins 14, Washington 7','Ravens 34, Giants 7','Steelers 16, Vikings 6'],'Only one touchdown was scored the entire game.'],
+['history',4,'Who returned a kickoff 108 yards, the longest play in Super Bowl history?','Jacoby Jones',['Desmond Howard','Devin Hester','Tim Dwight'],'Jones did it for the Ravens in Super Bowl XLVII against the 49ers.'],
+['history',4,'Who is the only special teams player ever named Super Bowl MVP?','Desmond Howard',['Jacoby Jones','Adam Vinatieri','Devin Hester'],'Howard\'s 99-yard kickoff return TD helped the Packers win Super Bowl XXXI.'],
+['history',4,'Which Steelers linebacker returned an interception 100 yards for a TD in Super Bowl XLIII?','James Harrison',['Troy Polamalu','James Farrior','Joey Porter'],'Harrison\'s return ended the first half against the Cardinals.'],
+['history',4,'"The Tackle" at the 1-yard line on the final play of Super Bowl XXXIV was made by which Ram?','Mike Jones',['Aeneas Williams','London Fletcher','Kevin Carter'],'Jones stopped the Titans\' Kevin Dyson just short of the goal line.'],
+['history',4,'Which undrafted Patriots CB intercepted Russell Wilson at the goal line to win Super Bowl XLIX?','Malcolm Butler',['Darrelle Revis','Brandon Browner','Devin McCourty'],'Butler\'s pick sealed a 28-24 win over Seattle.'],
+['history',4,'Super Bowl XLVII was briefly stopped by what?','A stadium power outage',['A thunderstorm','A fan on the field','An earthquake'],'About half the Superdome\'s lights went out early in the third quarter of Ravens vs. 49ers.'],
+['history',4,'Which team was the FIRST to play a Super Bowl in its own home stadium?','Tampa Bay Buccaneers',['Los Angeles Rams','Miami Dolphins','Minnesota Vikings'],'The Bucs beat the Chiefs 31-9 in Super Bowl LV at Raymond James Stadium.'],
+['history',4,'In Super Bowl XXII, Doug Williams threw 4 TD passes in a single quarter for which team?','Washington',['Denver Broncos','San Francisco 49ers','Chicago Bears'],'Williams became the first Black QB to start and win a Super Bowl, and he was named MVP.'],
+['history',4,'Which Bears defensive tackle scored a rushing TD in Super Bowl XX?','William "The Refrigerator" Perry',['Richard Dent','Dan Hampton','Steve McMichael'],'Perry plunged in from the 1 in a 46-10 rout of the Patriots.'],
+['history',4,'Which Super Bowl was the only one NOT labeled with Roman numerals?','Super Bowl 50',['Super Bowl 40','Super Bowl 100','Super Bowl 1'],'The NFL used "50" because "L" alone did not look good on logos. The Broncos beat the Panthers.'],
+['history',4,'How many teams have won THREE Super Bowls in a row?','None',['One','Two','Three'],'No team has done it. The Chiefs tried in Super Bowl LIX but lost to the Eagles.'],
+['history',4,'Which two franchises are both 0-4 in Super Bowls?','Vikings and Bills',['Bengals and Falcons','Browns and Lions','Chargers and Titans'],'Minnesota lost IV, VIII, IX, and XI. Buffalo lost XXV through XXVIII.'],
+['history',4,'As of the 2025 season, which team has NEVER played in a Super Bowl?','Detroit Lions',['New York Jets','Arizona Cardinals','New Orleans Saints'],'The Lions, Browns, Jaguars, and Texans have never reached the Super Bowl.'],
+['history',4,'In what year did the Detroit Lions win their last NFL Championship?','1957',['1962','1935','1971'],'The Lions beat the Browns 59-14 in the 1957 title game.'],
+['history',4,'In what year did the Cleveland Browns win their last NFL Championship?','1964',['1955','1972','1986'],'Jim Brown\'s Browns beat the Colts 27-0. That was before the Super Bowl era.'],
+['history',4,'Which team was the first in NFL history to finish a season 0-16?','2008 Detroit Lions',['2017 Cleveland Browns','1976 Tampa Bay Buccaneers','2009 St. Louis Rams'],'The 2017 Browns matched it. The 1976 Bucs went 0-14 in a shorter season.'],
+['history',4,'Where was Super Bowl I played?','Los Angeles Memorial Coliseum',['Orange Bowl, Miami','Tulane Stadium','Rose Bowl'],'It was not even a sellout. Tickets cost as little as $6!'],
+// History: league & coaches
+['history',4,'Who was the first president of the APFA, the league that became the NFL?','Jim Thorpe',['George Halas','Joe Carr','Curly Lambeau'],'Olympic legend Jim Thorpe was the league\'s figurehead president in 1920.'],
+['history',4,'Who was the first player ever selected in the NFL Draft (1936)?','Jay Berwanger',['Sammy Baugh','Red Grange','Bronko Nagurski'],'Berwanger, the first Heisman winner, never played a down in the NFL.'],
+['history',4,'The first "Monday Night Football" game (1970) matched the Jets against which team?','Cleveland Browns',['Baltimore Colts','Oakland Raiders','Kansas City Chiefs'],'The Browns won 31-21.'],
+['history',4,'The AFL\'s founding owners in 1960 called themselves what?','The Foolish Club',['The Founders Circle','The Rebel Eight','The Maverick League'],'Lamar Hunt and the other original AFL owners embraced the nickname.'],
+['history',4,'Which head coach has the most Super Bowl appearances (9)?','Bill Belichick',['Don Shula','Tom Landry','Andy Reid'],'Belichick went 6-3 in Super Bowls as head coach of the Patriots.'],
+['history',4,'Which coach won 4 Super Bowls with the 1970s Steelers?','Chuck Noll',['Bill Cowher','Mike Tomlin','Bud Grant'],'Noll\'s Steelers won Super Bowls IX, X, XIII, and XIV.'],
+['history',4,'Which coach won three Super Bowls with three DIFFERENT starting quarterbacks?','Joe Gibbs',['Bill Walsh','Chuck Noll','Bill Parcells'],'Gibbs won with Joe Theismann, Doug Williams, and Mark Rypien in Washington.'],
+['history',4,'Who was the first Black head coach to win a Super Bowl?','Tony Dungy',['Mike Tomlin','Art Shell','Lovie Smith'],'Dungy\'s Colts beat Lovie Smith\'s Bears in Super Bowl XLI.'],
+['history',4,'Who became the first Black head coach of the modern NFL era in 1989?','Art Shell',['Tony Dungy','Dennis Green','Fritz Pollard'],'Shell, a Hall of Fame tackle, coached the Raiders. Fritz Pollard had coached back in the 1920s.'],
+['history',4,'Who became the youngest head coach to win a Super Bowl (age 36)?','Sean McVay',['Jon Gruden','Mike Tomlin','Kyle Shanahan'],'McVay\'s Rams won Super Bowl LVI.'],
+['history',4,'Which Hall of Fame coach founded the Cincinnati Bengals?','Paul Brown',['Sid Gillman','Weeb Ewbank','Blanton Collier'],'The Browns are named after Paul Brown too. He founded the Bengals in 1968 after Cleveland fired him.'],
+['history',4,'Which coach was famously wired for sound in Super Bowl IV, telling his team to "matriculate" the ball down the field?','Hank Stram',['Vince Lombardi','John Madden','Tom Landry'],'Stram\'s Chiefs upset the Vikings 23-7.'],
+['history',4,'Which coach led the Cowboys for their first 29 seasons, wearing a trademark fedora?','Tom Landry',['Jimmy Johnson','Bill Parcells','Barry Switzer'],'Landry coached Dallas from 1960 to 1988.'],
+// Players: league leaders & records
+['players',4,'Who holds the NFL record for career rushing touchdowns (164)?','Emmitt Smith',['LaDainian Tomlinson','Marcus Allen','Walter Payton'],'Emmitt Smith holds both the career rushing yards and rushing TD records.'],
+['players',4,'Who holds the record for career receiving touchdowns (197)?','Jerry Rice',['Randy Moss','Terrell Owens','Cris Carter'],'Rice also holds the records for career catches and receiving yards.'],
+['players',4,'Who holds the NFL record for career sacks (200, official since 1982)?','Bruce Smith',['Reggie White','Michael Strahan','Kevin Greene'],'Bruce Smith played for the Bills and Washington. Reggie White is second with 198.'],
+['players',4,'Who holds the record for career interceptions (81)?','Paul Krause',['Rod Woodson','Night Train Lane','Ed Reed'],'Krause played safety for Washington and the Vikings.'],
+['players',4,'Who holds the record for most career points scored?','Adam Vinatieri',['Morten Andersen','Gary Anderson','Jason Hanson'],'Kicker Adam Vinatieri scored 2,673 points with the Patriots and Colts.'],
+['players',4,'Who set the single-season interception record (14) as a rookie in 1952?','Dick "Night Train" Lane',['Paul Krause','Emlen Tunnell','Mel Blount'],'He did it in just 12 games for the Los Angeles Rams.'],
+['players',4,'Who set the record for receptions in a season, 149, in 2019?','Michael Thomas',['Cooper Kupp','Marvin Harrison','Julio Jones'],'Thomas did it for the Saints.'],
+['players',4,'Who scored a record 31 total touchdowns (28 rushing) in 2006?','LaDainian Tomlinson',['Shaun Alexander','Priest Holmes','Marshall Faulk'],'LT won MVP with the San Diego Chargers.'],
+['players',4,'Who set the single-season passing yards record (5,477) in 2013?','Peyton Manning',['Drew Brees','Patrick Mahomes','Tom Brady'],'Manning threw for 5,477 yards and 55 TDs for the Broncos.'],
+['players',4,'Who holds the single-game passing record of 554 yards, set in 1951?','Norm Van Brocklin',['Johnny Unitas','Dan Marino','Warren Moon'],'Van Brocklin\'s Rams record has stood for more than 70 years.'],
+['players',4,'Who holds the single-game rushing record of 296 yards (2007)?','Adrian Peterson',['Jamal Lewis','Walter Payton','Corey Dillon'],'Peterson did it as a rookie for the Vikings against the Chargers.'],
+['players',4,'Who scored a record 40 points in a single game in 1929?','Ernie Nevers',['Jim Thorpe','Red Grange','Gale Sayers'],'Nevers scored 6 TDs and 4 extra points for the Chicago Cardinals against the Bears.'],
+['players',4,'Which rookie scored 6 touchdowns in one game in 1965?','Gale Sayers',['Jim Brown','Paul Hornung','Lenny Moore'],'"The Kansas Comet" did it for the Bears against the 49ers.'],
+['players',4,'Which Saint tied the record with 6 rushing TDs on Christmas Day 2020?','Alvin Kamara',['Mark Ingram','Latavius Murray','Taysom Hill'],'Kamara matched Ernie Nevers\' 1929 record against the Vikings.'],
+['players',4,'Who was the first player to rush for 2,000 yards in a season (1973)?','O.J. Simpson',['Jim Brown','Earl Campbell','Walter Payton'],'He ran for 2,003 yards for the Bills in a 14-game season.'],
+['players',4,'Which Broncos RB ran for 2,008 yards and won NFL MVP in 1998?','Terrell Davis',['Floyd Little','Clinton Portis','Mike Anderson'],'Davis had also been MVP of Super Bowl XXXII the season before.'],
+['players',4,'Which Raven ran for 2,066 yards in 2003?','Jamal Lewis',['Ray Rice','Priest Holmes','Willis McGahee'],'Lewis also ran for 295 yards in a single game that season.'],
+['players',4,'Which Titan ran for 2,006 yards in 2009 and was nicknamed "CJ2K"?','Chris Johnson',['Eddie George','Derrick Henry','LenDale White'],'Johnson was one of the fastest backs ever.'],
+['players',4,'Who broke Johnny Unitas\'s record of 47 straight games with a TD pass?','Drew Brees',['Peyton Manning','Tom Brady','Brett Favre'],'Brees extended the streak to 54 games with the Saints.'],
+['players',4,'Which QB threw 48 TD passes and became the first to pass for 5,000 yards, in 1984?','Dan Marino',['Dan Fouts','Joe Montana','John Elway'],'Marino did it in only his second season.'],
+['players',4,'Who caught 22 TD passes in just 12 games during the 1987 strike season?','Jerry Rice',['Steve Largent','Art Monk','Andre Reed'],'It stood as the record until Randy Moss caught 23 in 2007.'],
+['players',4,'Who was the first DEFENSIVE player to win NFL MVP (1971)?','Alan Page',['Dick Butkus','Joe Greene','Deacon Jones'],'Page anchored the Vikings\' "Purple People Eaters."'],
+['players',4,'Who is the only KICKER to win NFL MVP (1982)?','Mark Moseley',['Jan Stenerud','Morten Andersen','Adam Vinatieri'],'Moseley kicked for Washington in a strike-shortened season.'],
+['players',4,'Which QB won three straight MVP awards (1995-97)?','Brett Favre',['Peyton Manning','Steve Young','Joe Montana'],'Favre shared the 1997 award with Barry Sanders.'],
+['players',4,'Which RB won both NFL MVP and Super Bowl MVP for the 1993 season?','Emmitt Smith',['Thurman Thomas','Barry Sanders','Marcus Allen'],'Smith led the Cowboys to a win in Super Bowl XXVIII.'],
+['players',4,'Which Super Bowl MVP was stocking grocery shelves just a few years earlier?','Kurt Warner',['Tom Brady','Doug Williams','Jim Plunkett'],'Warner went from Hy-Vee to the Arena League to Super Bowl XXXIV MVP with the Rams.'],
+['players',4,'Who has the most career Super Bowl touchdowns (8)?','Jerry Rice',['Emmitt Smith','Rob Gronkowski','Franco Harris'],'Rice scored in four different Super Bowls.'],
+['players',4,'Who threw for a Super Bowl record 505 yards, but LOST?','Tom Brady',['Kurt Warner','Patrick Mahomes','Peyton Manning'],'Brady did it in Super Bowl LII, when the Eagles won 41-33.'],
+['players',4,'Which QB won 5 Grey Cups in Canada before his Hall of Fame NFL career?','Warren Moon',['Doug Flutie','Joe Theismann','Jeff Garcia'],'Moon starred for Edmonton, then the Houston Oilers.'],
+['players',4,'In 1943, which player led the NFL in passing, punting, AND interceptions?','Sammy Baugh',['Sid Luckman','Don Hutson','Bronko Nagurski'],'"Slingin\' Sammy" played for Washington.'],
+['players',4,'Which QB played in his league\'s championship game in all 10 of his pro seasons?','Otto Graham',['Bart Starr','Johnny Unitas','Bobby Layne'],'Graham\'s Browns won 7 of those 10 title games.'],
+['players',4,'Which Rams defensive end is credited with coining the term "sack"?','Deacon Jones',['Merlin Olsen','Jack Youngblood','Reggie White'],'Jones starred in the Rams\' "Fearsome Foursome."'],
+['players',4,'Which 1920s Bears star was nicknamed "The Galloping Ghost"?','Red Grange',['Bronko Nagurski','Jim Thorpe','Ernie Nevers'],'Grange helped make pro football popular.'],
+['players',4,'Who played in a World Series AND a Super Bowl?','Deion Sanders',['Bo Jackson','Brian Jordan','Tom Brady'],'Deion played for the Braves in the 1992 World Series and won two Super Bowls.'],
+['players',4,'Which Packers receiver of the 1930s-40s scored 99 career TDs and invented many modern routes?','Don Hutson',['Curly Lambeau','Elroy Hirsch','Max McGee'],'Hutson\'s receiving TD record stood for more than 40 years.'],
+// Rules history
+['rules',4,'In what year did the NFL adopt the two-point conversion?','1994',['1970','1985','2002'],'The AFL used it in the 1960s, but the NFL waited until 1994.'],
+['rules',4,'In 1974, the NFL moved the goalposts from the goal line to where?','The back of the end zone',['The 10-yard line','The sidelines','The 20-yard line'],'Players kept running into them on the goal line!'],
+['rules',4,'In 2015, extra-point kicks were moved back to the snap from which line?','15-yard line',['2-yard line','10-yard line','20-yard line'],'That made extra points a 33-yard kick.'],
+['rules',4,'In what season did the NFL go to a 17-game regular season?','2021',['2018','2020','2023'],'It was 14 games until 1978, then 16 until 2021.'],
+['rules',4,'In what year did the NFL first use instant replay to review calls?','1986',['1978','1995','2003'],'It was dropped after 1991, then the coach\'s challenge system arrived in 1999.'],
+['rules',4,'Which rule, created in 2003, requires teams to interview minority candidates for head coach jobs?','The Rooney Rule',['The Halas Rule','The Brown Rule','The Shell Rule'],'It is named after Steelers owner Dan Rooney.'],
+['rules',4,'After a fair catch, a team may try a rare kick that has no rush allowed. What is it called?','Fair catch kick',['Drop kick','Onside punt','Free punt'],'The kicker gets a free kick at the goal from a tee or a hold. It is worth 3 points.'],
+['rules',4,'In what year did the NFL add overtime to REGULAR-season games?','1974',['1958','1966','1990'],'Before that, regular-season games could end in a tie after 60 minutes.'],
+['rules',4,'In 2020, the NFL playoffs expanded to how many teams?','14',['12','16','10'],'Only the top seed in each conference gets a first-round bye now.'],
+['rules',4,'The "tuck rule" was famously abolished in what year?','2013',['2002','2008','2018'],'It had been made famous by the 2002 Patriots-Raiders snow game.'],
+// Strategy/systems
+['strategy',4,'The "West Coast offense," built on short timing passes, is credited to which coach?','Bill Walsh',['Don Coryell','Sid Gillman','Mike Martz'],'Walsh\'s 49ers won three Super Bowls with it in the 1980s.'],
+['strategy',4,'"Air Coryell," a deep vertical passing attack, was made famous by which team?','San Diego Chargers',['St. Louis Rams','Houston Oilers','Miami Dolphins'],'Don Coryell and Dan Fouts lit up scoreboards around 1980.'],
+['strategy',4,'Which defensive coordinator created the "46 defense" used by the 1985 Bears?','Buddy Ryan',['Mike Ditka','Bud Carson','Dick LeBeau'],'It was named after safety Doug Plank\'s jersey number, 46.'],
+['strategy',4,'The "Tampa 2" defense is most closely tied to which head coach?','Tony Dungy',['Jon Gruden','Bill Belichick','Rex Ryan'],'Dungy and Monte Kiffin built Tampa Bay\'s great defenses around it.'],
+['strategy',4,'Which defensive coach is famous for developing the "zone blitz"?','Dick LeBeau',['Buddy Ryan','Wade Phillips','Monte Kiffin'],'LeBeau\'s zone blitz helped the Steelers become "Blitzburgh."'],
+['strategy',4,'In 2008, the Dolphins shocked the Patriots using which direct-snap-to-RB formation?','Wildcat',['Pistol','Wishbone','Single wing'],'Ronnie Brown scored 4 TDs out of the Wildcat in that game.'],
+['strategy',4,'The "Run and Shoot" offense used four wide receivers and no tight end. Which team ran it in the early 1990s?','Houston Oilers',['Dallas Cowboys','Buffalo Bills','Kansas City Chiefs'],'Warren Moon threw for huge numbers in it.'],
+['strategy',4,'The Chiefs\' famous "Jet Chip Wasp" play converted a 3rd-and-15 in which Super Bowl?','Super Bowl LIV',['Super Bowl LVII','Super Bowl IV','Super Bowl LVIII'],'Mahomes hit Tyreek Hill for 44 yards to spark the comeback against the 49ers.'],
+// Teams history
+['teams',4,'What was the Kansas City Chiefs\' original name?','Dallas Texans',['Kansas City Cowboys','Houston Oilers','Missouri Mustangs'],'Lamar Hunt\'s AFL team moved from Dallas to Kansas City in 1963.'],
+['teams',4,'The New York Jets were originally called the New York...','Titans',['Jets','Knights','Bulldogs'],'The team was renamed the Jets in 1963.'],
+['teams',4,'In 1943, two teams briefly merged because of WWII player shortages. Fans called them the...','Steagles',['Phil-Pitts Bears','Card-Pitts','Brooklyn Tigers'],'The Eagles and Steelers combined for one season.'],
+['teams',4,'What was the Pittsburgh Steelers\' original name in 1933?','Pirates',['Ironmen','Smoke','Miners'],'They became the Steelers in 1940.'],
+['teams',4,'The Baltimore Ravens began play in 1996 after which franchise relocated?','Cleveland Browns',['Baltimore Colts','Houston Oilers','Los Angeles Rams'],'Cleveland kept the Browns name and history, and a new Browns team returned in 1999.'],
+['teams',4,'Washington\'s great 1980s offensive line had what nickname?','The Hogs',['The Herd','The Wall','The Tanks'],'The Hogs paved the way for three Super Bowl titles.'],
+['teams',4,'The Broncos\' late-1970s defense was known as the...','Orange Crush',['Steel Curtain','No-Name Defense','Doomsday Defense'],'It led Denver to its first Super Bowl, after the 1977 season.'],
+['teams',4,'Which team\'s defense was called "Doomsday"?','Dallas Cowboys',['Pittsburgh Steelers','Minnesota Vikings','Los Angeles Rams'],'Bob Lilly and Randy White starred on the Doomsday defenses.'],
+['teams',4,'The 1972 Dolphins\' unheralded defense was famously called the...','No-Name Defense',['Killer B\'s','Orange Crush','Fun Bunch'],'The name came from Cowboys coach Tom Landry saying, before Super Bowl VI, that he could not recall their names.'],
+['teams',4,'The Colts famously left Baltimore in 1984 in the middle of the night using what?','Mayflower moving trucks',['A cargo train','Private jets','A riverboat'],'The trucks rolled out in a snowstorm, heading for Indianapolis.'],
+// Stadiums history
+['stadiums',4,'Which was the first domed stadium used by an NFL team?','Houston Astrodome',['Louisiana Superdome','Pontiac Silverdome','Seattle Kingdome'],'The Houston Oilers moved into the Astrodome in 1968.'],
+['stadiums',4,'Which team\'s old stadium had a famous hole in its roof?','Dallas Cowboys (Texas Stadium)',['Minnesota Vikings (Metrodome)','Houston Oilers (Astrodome)','Seattle Seahawks (Kingdome)'],'Fans joked the hole was there "so God can watch His favorite team."'],
+['stadiums',4,'In December 2010, which stadium\'s roof collapsed under heavy snow?','Metrodome',['Silverdome','Kingdome','RCA Dome'],'The Vikings had to play home games elsewhere, including outdoors at the University of Minnesota.'],
+['stadiums',4,'The Seahawks played in which concrete dome from 1976 to 1999?','The Kingdome',['The Astrodome','The Metrodome','The Silverdome'],'The Kingdome was demolished in 2000.'],
+['stadiums',4,'The Detroit Lions played in which suburban dome from 1975 to 2001?','Pontiac Silverdome',['Tiger Stadium','Ford Field','Metrodome'],'The Silverdome also hosted Super Bowl XVI.'],
+['stadiums',4,'The 49ers played at which windy stadium before moving to Levi\'s Stadium?','Candlestick Park',['Kezar Stadium','Oakland Coliseum','Cow Palace'],'"The Catch" happened at Candlestick in January 1982.'],
+['stadiums',4,'The Steelers won 4 Super Bowls in the 1970s while playing home games at...','Three Rivers Stadium',['Forbes Field','Heinz Field','Pitt Stadium'],'Three Rivers was home from 1970 to 2000.'],
+['stadiums',4,'The Dolphins\' perfect 1972 season was played at which home stadium?','The Orange Bowl',['Joe Robbie Stadium','Hard Rock Stadium','Tampa Stadium'],'Miami played at the Orange Bowl from 1966 to 1986.'],
+['stadiums',4,'Lambeau Field was originally called...','City Stadium',['Packer Park','Green Bay Field','Hagemeister Park'],'It was renamed in 1965 for team founder Curly Lambeau.'],
+['stadiums',4,'Washington played its home games at which stadium from 1961 to 1996?','RFK Stadium',['FedEx Field','Griffith Stadium','Memorial Stadium'],'The stands at RFK famously bounced when fans jumped.'],
+['stadiums',4,'Which team\'s fans sit in the famous end-zone section called the "Dawg Pound"?','Cleveland Browns',['Buffalo Bills','Pittsburgh Steelers','Chicago Bears'],'Fans wear dog masks and bark at opponents!'],
+['stadiums',4,'Which NFL stadium sits at the highest elevation?','Empower Field at Mile High',['Allegiant Stadium','State Farm Stadium','Lumen Field'],'It is about 5,280 feet above sea level, in Denver.'],
+];
+
+const QB = RAW_Q.concat(SUPER_Q).map((r,i)=>({id:i,cat:r[0],d:r[1],q:r[2],a:r[3],w:r[4],x:r[5]}));
 </script>
 <script>'use strict';
 // =====================================================================
@@ -453,45 +596,62 @@ function makeNoise(seed){const r=mulberry32(seed);const P=new Float32Array(65536
 
 // ---------------- CONSTANTS ----------------
 const TS=16, VW=20, VH=13, CW=320, CH=208;
-const MW=150, MH=110, WORLD_SEED=1120;
+const MW=212, MH=156, WORLD_SEED=1120;
 const T={GRASS:0,TALL:1,PATH:2,WATER:3,SAND:4,TREE:5,ROCK:6,FLOWER:7,FLOOR:8,WALL:9,ROOF:10,DOOR:11,FENCE:12,BRIDGE:13,LAVA:14,JUNGLE:15,FOUNTAIN:16,BRUSH:17,SIGN:18,GATE:19,FIELD:20,TOTEM:21,CACTUS:22,MFLOOR:23,VFLOOR:24,ROOFB:25,COLUMN:26,GOAL:27,PINE:28,FIELDLINE:29,WINDOW:30};
 const SOLID=new Set([T.WATER,T.TREE,T.ROCK,T.WALL,T.ROOF,T.FENCE,T.LAVA,T.FOUNTAIN,T.SIGN,T.GATE,T.TOTEM,T.CACTUS,T.ROOFB,T.COLUMN,T.GOAL,T.PINE,T.DOOR,T.WINDOW]);
 const OBJ=new Set([T.TREE,T.PINE,T.ROCK,T.CACTUS,T.COLUMN,T.TOTEM,T.SIGN,T.FLOWER,T.TALL,T.JUNGLE,T.BRUSH,T.GOAL,T.FENCE]);
-const ENC={[T.TALL]:.10,[T.JUNGLE]:.13,[T.BRUSH]:.10,[T.GRASS]:.012,[T.SAND]:.012,[T.MFLOOR]:.014,[T.FLOWER]:.012,[T.PATH]:.006,[T.VFLOOR]:.02};
+const ENC={[T.TALL]:.10,[T.JUNGLE]:.12,[T.BRUSH]:.10,[T.GRASS]:.009,[T.SAND]:.009,[T.MFLOOR]:.011,[T.FLOWER]:.009,[T.PATH]:.004,[T.VFLOOR]:.02};
 const DX={up:0,down:0,left:-1,right:1}, DY={up:-1,down:1,left:0,right:0};
 const CATS={rules:{name:'Rules',c:'#e8443a'},strategy:{name:'Positions & Strategy',c:'#159a86'},history:{name:'History',c:'#8e44ad'},players:{name:'Players',c:'#2f6fd6'},teams:{name:'Teams & Cities',c:'#2e9e50'},stadiums:{name:'Stadiums',c:'#e67e22'}};
 
 const POIS=[
- {id:'kickoff',name:'Kickoff Town',region:'Kickoff Plains',x:75,y:86,biome:'plains',lv:[1,3],diff:[1,1]},
- {id:'harbor',name:'Huddle Harbor',region:'Huddle Coast',x:24,y:84,biome:'coast',cat:'teams',lv:[3,6],diff:[1,2],
+ {id:'kickoff',name:'Kickoff Town',region:'Kickoff Plains',x:106,y:122,biome:'plains',lv:[1,3],diff:[1,1]},
+ {id:'harbor',name:'Huddle Harbor',region:'Huddle Coast',x:34,y:118,biome:'coast',cat:'teams',lv:[3,6],diff:[1,2],
   boss:{name:'Captain Longneck',fam:'sauro',lv:8,pal:{B:'#3f8fb0',L:'#d8f0f0',P:'#1f4d6b',K:'#e8dcc0'},pattern:'spots',trophy:'Compass Trophy',
    intro:["Ahoy, Brady! I'm Captain Longneck, Head Coach of TEAMS & CITIES!","I've sailed to every NFL city. Do you know where all 32 teams play? Let's find out!"],
    outro:["Shiver my shoulder pads! You know your teams!","Take the COMPASS TROPHY. Now, onward!"]}},
- {id:'dunes',name:'Draft Day Dunes',region:'Draft Day Desert',x:120,y:88,biome:'desert',cat:'players',lv:[3,6],diff:[1,2],
+ {id:'dunes',name:'Draft Day Dunes',region:'Draft Day Desert',x:169,y:124,biome:'desert',cat:'players',lv:[3,6],diff:[1,2],
   boss:{name:'Scout Raptor',fam:'raptor',lv:8,pal:{B:'#c98a3a',L:'#f4dfb0',P:'#6b3a1a',K:'#f4f4f4'},pattern:'stripes',trophy:'Draft Trophy',
    intro:["Hssss... I'm Scout Raptor, Head Coach of PLAYERS!","I've scouted every superstar from Montana to Mahomes. Let's see your scouting report!"],
    outro:["Impressive! You'd make a great GM someday.","The DRAFT TROPHY is yours!"]}},
- {id:'rulebook',name:'Rulebook Ridge',region:'Rulebook Woods',x:30,y:46,biome:'forest',cat:'rules',lv:[6,9],diff:[1,2],
+ {id:'rulebook',name:'Rulebook Ridge',region:'Rulebook Woods',x:42,y:65,biome:'forest',cat:'rules',lv:[6,9],diff:[1,2],
   boss:{name:'Referee Rex',fam:'rex',lv:11,pal:{B:'#f2f2f2',L:'#dcdcdc',P:'#1b1b1b',K:'#f4f4f4'},pattern:'vstripes',trophy:'Whistle Trophy',
    intro:["TWEEEEET! I'm Referee Rex, Head Coach of RULES!","Downs, scoring, penalties... One wrong answer and that's a FLAG on you!"],
    outro:["After review... the ruling stands: YOU WIN!","Take the WHISTLE TROPHY."]}},
- {id:'springs',name:'Stadium Springs',region:'Stadium Springs',x:126,y:52,biome:'springs',cat:'stadiums',lv:[6,9],diff:[1,2],
+ {id:'springs',name:'Stadium Springs',region:'Stadium Springs',x:178,y:73,biome:'springs',cat:'stadiums',lv:[6,9],diff:[1,2],
   boss:{name:'Groundskeeper Stego',fam:'stego',lv:11,pal:{B:'#4d9a4a',L:'#cfe8a8',P:'#f5c542',K:'#f4f4f4'},pattern:'none',trophy:'Turf Trophy',
    intro:["Hey! Stay off my turf! I'm Groundskeeper Stego, Head Coach of STADIUMS!","From Lambeau to SoFi, I've mowed 'em all. Do you know where every team plays?"],
    outro:["Well, I'll be. You know your stadiums!","Here's the TURF TROPHY. Wipe your cleats!"]}},
- {id:'peak',name:'Playbook Peak',region:'Playbook Mountains',x:46,y:16,biome:'mountain',cat:'strategy',lv:[9,12],diff:[2,3],
+ {id:'peak',name:'Playbook Peak',region:'Playbook Mountains',x:65,y:23,biome:'mountain',cat:'strategy',lv:[9,12],diff:[2,3],
   boss:{name:'Coordinator Ankylo',fam:'ankylo',lv:14,pal:{B:'#7a6a8a',L:'#c8bcd8',P:'#3a2a4a',K:'#d8c070'},pattern:'none',trophy:'Playbook Trophy',
    intro:["I'm Coordinator Ankylo, Head Coach of POSITIONS & STRATEGY.","Blitzes, audibles, nickel packages... Can you read my defense?"],
    outro:["You read that coverage perfectly.","The PLAYBOOK TROPHY is yours, Coach Brady."]}},
- {id:'canton',name:'Canton Ruins',region:'Canton Ruins',x:106,y:18,biome:'ruins',cat:'history',lv:[9,12],diff:[2,3],
+ {id:'canton',name:'Canton Ruins',region:'Canton Ruins',x:150,y:25,biome:'ruins',cat:'history',lv:[9,12],diff:[2,3],
   boss:{name:'Curator Trike',fam:'trike',lv:14,pal:{B:'#b5654a',L:'#f0d0b0',P:'#f5c542',K:'#fff6d8'},pattern:'spots',trophy:'Legacy Trophy',
    intro:["Welcome to the Ruins. I'm Curator Trike, Head Coach of HISTORY.","The Ice Bowl, The Catch, the Immaculate Reception... History remembers. Do you?"],
    outro:["You honor the legends of the game.","Take the LEGACY TROPHY. Your gold jacket awaits!"]}},
- {id:'champ',name:'Championship Stadium',region:'Championship Volcano',x:76,y:46,biome:'volcano',cat:null,lv:[12,15],diff:[2,3],
+ {id:'champ',name:'Championship Stadium',region:'Championship Volcano',x:107,y:65,biome:'volcano',cat:null,lv:[12,15],diff:[2,3],
   boss:{name:'Commissioner Spino',fam:'spino',lv:20,pal:{B:'#d4a017',L:'#fff0b0',P:'#8a1c1c',K:'#ffffff'},pattern:'stripes',trophy:"Champion's Ring",final:true,
    intro:["So... the kid with the freckles made it to the Championship.","I am COMMISSIONER SPINO. Every category. Every era. Every rule.","Win this, and you're a true Gridiron Legend. KICKOFF!"],
    outro:["Incredible... You know this game like a true pro.","Brady, you are the CHAMPION of the Gridiron Isles!"]}},
 ];
+const LEGENDS={
+ goldball:{name:'Coach Hoodosaurus',title:'The Hooded Mastermind',fam:'rex',pal:{B:'#8a8d94',L:'#c8cad0',P:'#3c3f48',K:'#f4f4f4'},pattern:'none',
+  intro:["...","You opened my chest. You didn't knock.","I don't do small talk. We're on to the questions.","Do your job, kid."],
+  outro:["...","It is what it is. The Golden Football is yours.","Now get out of my film room. We're on to the next one."]},
+ goldhelm:{name:'Coach Iron Sweep',title:'The Old-School Drill Sergeant',fam:'trike',pal:{B:'#2f5a3a',L:'#e8d070',P:'#f5c542',K:'#fff6d8'},pattern:'none',
+  intro:["Kid... THIS is a dinosaur.","We start with FUNDAMENTALS. Perfect practice makes perfect players!","Show me you know where this game came from!"],
+  outro:["Hmph. Discipline. Desire. You've got both.","The Golden Helmet is yours. Wear it with pride."]},
+ goldjacket:{name:'Coach Mustachiodon',title:'Da Sideline Legend',fam:'ankylo',pal:{B:'#2a3460',L:'#e8803a',P:'#c8501a',K:'#d8c070'},pattern:'stripes',
+  intro:["Whaddya think this is, a PICNIC?!","On MY sideline, you know your history or you take a seat!","Let's see what you got, kid!"],
+  outro:["...Okay. OKAY. That's some real football knowledge right there!","Take the Gold Jacket. You earned it."]},
+ goldcleats:{name:'The Big Tunasaurus',title:'The Turnaround Specialist',fam:'sauro',pal:{B:'#3a5aa0',L:'#d8e0f0',P:'#a8323a',K:'#f0f0f0'},pattern:'spots',
+  intro:["You want the Golden Cleats? Everybody wants the Golden Cleats.","Let me tell you something: you are what your answers say you are.","So let's find out what you are."],
+  outro:["Alright. You're a pro. Don't let it go to your head.","The Golden Cleats are yours. Now go win somewhere else."]},
+ hose:{name:'Coach Clockwatcher',title:'The Five-Minutes-Early Man',fam:'raptor',pal:{B:'#1f3f8a',L:'#e8e8f0',P:'#c8202a',K:'#f4f4f4'},pattern:'stripes',
+  intro:["You're LATE.","On my team, if you're on time, you're LATE. Five minutes early, every time!","The shot clock is running. MOVE!"],
+  outro:["...Right on time. I'm impressed.","Take the Hydration Hose. And set your watch five minutes fast."]},
+};
 const BOSS_ORDER=['harbor','dunes','rulebook','springs','peak','canton'];
 const poiById=id=>POIS.find(p=>p.id===id);
 
@@ -563,7 +723,7 @@ let S=null; // save
 function newSave(diff){return{v:1,x:POIS[0].x,y:POIS[0].y+3,dir:'down',lv:1,xp:0,hp:72,coins:30,
  inv:{water:3,orange:2,hint:1,timeout:1},gear:['foamball','jersey','sneakers'],equip:{weapon:'foamball',helmet:null,pads:'jersey',cleats:'sneakers'},
  buffs:{},trophies:[],taken:{},bosses:{},npc:{},totem:{},seen:{},missed:{},dex:{},names:{},
- st:{ans:0,cor:0,cat:{},best:0,streak:0,battles:0,wins:0},respawn:{x:POIS[0].x,y:POIS[0].y+3},steps:0,visited:{kickoff:1},diff:diff||'pro',sound:true,gateOpen:false,champion:false,intro:false}}
+ st:{ans:0,cor:0,cat:{},best:0,streak:0,battles:0,wins:0},respawn:{x:POIS[0].x,y:POIS[0].y+3},steps:0,visited:{kickoff:1},diff:diff||'pro',sound:true,mapv:2,gateOpen:false,champion:false,intro:false}}
 let saveWarned=false;
 function saveGame(silent){if(!S||state==='title')return false;S.savedAt=Date.now();try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));if(!silent)toast('💾 Game saved');return true}catch(e){if(!silent||!saveWarned){saveWarned=true;toast("⚠️ This browser is blocking saves. Use Menu → Options → Export save code.")}return false}}
 function encodeSave(){return btoa(unescape(encodeURIComponent(JSON.stringify(S))))}
@@ -630,15 +790,16 @@ function genWorld(){
  const cand=[];for(let y=2;y<MH-2;y++)for(let x=2;x<MW-2;x++){const i=idx(x,y);if(reach[i]&&!town[i]&&!SOLID.has(map[i])&&map[i]!==T.PATH&&map[i]!==T.BRIDGE&&region[i]!==ci)cand.push(i)}
  const open4=i=>{const x=i%MW,y=(i/MW)|0;return[[1,0],[-1,0],[0,1],[0,-1]].every(([a,b])=>{const j=idx(x+a,y+b);return!SOLID.has(map[j])&&!town[j]})};
  const nearPath=i=>{const x=i%MW,y=(i/MW)|0;for(let b=-2;b<=2;b++)for(let a=-2;a<=2;a++){if(map[idx(x+a,y+b)]===T.PATH)return true}return false};
- const used=new Set();const far=i=>{for(const u of used){const dx=(u%MW)-(i%MW),dy=((u/MW)|0)-((i/MW)|0);if(dx*dx+dy*dy<16)return false}return true};
- let tries=0;while(totems.length<8&&tries++<5000){const i=cand[(prr()*cand.length)|0];if(open4(i)&&nearPath(i)&&far(i)){map[i]=T.TOTEM;base[i]=base[i]===T.FLOOR?T.GRASS:base[i];totems.push({id:'t'+totems.length,x:i%MW,y:(i/MW)|0});used.add(i)}}
+ const used=new Set();const far=(i,m=4)=>{for(const u of used){const dx=(u%MW)-(i%MW),dy=((u/MW)|0)-((i/MW)|0);if(dx*dx+dy*dy<m*m)return false}return true};
+ const poiDist=i=>Math.min(...POIS.map(p=>Math.hypot((i%MW)-p.x,((i/MW)|0)-p.y)));
+ // legendary chests first, spread far apart and away from towns
+ const corners=[[12,12,'goldball'],[MW-13,12,'goldhelm'],[12,MH-13,'goldjacket'],[MW-13,MH-13,'goldcleats'],[(MW/2|0)+30,MH-10,'hose']];
+ corners.forEach(([tx,ty,g],k)=>{let bi=-1,bd=1e9;for(const i of cand){if(!open4(i)||used.has(i)||poiDist(i)<20)continue;const d=Math.hypot((i%MW)-tx,((i/MW)|0)-ty);if(d<bd){bd=d;bi=i}}if(bi>=0){items.push({id:'L'+k,x:bi%MW,y:(bi/MW)|0,kind:'chest',legend:g});used.add(bi)}});
+ let tries=0;while(totems.length<11&&tries++<8000){const i=cand[(prr()*cand.length)|0];if(open4(i)&&nearPath(i)&&far(i,14)){map[i]=T.TOTEM;base[i]=base[i]===T.FLOOR?T.GRASS:base[i];totems.push({id:'t'+totems.length,x:i%MW,y:(i/MW)|0});used.add(i)}}
  // chests & sparkles
  const dist=i=>Math.hypot((i%MW)-kk.x,((i/MW)|0)-kk.y);
- tries=0;let n=0;while(n<42&&tries++<8000){const i=cand[(prr()*cand.length)|0];if(map[i]===T.TOTEM||!open4(i)||!far(i)||dist(i)<10)continue;items.push({id:'c'+n,x:i%MW,y:(i/MW)|0,kind:'chest',tier:Math.min(4,Math.floor(dist(i)/18))});used.add(i);n++}
- n=0;tries=0;while(n<34&&tries++<8000){const i=cand[(prr()*cand.length)|0];if(map[i]===T.TOTEM||!far(i))continue;items.push({id:'s'+n,x:i%MW,y:(i/MW)|0,kind:'sparkle'});used.add(i);n++}
- // legendary chests in far corners
- const corners=[[8,8,'goldball'],[MW-9,8,'goldhelm'],[8,MH-9,'goldjacket'],[MW-9,MH-9,'goldcleats'],[MW/2|0,6,'hose']];
- corners.forEach(([tx,ty,g],k)=>{let bi=-1,bd=1e9;for(const i of cand){if(!open4(i)||used.has(i))continue;const d=Math.hypot((i%MW)-tx,((i/MW)|0)-ty);if(d<bd){bd=d;bi=i}}if(bi>=0){items.push({id:'L'+k,x:bi%MW,y:(bi/MW)|0,kind:'chest',legend:g});used.add(bi)}});
+ tries=0;let n=0;while(n<50&&tries++<20000){const i=cand[(prr()*cand.length)|0];if(map[i]===T.TOTEM||!open4(i)||!far(i,11)||dist(i)<12)continue;items.push({id:'c'+n,x:i%MW,y:(i/MW)|0,kind:'chest',tier:Math.min(4,Math.floor(dist(i)/18))});used.add(i);n++}
+ n=0;tries=0;while(n<44&&tries++<20000){const i=cand[(prr()*cand.length)|0];if(map[i]===T.TOTEM||!far(i,7))continue;items.push({id:'s'+n,x:i%MW,y:(i/MW)|0,kind:'sparkle'});used.add(i);n++}
  // NPCs
  genNPCs(prr,reach,cand,used);
  // bosses
@@ -674,16 +835,16 @@ function genNPCs(prr,reach,cand,used){
  POIS.forEach((p,k)=>{
   if(p.id==='champ'){const cx=p.x,cy=p.y+16;mk(cx-3,cy,'shop',{rad:0,name:'Camp Vendor',tier:3,dir:'down'});mk(cx,cy+1,'tip',{rad:1,name:'Old Scout'});return}
   mk(p.x-6,p.y+0,'shop',{rad:0,name:'Pro Shop',tier:{kickoff:0,harbor:1,dunes:1,rulebook:2,springs:2,peak:3,canton:3}[p.id],dir:'down'});
-  for(let j=0;j<3;j++){const kind=P(['tip','tip','quiz','quiz','giver']);mk(p.x+((prr()*10)|0)-5,p.y+3+((prr()*3)|0),kind,{rad:3})}
+  const spots=[[-6,4],[5,4],[-3,-5],[3,6],[7,2],[-7,3],[4,-5]];for(let j=0;j<3;j++){const kind=P(['tip','tip','quiz','quiz','giver']);const[sx,sy]=spots.splice((prr()*spots.length)|0,1)[0];mk(p.x+sx,p.y+sy,kind,{rad:2})}
  });
  const kk=POIS[0];
  mk(kk.x+6,kk.y,'mom',{rad:0,name:'Mom',dir:'down',look:{s:'#f2c9a0',h:'#3a2418',t:'#c0506a',p:'#3b4a6b',hat:null,fr:true}});
  mk(kk.x+2,kk.y-7,'coach',{rad:0,name:'Coach Dale',dir:'down',look:{s:'#c98d5e',h:'#141414',t:'#e8443a',p:'#2a2a2a',hat:'#1a3a8a',fr:false}});
  // roadside
  const path=[];for(let i=0;i<map.length;i++)if(map[i]===T.PATH&&!town[i])path.push(i);
- let tries=0,n=0;while(n<22&&tries++<4000){const i=path[(prr()*path.length)|0],x=i%MW,y=(i/MW)|0;
+ let tries=0,n=0;while(n<22&&tries++<20000){const i=path[(prr()*path.length)|0],x=i%MW,y=(i/MW)|0;
   const opts=[[1,0],[-1,0],[0,1],[0,-1]].map(([a,b])=>[x+a*2,y+b*2]).filter(([a,b])=>inb(a,b)&&reach[idx(a,b)]&&!SOLID.has(map[idx(a,b)])&&map[idx(a,b)]!==T.PATH&&!town[idx(a,b)]&&!used.has(idx(a,b)));
-  if(!opts.length)continue;const[a,b]=opts[0];if(npcs.some(o=>Math.abs(o.x-a)+Math.abs(o.y-b)<8))continue;used.add(idx(a,b));
+  if(!opts.length)continue;const[a,b]=opts[0];if(npcs.some(o=>Math.abs(o.x-a)+Math.abs(o.y-b)<13))continue;used.add(idx(a,b));
   mk(a,b,P(['tip','quiz','quiz','giver']),{rad:0});n++}
 }
 
@@ -945,7 +1106,7 @@ function updateWorld(){
  if(excl>0){excl--;if(excl===0)beginWild();return}
  const p=player;
  if(p.moving){p.prog+=p.spd;p.anim+=p.spd/1.6;if(p.prog>=16){p.prog=0;p.moving=false;p.x=p.tx;p.y=p.ty;onStep()}}
- if(!p.moving&&state==='world'){const d=curDir();if(d){p.dir=d;const nx=p.x+DX[d],ny=p.y+DY[d];if(walkable(nx,ny)){p.tx=nx;p.ty=ny;p.moving=true;p.spd=held.run?3.2:1.6}else if(p.bump--<=0){p.bump=18;SFX.bump()}}else p.anim=0}
+ if(!p.moving&&state==='world'){const d=curDir();if(d){p.dir=d;const nx=p.x+DX[d],ny=p.y+DY[d];if(walkable(nx,ny)){p.tx=nx;p.ty=ny;p.moving=true;p.spd=held.run?4:2}else if(p.bump--<=0){p.bump=18;SFX.bump()}}else p.anim=0}
  p.px=(p.x+(p.tx-p.x)*p.prog/16)*16;p.py=(p.y+(p.ty-p.y)*p.prog/16)*16;
  for(const n of npcs){
   if(n.moving){n.prog+=1;if(n.prog>=16){n.prog=0;n.moving=false;n.x=n.tx;n.y=n.ty}}
@@ -990,6 +1151,11 @@ function interact(){if(player.moving)return;
 function openGate(){for(let i=0;i<map.length;i++)if(map[i]===T.GATE)map[i]=T.BRIDGE;S.gateOpen=true;SFX.win();dialog(['The six trophies glow... The Championship Gate swings open!','Commissioner Spino awaits in the stadium. Good luck, Brady!']);drawMiniMap(true)}
 function openChest(it){
  if(S.taken[it.id]){dialog(['The chest is empty.']);return}
+ if(it.legend){const L=LEGENDS[it.legend],g=GEAR[it.legend];
+  dialog([`✨ A LEGENDARY CHEST! Inside: the ${g.icon} ${g.name}! ✨`,'But a gruff old coach is guarding it...',`${L.name}, ${L.title}`].concat(L.intro.map(l=>`${L.name}: ${l}`)),()=>
+   choice(`⚠️ LEGEND CHALLENGE: ${L.name} asks only SUPERFAN questions (deep-cut history, records, classic games) with a 12-second shot clock. Recommended: Lv 15+ with good gear. Accept?`,['Bring it on!','Not yet'],i=>{
+    if(i===0){const e=makeEnemy(L.fam,22,{name:L.name,pal:L.pal,pattern:L.pattern,boss:true,legend:true});startBattle(e,{legend:it,cat:null,diff:[4,4],shotclock:12})}
+    else dialog([`${L.name}: Come back when you're ready. IF you're ever ready.`])}));return}
  S.taken[it.id]=1;SFX.item();const lines=[];
  if(it.legend){const g=GEAR[it.legend];S.gear.push(it.legend);lines.push(`✨ A LEGENDARY CHEST! ✨`,`Brady found the ${g.icon} ${g.name}! (${gearDesc(g)})`,'Equip it from the Menu → Gear.')}
  else{const lv=4+it.tier*4;const r=R();
@@ -1018,9 +1184,10 @@ function bossTalk(b){const d=b.def;const p=poiById(b.poi);
 // ---------------- QUESTIONS ----------------
 const recent=[];
 function pickQuestion(cat,dmin,dmax,preferMissed){
- if(S.diff==='rookie')dmax=Math.min(dmax,2);if(S.diff==='allpro')dmin=Math.max(dmin,Math.min(2,dmax));
+ if(dmin<4){if(S.diff==='rookie')dmax=Math.min(dmax,2);if(S.diff==='allpro')dmin=Math.max(dmin,Math.min(2,dmax));if(S.diff==='superfan'){dmin=3;dmax=4}}
  let pool=QB.filter(q=>(!cat||q.cat===cat)&&q.d>=dmin&&q.d<=dmax);if(pool.length<4)pool=QB.filter(q=>!cat||q.cat===cat);
- const avail=pool.filter(q=>!recent.includes(q.id));const P=avail.length?avail:pool;
+ const avail=pool.filter(q=>!recent.includes(q.id));let P=avail.length?avail:pool;
+ if(S.diff==='superfan'&&dmax>=4&&R()<.7){const p4=P.filter(q=>q.d===4);if(p4.length)P=p4}
  const missed=P.filter(q=>S.missed[q.id]);let q;
  if(missed.length&&(preferMissed||R()<.25))q=pick(missed);
  else{const fresh=P.filter(q=>!S.seen[q.id]);q=pick(fresh.length?fresh:P)}
@@ -1033,8 +1200,8 @@ function recordAnswer(q,ok){S.seen[q.id]=(S.seen[q.id]||0)+1;S.st.ans++;const c=
 const BIOME_FAMS={plains:FAMS.slice(0,7),forest:['raptor','rex','stego','raptor'],coast:['sauro','ptero','trike','sauro'],desert:['raptor','ankylo','rex','spino'],mountain:['ptero','ankylo','trike','ptero'],ruins:['trike','sauro','stego','spino'],springs:['sauro','stego','ptero','trike'],volcano:['rex','spino','ankylo','ptero']};
 function makeEnemy(fam,lv,o={}){const shiny=!o.boss&&!o.name&&R()<.04;const pal=o.pal||(shiny?{B:'#e8b820',L:'#fff2b0',P:'#a86a00',K:'#ffffff'}:randPal());
  const name=o.name||((shiny?'Golden ':'')+dinoName(fam));
- const hp=o.boss?90+lv*16:24+lv*9;
- const spr=makeDino(fam,pal,o.pattern||pick(['none','stripes','spots','none']),(R()*1e9)|0);return{fam,lv,name,maxHp:hp,hp,atk:(5+lv*2.6)*(o.boss?1.3:1),boss:!!o.boss,shiny,spr,white:tint(spr,'#ffffff')}}
+ const hp=Math.round((o.boss?90+lv*16:24+lv*9)*(o.legend?1.15:1)*(S&&S.diff==='superfan'?1.2:1));
+ const spr=makeDino(fam,pal,o.pattern||pick(['none','stripes','spots','none']),(R()*1e9)|0);return{fam,lv,name,maxHp:hp,hp,atk:(5+lv*2.6)*(o.boss?1.3:1)*(o.legend?1.15:1),boss:!!o.boss,legend:!!o.legend,shiny,spr,white:tint(spr,'#ffffff')}}
 function beginWild(){const reg=regionPoi(player.x,player.y);const fams=BIOME_FAMS[reg.biome];const lv=rint(reg.lv[0],reg.lv[1]);const e=makeEnemy(pick(fams),lv);
  const cat=reg.cat&&R()<.55?reg.cat:null;startBattle(e,{cat,diff:reg.diff,biome:reg.biome})}
 
@@ -1046,12 +1213,12 @@ function startBattle(en,opts){
  S.st.battles++;const fr=S.dex[en.fam]||(S.dex[en.fam]={seen:0,def:0});fr.seen++;S.names[en.name]=1;
  $('#battle').classList.remove('hidden');$('#hud').classList.add('hidden');
  updBattleBoxes(true);
- const intro=opts.boss?`${en.name} wants to battle!`:opts.practice?`Practice time! ${en.name} (Lv ${en.lv}) steps up!`:`A wild ${en.shiny?'✨':''}${en.name} (Lv ${en.lv}) appeared!`;
+ const intro=opts.legend?`⚠️ LEGEND CHALLENGE! ${en.name} wants to battle! Superfan questions · 12-second shot clock`:opts.boss?`${en.name} wants to battle!`:opts.practice?`Practice time! ${en.name} (Lv ${en.lv}) steps up!`:`A wild ${en.shiny?'✨':''}${en.name} (Lv ${en.lv}) appeared!`;
  setPanel(`<div class="qIntro">${esc(intro)}${opts.cat?`<br><small>Category: <b style="color:${CATS[opts.cat].c}">${CATS[opts.cat].name}</b></small>`:''}</div>`,`<button class="tool go" onclick="G.nextQ()">Ready! ▶</button>`);
 }
 function setPanel(main,tools){$('#qMain').innerHTML=main;$('#qTools').innerHTML=tools||'';$('#qFeedback').classList.add('hidden')}
 function updBattleBoxes(instant){const e=B.en,s=stats();
- $('#enName').textContent=e.name;$('#enLv').textContent='Lv'+e.lv;$('#enTag').textContent=e.boss?'HEAD COACH':FAMN[e.fam]+(e.shiny?' ✨':'');
+ $('#enName').textContent=e.name;$('#enLv').textContent='Lv'+e.lv;$('#enTag').textContent=e.legend?'⭐ LEGENDARY COACH':e.boss?'HEAD COACH':FAMN[e.fam]+(e.shiny?' ✨':'');
  setBar('#enHp',e.hp/e.maxHp,instant);setBar('#plHp',S.hp/s.hp,instant);$('#plLv').textContent='Lv'+S.lv;$('#plHpT').textContent=`${Math.max(0,Math.ceil(S.hp))}/${s.hp}`;
  $('#plXp').style.width=(S.xp/xpNeed(S.lv)*100)+'%';
  const bf=Object.keys(S.buffs).filter(k=>k!=='horn').map(k=>BUFFS[k].icon).join('');
@@ -1061,8 +1228,8 @@ function nextQ(){
  if(!B)return;B.phase='question';B.bag=false;B.removed=new Set();
  const o=B.opts;let d=o.diff||[1,2];if(B.en.boss&&B.en.hp<B.en.maxHp*.5)d=[Math.min(3,d[0]+1),3];
  const q=pickQuestion(o.cat||(o.drill?null:null),d[0],d[1],o.drill);B.q=q;B.ans=shuffle([q.a,...q.w]);B.qStart=performance.now();B.sel=0;renderQ();}
-function renderQ(){B.bag=false;const q=B.q;const c=CATS[q.cat];
- const main=`<div id="qHead"><span class="cat" style="background:${c.c}">${c.name}</span><span class="diff">${'★'.repeat(q.d)}${'☆'.repeat(3-q.d)}</span><span id="qTimer"></span></div>
+function renderQ(){B.bag=false;if(B.pausedAt){B.qStart+=performance.now()-B.pausedAt;B.pausedAt=0}const q=B.q;const c=CATS[q.cat];
+ const main=`<div id="qHead"><span class="cat" style="background:${c.c}">${c.name}</span><span class="diff">${q.d>=4?'<b style="color:#9b40c6">★★★★ SUPERFAN</b>':'★'.repeat(q.d)+'☆'.repeat(3-q.d)}</span><span id="qTimer"></span></div>
  <div id="qText">${esc(q.q)}</div>
  <div id="qAns">${B.ans.map((a,i)=>`<button class="ans${B.removed.has(i)?' gone':''}${i===B.sel?' sel':''}" data-i="${i}" onclick="G.answer(${i})"><b>${i+1}</b> ${esc(a)}</button>`).join('')}</div>`;
  const n=k=>S.inv[k]||0;
@@ -1080,9 +1247,9 @@ function answer(i){
   B.anim={type:'atk',t:0,dmg,crit,proj:GEAR[S.equip.weapon]?.proj||'ball'};SFX.correct();setTimeout(()=>SFX.hit(),380);
   msg=`<b class="good">✔ CORRECT!</b> ${crit?'<b class="crit">CRITICAL HIT!</b> ':''}${quick?'<b class="quick">Quick Snap!</b> ':''}${B.streak>=3?`<b class="fire">🔥x${B.streak}</b> `:''}<b>${dmg} damage!</b>${heal?` <span class="good">+${heal} HP</span>`:''}<br>${esc(q.x)}`}
  else{B.streak=0;const dodge=R()<s.dodge;let dmg=0;
-  if(!dodge){dmg=B.en.atk*(.9+R()*.2)*30/(30+s.def)*(S.buffs.guard?.65:1)*({rookie:.7,pro:1,allpro:1.25}[S.diff]);if(B.opts.practice)dmg*=.3;dmg=Math.max(1,Math.round(dmg));S.hp=Math.max(0,S.hp-dmg)}
+  if(!dodge){dmg=B.en.atk*(.9+R()*.2)*30/(30+s.def)*(S.buffs.guard?.65:1)*({rookie:.7,pro:1,allpro:1.25,superfan:1.5}[S.diff]||1);if(B.opts.practice)dmg*=.3;dmg=Math.max(1,Math.round(dmg));S.hp=Math.max(0,S.hp-dmg)}
   B.anim={type:'hit',t:0,dmg,dodge};SFX.wrong();
-  msg=`<b class="bad">✘ ${dodge?'Wrong... but Brady JUKED the attack!':'WRONG!'}</b> ${dodge?'':`<b>Brady takes ${dmg} damage.</b>`}<br>Answer: <b>${esc(q.a)}</b>. ${esc(q.x)}`}
+  msg=`<b class="bad">${i===-1?'⏱ SHOT CLOCK EXPIRED! ':''}✘ ${dodge?'Wrong... but Brady JUKED the attack!':'WRONG!'}</b> ${dodge?'':`<b>Brady takes ${dmg} damage.</b>`}<br>Answer: <b>${esc(q.a)}</b>. ${esc(q.x)}`}
  $('#qTools').innerHTML='';B.fbReady=false;
  setTimeout(()=>{if(!B||B.phase!=='feedback')return;const fb=$('#qFeedback');fb.innerHTML=msg;fb.className=ok?'box ok':'box no';$('#qTools').innerHTML=`<button class="tool go" onclick="G.cont()">Continue ▶</button>`;B.fbReady=true},700);
  setTimeout(()=>B&&updBattleBoxes(),400);
@@ -1092,7 +1259,7 @@ function cont(){if(!B)return;if(B.phase==='feedback'){if(B.fbReady===false)retur
 function useHint(){if(!B||B.phase!=='question'||!S.inv.hint||B.removed.size)return;S.inv.hint--;const wrong=B.ans.map((a,i)=>i).filter(i=>B.ans[i]!==B.q.a);shuffle(wrong);B.removed.add(wrong[0]);B.removed.add(wrong[1]);if(B.removed.has(B.sel))B.sel=B.ans.indexOf(B.q.a);SFX.blip();renderQ()}
 function useTimeout(){if(!B||B.phase!=='question'||!S.inv.timeout)return;S.inv.timeout--;SFX.blip();
  setPanel(`<div class="qIntro">⏱️ TIMEOUT! Brady catches his breath. The answer was <b>${esc(B.q.a)}</b>.<br><small>${esc(B.q.x)}</small></div>`,`<button class="tool go" onclick="G.nextQ()">Next question ▶</button>`);B.phase='timeout'}
-function bag(){if(!B||B.phase!=='question')return;B.bag=true;const list=Object.keys(CONS).filter(k=>S.inv[k]&&CONS[k].heal);
+function bag(){if(!B||B.phase!=='question')return;B.bag=true;B.pausedAt=performance.now();const list=Object.keys(CONS).filter(k=>S.inv[k]&&CONS[k].heal);
  setPanel(`<div class="qIntro">🎒 <b>Bag</b> (HP ${Math.ceil(S.hp)}/${stats().hp})<div class="bagList">${list.length?list.map(k=>`<button class="tool" onclick="G.useItem('${k}',true)">${CONS[k].icon} ${CONS[k].name} x${S.inv[k]}<br><small>${CONS[k].desc}</small></button>`).join(''):'<i>No healing items!</i>'}</div></div>`,`<button class="tool" onclick="G.back()">◀ Back to question</button>`)}
 function run(){if(!B||B.phase!=='question')return;
  if(B.en.boss){toast("You can't run from a Head Coach!");return}
@@ -1105,7 +1272,8 @@ function victory(){const e=B.en;B.phase='end';SFX.win();S.st.wins++;S.dex[e.fam]
  else{
   let xp=Math.round((10+e.lv*6)*(e.boss?3:1)*(S.buffs.film?1.5:1)*(e.shiny?2:1)),coins=Math.round((6+e.lv*3)*(e.boss?4:1)*(S.buffs.lucky?1.5:1)*(e.shiny?3:1));
   S.xp+=xp;S.coins+=coins;lines.push(`+${xp} XP   +${coins} coins 🪙`);
-  const drops=[];if(e.boss){const p=poiById(B.opts.boss.poi);drops.push(['g',rollGear(e.lv+8,BOSS_ORDER.indexOf(p.id)>=2||p.id==='champ'?3:2)]);drops.push(['c',rollCons()],['c',rollCons()])}
+  const drops=[];if(B.opts.legend){const it=B.opts.legend,g=GEAR[it.legend];S.taken[it.id]=1;S.gear.push(it.legend);lines.push(`🏆 LEGEND DEFEATED! Brady claims the <span style="color:${RAR[4].c}">${g.icon} ${g.name}</span>!`);drops.push(['c','icepack'])}
+  else if(e.boss){const p=poiById(B.opts.boss.poi);drops.push(['g',rollGear(e.lv+8,BOSS_ORDER.indexOf(p.id)>=2||p.id==='champ'?3:2)]);drops.push(['c',rollCons()],['c',rollCons()])}
   else{if(R()<.45)drops.push(['c',rollCons()]);if(R()<.14||e.shiny)drops.push(['g',rollGear(e.lv)])}
   drops.forEach(([t,k])=>{if(t==='c'){S.inv[k]=(S.inv[k]||0)+1;lines.push(`Loot: ${CONS[k].icon} ${CONS[k].name}`)}else{S.gear.push(k);const g=GEAR[k];lines.push(`Loot: <span style="color:${RAR[g.r].c}">${g.icon} ${g.name} [${RAR[g.r].n}]</span>`)}});
   // buff countdown
@@ -1113,7 +1281,8 @@ function victory(){const e=B.en;B.phase='end';SFX.win();S.st.wins++;S.dex[e.fam]
  }
  while(S.xp>=xpNeed(S.lv)){S.xp-=xpNeed(S.lv);S.lv++;S.hp=stats().hp;lines.push(`<b class="good">⭐ LEVEL UP! Brady is now Lv ${S.lv}! HP fully restored.</b>`);setTimeout(SFX.level,600)}
  let after=null;
- if(e.boss){const b=B.opts.boss,d=b.def;S.bosses[b.poi]=1;if(!S.trophies.includes(d.trophy))S.trophies.push(d.trophy);lines.push(`🏆 Brady earned the <b>${d.trophy}</b>!`);
+ if(B.opts.legend){const L=LEGENDS[B.opts.legend.legend];after=()=>dialog(L.outro.map(l=>`${L.name}: ${l}`).concat(['Equip your legendary gear from Menu → Gear.']))}
+ else if(e.boss&&B.opts.boss){const b=B.opts.boss,d=b.def;S.bosses[b.poi]=1;if(!S.trophies.includes(d.trophy))S.trophies.push(d.trophy);lines.push(`🏆 Brady earned the <b>${d.trophy}</b>!`);
   after=()=>{dialog(d.outro.map(l=>`${d.name}: ${l}`),()=>{if(d.final){S.champion=true;saveGame(true);showEnding()}else if(S.trophies.length>=6)dialog(['All 6 Coach Trophies collected! 🏆','Head to the Championship Gate in the volcano at the center of the map!'])})}}
  B.after=after;updBattleBoxes();saveGame(true);
  setPanel(`<div class="qIntro vic">${lines.join('<br>')}</div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}
@@ -1210,7 +1379,7 @@ function renderMenu(){
   h+=`<h4>Plays to review (${ids.length}) ${ids.length?`<button onclick="G.drill()">🏋️ Practice Drill</button>`:''}</h4>`+(ids.length?ids.map(id=>{const q=QB[id];return`<div class="film"><span class="cat" style="background:${CATS[q.cat].c}">${CATS[q.cat].name}</span> ${esc(q.q)}<br><b class="good">✔ ${esc(q.a)}</b> <small>${esc(q.x)}</small></div>`}).join(''):'<i>No missed questions right now. Questions you miss show up here until you get them right twice.</i>')}
  else if(menuTab==='prog'){h=`<div class="sub">Level <b>${S.lv}</b> · XP ${S.xp}/${xpNeed(S.lv)} · Battles ${S.st.battles} · Wins ${S.st.wins} · Steps ${S.steps}</div><div class="grid">`+BOSS_ORDER.concat(['champ']).map(id=>{const p=poiById(id),d=p.boss,done=S.bosses[id];return`<div class="card ${done?'won':''}"><div class="ic">${done?'🏆':'🔒'}</div><div><b>${done?d.trophy:'???'}</b><br><small>${p.name} · ${d.name}<br>${p.cat?CATS[p.cat].name:'All categories'} · Lv ${d.lv}</small></div></div>`}).join('')+'</div>'}
  else if(menuTab==='opt'){h=`<div class="opt"><button onclick="G.save()">💾 Save game</button><button onclick="G.snd()">${S.sound?'🔊 Sound: ON':'🔇 Sound: OFF'}</button><button onclick="G.openMap()">🗺 World map</button></div>
-  <div class="sub">Difficulty: <b>${{rookie:'Rookie',pro:'Pro',allpro:'All-Pro'}[S.diff]}</b> <button onclick="G.cycleDiff()">Change</button></div>
+  <div class="sub">Difficulty: <b>${{rookie:'Rookie',pro:'Pro',allpro:'All-Pro',superfan:'Superfan'}[S.diff]}</b> <button onclick="G.cycleDiff()">Change</button></div>
   <div class="help"><b>Controls</b><br>Move: Arrow keys / WASD · Run: hold Shift<br>Talk / Interact / Confirm: Space, Enter or Z<br>Back: Esc or X · Menu: I or Tab · Map: M<br>Battle answers: 1–4 keys or click/tap<br><br><b>Tips</b><br>Tall grass has the most wild dinos. Each region's dinos ask more questions from the local Head Coach's category.<br>Questions you miss come back later so you can master them.</div>
   <div class="help"><b>Save codes</b>: the game auto-saves in this browser. To move your progress to another device or browser, export a save code there and import it here.<div class="opt"><button onclick="G.exportSave()">📤 Export save code</button><button onclick="G.importSave()">📥 Import save code</button></div><div id="saveIO"></div></div>
   <div class="opt"><button class="danger" onclick="G.reset()">🗑 Start a new game</button></div>`}
@@ -1238,14 +1407,14 @@ function renderShop(){const n=shopN;let h=`<div id="menuTabs"><button class="${s
 // ---------------- MAP VIEW ----------------
 let miniMap=null;
 const MAPC={[T.GRASS]:'#6cc04a',[T.TALL]:'#3f9a35',[T.PATH]:'#e0c080',[T.WATER]:'#3a7bd5',[T.SAND]:'#f0da9a',[T.TREE]:'#26703a',[T.PINE]:'#1d5a2e',[T.ROCK]:'#7a7f88',[T.FLOWER]:'#8fd070',[T.FLOOR]:'#e8e0cc',[T.WALL]:'#efe3c6',[T.ROOF]:'#c8423a',[T.ROOFB]:'#3f6fc8',[T.DOOR]:'#7a4a26',[T.WINDOW]:'#efe3c6',[T.FENCE]:'#a8743f',[T.BRIDGE]:'#b07a45',[T.LAVA]:'#e8501c',[T.JUNGLE]:'#2f7d36',[T.FOUNTAIN]:'#4a90e8',[T.BRUSH]:'#c8b070',[T.SIGN]:'#a8743f',[T.GATE]:'#f5c542',[T.FIELD]:'#43a047',[T.FIELDLINE]:'#ffffff',[T.TOTEM]:'#f5c542',[T.CACTUS]:'#2f8a3a',[T.MFLOOR]:'#a8957a',[T.VFLOOR]:'#4a3838',[T.COLUMN]:'#e8e4d8',[T.GOAL]:'#f5d142'};
-function drawMiniMap(force){if(miniMap&&!force)return;miniMap=document.createElement('canvas');miniMap.width=MW*3;miniMap.height=MH*3;const g=miniMap.getContext('2d');for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){g.fillStyle=MAPC[map[idx(x,y)]]||'#000';g.fillRect(x*3,y*3,3,3)}}
+function drawMiniMap(force){if(miniMap&&!force)return;miniMap=document.createElement('canvas');miniMap.width=MW*2;miniMap.height=MH*2;const g=miniMap.getContext('2d');for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){g.fillStyle=MAPC[map[idx(x,y)]]||'#000';g.fillRect(x*2,y*2,2,2)}}
 function openMap(){drawMiniMap();state='menu';$('#menu').classList.add('hidden');$('#mapView').classList.remove('hidden');renderMap()}
 function renderMap(){const c=$('#mapCv'),g=c.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(miniMap,0,0);
- for(const it of items)if(it.legend&&!S.taken[it.id]){g.fillStyle='#f5c542';g.fillRect(it.x*3-1,it.y*3-1,4,4)}
- g.font='bold 11px monospace';g.textAlign='center';
- for(const p of POIS){const done=S.bosses[p.id];g.fillStyle=OUT;g.fillRect(p.x*3-5,p.y*3-5,10,10);g.fillStyle=p.id==='kickoff'?'#fff':done?'#3ccf5a':'#e8443a';g.fillRect(p.x*3-4,p.y*3-4,8,8);
-  const lab=p.name+(done?' ✔':'');g.lineWidth=3;g.strokeStyle=OUT;g.strokeText(lab,p.x*3,p.y*3-9);g.fillStyle='#fff';g.fillText(lab,p.x*3,p.y*3-9)}
- if((frame>>4)%2===0){g.fillStyle='#fff';g.fillRect(player.x*3-3,player.y*3-3,7,7);g.fillStyle='#2f6fd6';g.fillRect(player.x*3-2,player.y*3-2,5,5)}}
+ const M=2;for(const it of items)if(it.legend&&!S.taken[it.id]){g.fillStyle=OUT;g.fillRect(it.x*M-3,it.y*M-3,7,7);g.fillStyle='#f5c542';g.fillRect(it.x*M-2,it.y*M-2,5,5)}
+ g.font='bold 10px monospace';g.textAlign='center';
+ for(const p of POIS){const done=S.bosses[p.id];g.fillStyle=OUT;g.fillRect(p.x*M-5,p.y*M-5,10,10);g.fillStyle=p.id==='kickoff'?'#fff':done?'#3ccf5a':'#e8443a';g.fillRect(p.x*M-4,p.y*M-4,8,8);
+  const lab=p.name+(done?' ✔':'');g.lineWidth=3;g.strokeStyle=OUT;g.strokeText(lab,p.x*M,p.y*M-9);g.fillStyle='#fff';g.fillText(lab,p.x*M,p.y*M-9)}
+ if((frame>>4)%2===0){g.fillStyle='#fff';g.fillRect(player.x*M-3,player.y*M-3,7,7);g.fillStyle='#2f6fd6';g.fillRect(player.x*M-2,player.y*M-2,5,5)}}
 
 // ---------------- TITLE / ENDING ----------------
 function showTitle(){state='title';$('#title').classList.remove('hidden');const sv=loadSave();$('#btnCont').style.display=sv?'':'none';if(sv)$('#btnCont').textContent=`▶ Continue (Lv ${sv.lv} · 🏆 ${(sv.trophies||[]).length}/6)`;
@@ -1254,6 +1423,7 @@ function showTitle(){state='title';$('#title').classList.remove('hidden');const 
 function startGame(sv,isNew){S=sv;
  for(const k of['buffs','taken','bosses','npc','totem','seen','missed','dex','names','visited'])S[k]=S[k]||{};
  $('#title').classList.add('hidden');$('#hud').classList.remove('hidden');
+ if(S.mapv!==2){S.mapv=2;S.x=S.respawn.x=POIS[0].x;S.y=S.respawn.y=POIS[0].y+3;S.taken={};S.npc={};S.totem={};if(!isNew)setTimeout(()=>toast('🗺 The isles doubled in size! Brady is back in Kickoff Town.'),600)}
  if(S.gateOpen)for(let i=0;i<map.length;i++)if(map[i]===T.GATE)map[i]=T.BRIDGE;
  startPlayer();state='world';lastRegion=region[idx(S.x,S.y)];lastTown=town[idx(S.x,S.y)];updHud();drawFace();ac();
  if(isNew){dialog(["🦖 THE GRIDIRON ISLES are overrun by DINOSAURS!","These dinos only respect one thing: FOOTBALL KNOWLEDGE.","In battle, a question pops up. Answer RIGHT and Brady attacks. Answer WRONG and the dino attacks Brady!","Beat the 6 Head Coach dinos to earn their trophies, then face COMMISSIONER SPINO in the volcano at the center of the isles.","Follow the red compass (top-right) to your next goal. Talk to people with Space/Enter. Press M for the map and I for your menu.","Ready, Brady? Let's go! 🏈"],()=>{S.intro=true;saveGame(true)})}
@@ -1282,7 +1452,7 @@ function loop(t){requestAnimationFrame(loop);const dt=Math.min(100,t-lastT||16);
   if(state==='title'){titleT++;player.px=((Math.sin(titleT/900)*.5+.5)*(MW-24)+12)*16;player.py=((Math.cos(titleT/1300)*.5+.5)*(MH-16)+8)*16}
  }
  ctx.imageSmoothingEnabled=false;
- if(state==='battle'||(B&&state==='menu')){drawBattle();if(B&&B.phase==='question'){const el=$('#qTimer');if(el){const s=(performance.now()-B.qStart)/1000;el.textContent=s<7?`⚡ ${Math.ceil(7-s)}s`:''}}}
+ if(state==='battle'||(B&&state==='menu')){drawBattle();if(B&&B.phase==='question'&&!B.bag){const el=$('#qTimer');const s=(performance.now()-B.qStart)/1000;if(B.opts.shotclock){const r=B.opts.shotclock-s;if(el){el.textContent=`⏱ ${Math.max(0,Math.ceil(r))}s`;el.style.color=r<4?'#c62828':'#1f6fd6'}if(r<=0)answer(-1)}else if(el){el.textContent=s<7?`⚡ ${Math.ceil(7-s)}s`:''}}}
  else{drawWorld();if(state!=='title')drawCompass()}
  if(!$('#mapView').classList.contains('hidden'))renderMap();
 }
@@ -1302,7 +1472,7 @@ function bindTouch(){document.querySelectorAll('[data-d]').forEach(b=>{const d=b
 // ---------------- PUBLIC API (for onclick) ----------------
 window.G={nextQ,answer,cont,useHint,useTimeout,bag,run,back:()=>renderQ(),useItem,equip,pickChoice,closeMenu,openMap,
  tab:t=>{menuTab=t;renderMenu()},save:()=>saveGame(),snd:()=>{S.sound=!S.sound;updHud();renderMenu()},
- cycleDiff:()=>{S.diff={rookie:'pro',pro:'allpro',allpro:'rookie'}[S.diff];renderMenu()},
+ cycleDiff:()=>{S.diff={rookie:'pro',pro:'allpro',allpro:'superfan',superfan:'rookie'}[S.diff];renderMenu()},
  reset:()=>{const b=$('#menuBody');b.innerHTML=`<div class="help"><b>Start over?</b> Your current progress will be erased.<br><br><button class="danger" onclick="G.doReset()">Yes, erase and start over</button> <button onclick="G.tab('opt')">Cancel</button></div>`},
  doReset:()=>{try{localStorage.removeItem(SAVE_KEY)}catch(e){}location.reload()},
  drill:()=>{closeMenu();startBattle(makeEnemy('stego',Math.max(1,S.lv-2),{name:'Film Room Dummy-stego',pal:{B:'#8a8a9a',L:'#d8d8e0',P:'#e8443a',K:'#f4f4f4'},pattern:'spots'}),{practice:true,drill:true,cat:null,diff:[1,3]})},
