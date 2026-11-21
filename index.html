@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Dino Quest"><meta name="theme-color" content="#100b1e">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Brady's Gridiron Dino Quest</title>
 <style>
@@ -140,7 +141,7 @@ body.touch:not(.portrait) #touch{position:fixed;left:0;right:0;bottom:10px;max-w
    <div id="hudL" class="box"><canvas id="face" width="36" height="26"></canvas><div><div id="hudName"><span>BRADY</span><span id="hudLv">Lv1</span></div><div id="hudHpRow"><div class="bar"><i id="hudHp"></i></div><span id="hudHpT"></span></div><div id="hudCoins"></div></div></div>
    <div id="hudR" class="box"><canvas id="compass" width="24" height="24"></canvas><div id="objective"></div><div id="trophies"></div></div>
    <div id="buffs"></div>
-   <div id="hudBtns"><button id="btnZin" title="Zoom in (+)">🔍＋</button><button id="btnZout" title="Zoom out (−)">🔍－</button><button id="btnMenu">☰ Menu (I)</button><button id="btnMap">🗺 Map (M)</button><button id="btnSnd">🔊</button></div>
+   <div id="hudBtns"><button id="btnFs" title="Full screen (F)">⛶</button><button id="btnZin" title="Zoom in (+)">🔍＋</button><button id="btnZout" title="Zoom out (−)">🔍－</button><button id="btnMenu">☰ Menu (I)</button><button id="btnMap">🗺 Map (M)</button><button id="btnSnd">🔊</button></div>
   </div>
   <div id="battle" class="hidden">
    <div id="enBox" class="box"><div class="nm"><span id="enName"></span><span id="enLv"></span></div><div class="hpRow"><b>HP</b><div class="bar"><i id="enHp"></i></div></div><div id="enTag"></div></div>
@@ -156,8 +157,8 @@ body.touch:not(.portrait) #touch{position:fixed;left:0;right:0;bottom:10px;max-w
   <div id="title">
    <div id="logo"><div class="l1">★ BRADY'S ★</div><div class="l2">GRIDIRON</div><div class="l3">DINO QUEST</div></div>
    <div id="titleArt"><canvas id="titleBrady" width="72" height="72"></canvas><canvas id="titleDino" width="116" height="100"></canvas></div>
-   <div id="titleBtns"><button id="btnCont" onclick="G.continueGame()">▶ Continue</button><button onclick="G.showNew()">🏈 New Game</button></div>
-   <div id="titleFoot">Answer NFL trivia to battle dinosaurs! · Arrows/WASD move · Space/Enter interact · I menu · M map · +/− zoom</div>
+   <div id="titleBtns"><button id="btnCont" onclick="G.continueGame()">▶ Continue</button><button onclick="G.showNew()">🏈 New Game</button><button class="fsBtn" onclick="G.fs()">⛶ Full screen</button></div>
+   <div id="titleFoot">Answer NFL trivia to battle dinosaurs! · Arrows/WASD move · Space/Enter interact · I menu · M map · +/− zoom · F full screen</div>
    <div id="newGameBox" class="box hidden"><b style="font-size:14px">Choose your difficulty</b>
     <button class="dbtn" onclick="G.newGame('rookie')">🟢 ROOKIE: easier questions, dinos hit softer. Great for learning!</button>
     <button class="dbtn" onclick="G.newGame('pro')">🟡 PRO: the standard experience.</button>
@@ -1028,25 +1029,40 @@ function walkable(x,y,self){if(!inb(x,y))return false;const t=map[idx(x,y)];if(S
  for(const it of items)if(it.kind==='chest'&&it.x===x&&it.y===y)return false;
  for(const b of bosses)if(x>=b.x-1&&x<=b.x+1&&y>=b.y-1&&y<=b.y)return false;
  return true}
-function drawTile(t,x,y,sx,sy){
- const tc=tileCache;const ab=(frame>>5)&1;
- if(OBJ.has(t)){const b=base[idx(x,y)];drawTile(OBJ.has(b)?T.GRASS:b,x,y,sx,sy)}
- let arr=tc[t];if(!arr){arr=tc[T.GRASS]}
- let img;if(t===T.WATER||t===T.LAVA||t===T.FOUNTAIN)img=arr[ab];else if(t===T.FIELD)img=arr[x&1];else img=arr[hash(x,y)%arr.length];
- if(t===T.FOUNTAIN){ctx.drawImage(tc[base[idx(x,y)]===T.PATH?T.PATH:T.FLOOR][0],sx,sy)}
- ctx.drawImage(img,sx,sy);
+const LAYERED=new Set([...OBJ,T.FOUNTAIN]);
+const SHADOW_OBJ=new Set([T.TREE,T.PINE,T.ROCK,T.CACTUS,T.COLUMN,T.TOTEM,T.SIGN,T.GOAL,T.FOUNTAIN,T.FENCE]);
+const BLDG=new Set([T.WALL,T.WINDOW,T.DOOR,T.ROOF,T.ROOFB]);
+function tileImg(t,x,y){const arr=tileCache[t]||tileCache[T.GRASS];const ab=(frame>>5)&1;
+ if(t===T.WATER||t===T.LAVA||t===T.FOUNTAIN)return arr[ab%arr.length];if(t===T.FIELD)return arr[x&1];return arr[hash(x,y)%arr.length]}
+function drawTile(t,x,y,sx,sy){ // ground layer
+ if(LAYERED.has(t)){let b=base[idx(x,y)];if(LAYERED.has(b))b=T.GRASS;if(t===T.FOUNTAIN&&b!==T.PATH)b=T.FLOOR;drawTile(b,x,y,sx,sy);return}
+ ctx.drawImage(tileImg(t,x,y),sx,sy);
  if(t===T.WATER){if(y>0&&map[idx(x,y-1)]!==T.WATER&&map[idx(x,y-1)]!==T.BRIDGE){ctx.fillStyle='#b8dcff';ctx.fillRect(sx,sy,16,1)}if(x>0&&map[idx(x-1,y)]!==T.WATER&&map[idx(x-1,y)]!==T.BRIDGE){ctx.fillStyle='#9cc9ff';ctx.fillRect(sx,sy,1,16)}}
 }
+function drawShadow(t,x,y,sx,sy){
+ if(SHADOW_OBJ.has(t)){ctx.fillStyle='rgba(16,8,36,.34)';
+  if(t===T.FENCE){ctx.fillRect(sx,sy+13,16,2);return}
+  if(t===T.SIGN){ctx.fillRect(sx+5,sy+14,9,2);return}
+  ctx.fillRect(sx+3,sy+13,14,2);ctx.fillRect(sx+5,sy+15,13,2);ctx.fillStyle='rgba(16,8,36,.18)';ctx.fillRect(sx+7,sy+17,10,1);ctx.fillRect(sx+16,sy+9,2,4);return}
+ if(BLDG.has(t)){const below=y+1<MH?map[idx(x,y+1)]:t,right=x+1<MW?map[idx(x+1,y)]:t;
+  if(!BLDG.has(below)){ctx.fillStyle='rgba(16,8,36,.32)';ctx.fillRect(sx+2,sy+16,14,3);ctx.fillStyle='rgba(16,8,36,.16)';ctx.fillRect(sx+3,sy+19,14,2)}
+  if(!BLDG.has(right)){ctx.fillStyle='rgba(16,8,36,.28)';ctx.fillRect(sx+16,sy+4,3,BLDG.has(below)?12:15)}}
+}
+function drawOverlay(t,x,y,sx,sy){if(LAYERED.has(t))ctx.drawImage(tileImg(t,x,y),sx,sy)}
+let bumpFx=null;
 function drawWorld(){
  const ppx=player.px,ppy=player.py;
  camX=Math.round(clamp(ppx+8-CW/2,0,MW*TS-CW));camY=Math.round(clamp(ppy+8-CH/2,0,MH*TS-CH));
  const x0=Math.floor(camX/TS),y0=Math.floor(camY/TS);
- const vw=Math.ceil(CW/TS),vh=Math.ceil(CH/TS);for(let ty=y0;ty<=y0+vh+1;ty++)for(let tx=x0;tx<=x0+vw+1;tx++){if(!inb(tx,ty))continue;drawTile(map[idx(tx,ty)],tx,ty,tx*TS-camX,ty*TS-camY)}
+ const vw=Math.ceil(CW/TS),vh=Math.ceil(CH/TS);
+ for(const fn of[drawTile,drawShadow,drawOverlay])for(let ty=y0-1;ty<=y0+vh+1;ty++)for(let tx=x0-1;tx<=x0+vw+1;tx++){if(!inb(tx,ty))continue;fn(map[idx(tx,ty)],tx,ty,tx*TS-camX,ty*TS-camY)}
+ if(bumpFx&&bumpFx.t>0){bumpFx.t--;const a=bumpFx.t/24,sx=bumpFx.x*16-camX,sy=bumpFx.y*16-camY;ctx.strokeStyle=`rgba(255,255,255,${.9*a})`;ctx.lineWidth=1;ctx.strokeRect(sx+.5,sy+.5,15,15);ctx.strokeStyle=`rgba(232,68,58,${.7*a})`;ctx.strokeRect(sx+1.5,sy+1.5,13,13);
+  ctx.fillStyle=`rgba(255,255,255,${.8*a})`;const k=24-bumpFx.t,bx=player.px-camX+8+DX[player.dir]*7,by=player.py-camY+13+DY[player.dir]*5;ctx.fillRect(bx-3-k/3,by-k/4,2,2);ctx.fillRect(bx+2+k/3,by-k/4,2,2)}
  const ents=[];
  for(const it of items){if(Math.abs(it.x*16-ppx)>CW/2+40||Math.abs(it.y*16-ppy)>CH/2+40)continue;if(it.kind==='sparkle'&&S.taken[it.id])continue;ents.push({y:it.y*16,d:()=>drawItem(it)})}
  for(const n of npcs){if(Math.abs(n.px-ppx)>CW/2+40||Math.abs(n.py-ppy)>CH/2+40)continue;ents.push({y:n.py,d:()=>drawChar(n.spr,n.dir,n.moving?1+((n.prog/8)|0)%2:0,n.px,n.py)})}
  for(const b of bosses){if(Math.abs(b.x*16-ppx)>CW/2+80||Math.abs(b.y*16-ppy)>CH/2+80)continue;ents.push({y:b.y*16,d:()=>drawBossMap(b)})}
- if(state!=='title')ents.push({y:ppy,d:()=>drawChar(bradySpr,player.dir,player.moving?1+((player.anim/8)|0)%2:0,ppx,ppy)});
+ if(state!=='title')ents.push({y:ppy,d:()=>{const n=bumpFx&&bumpFx.t>16?1:0;drawChar(bradySpr,player.dir,player.moving?1+((player.anim/8)|0)%2:0,ppx+DX[player.dir]*n,ppy+DY[player.dir]*n)}});
  ents.sort((a,b)=>a.y-b.y).forEach(e=>e.d());
  if(excl>0){const sx=ppx-camX+5,sy=ppy-camY-16;ctx.fillStyle=OUT;ctx.fillRect(sx-1,sy-1,8,12);ctx.fillStyle='#fff';ctx.fillRect(sx,sy,6,10);ctx.fillStyle='#e8443a';ctx.fillRect(sx+2,sy+1,2,5);ctx.fillRect(sx+2,sy+7,2,2)}
 }
@@ -1065,6 +1081,15 @@ function applyCanvasSize(battle){const z=battle?1:ZOOMS[zoomI];const w=Math.roun
 let zoomT=0;
 function setZoom(d){if(state!=='world'&&state!=='title')return;const n=clamp(zoomI+d,0,ZOOMS.length-1);if(n===zoomI)return;zoomI=n;if(S&&state==='world'){S.zoom=n;saveGame(true)}toast(`🔍 Zoom: ${ZOOMN[n]}`);updZoomBtns()}
 function updZoomBtns(){const a=$('#btnZin'),b=$('#btnZout');if(a)a.disabled=zoomI===0;if(b)b.disabled=zoomI===ZOOMS.length-1}
+// ---------------- FULLSCREEN ----------------
+const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement;
+function toggleFS(){const el=document.documentElement;
+ try{if(fsEl()){(document.exitFullscreen||document.webkitExitFullscreen).call(document);return}
+  const r=el.requestFullscreen||el.webkitRequestFullscreen;
+  if(!r){toast("Full screen isn't available here. On iPhone: Share → Add to Home Screen.");return}
+  const pr=r.call(el,{navigationUI:'hide'});if(pr&&pr.catch)pr.catch(()=>toast('This browser blocked full screen'))}catch(e){toast('This browser blocked full screen')}}
+function updFsBtn(){const on=!!fsEl();document.querySelectorAll('.fsBtn').forEach(b=>b.textContent=on?'⛶ Exit full screen':'⛶ Full screen');const h=$('#btnFs');if(h)h.textContent=on?'⛶ Exit':'⛶'}
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{fit();updFsBtn();setTimeout(fit,150)}));
 // ---------------- INPUT ----------------
 const held={up:0,down:0,left:0,right:0,run:0};const dirStack=[];
 const KEYMAP={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};
@@ -1080,6 +1105,7 @@ window.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const
  else if(['Escape','Backspace','KeyX'].includes(e.code)){e.preventDefault();press('B')}
  else if(['KeyI','Tab'].includes(e.code)){e.preventDefault();press('MENU')}
  else if(e.code==='KeyM'){press('MAP')}
+ else if(e.code==='KeyF'){toggleFS()}
  else if(/^Digit[1-4]$/.test(e.code)){press('ANS',+e.code.slice(5)-1)}
 });
 window.addEventListener('keyup',e=>{const d=KEYMAP[e.code];if(d)setDir(d,0);if(e.key==='Shift')held.run=0});
@@ -1114,7 +1140,7 @@ function updateWorld(){
  if(excl>0){excl--;if(excl===0)beginWild();return}
  const p=player;
  if(p.moving){p.prog+=p.spd;p.anim+=p.spd/1.6;if(p.prog>=16){p.prog=0;p.moving=false;p.x=p.tx;p.y=p.ty;onStep()}}
- if(!p.moving&&state==='world'){const d=curDir();if(d){p.dir=d;const nx=p.x+DX[d],ny=p.y+DY[d];if(walkable(nx,ny)){p.tx=nx;p.ty=ny;p.moving=true;p.spd=held.run?4:2}else if(p.bump--<=0){p.bump=18;SFX.bump()}}else p.anim=0}
+ if(!p.moving&&state==='world'){const d=curDir();if(d){p.dir=d;const nx=p.x+DX[d],ny=p.y+DY[d];if(walkable(nx,ny)){p.tx=nx;p.ty=ny;p.moving=true;p.spd=held.run?4:2}else if(p.bump--<=0){p.bump=18;SFX.bump();bumpFx={x:nx,y:ny,t:24}}}else p.anim=0}
  p.px=(p.x+(p.tx-p.x)*p.prog/16)*16;p.py=(p.y+(p.ty-p.y)*p.prog/16)*16;
  for(const n of npcs){
   if(n.moving){n.prog+=1;if(n.prog>=16){n.prog=0;n.moving=false;n.x=n.tx;n.y=n.ty}}
@@ -1386,9 +1412,9 @@ function renderMenu(){
   h=`<div class="sub">Accuracy: <b>${acc}%</b> (${S.st.cor}/${S.st.ans}) · Best streak: <b>${S.st.best}</b></div><div class="catbars">`+Object.keys(CATS).map(k=>{const c=S.st.cat[k]||[0,0];const p=c[0]?Math.round(c[1]/c[0]*100):0;return`<div class="cb"><span>${CATS[k].name}</span><div class="bar"><i style="width:${p}%;background:${CATS[k].c}"></i></div><small>${c[1]}/${c[0]}</small></div>`}).join('')+'</div>';
   h+=`<h4>Plays to review (${ids.length}) ${ids.length?`<button onclick="G.drill()">🏋️ Practice Drill</button>`:''}</h4>`+(ids.length?ids.map(id=>{const q=QB[id];return`<div class="film"><span class="cat" style="background:${CATS[q.cat].c}">${CATS[q.cat].name}</span> ${esc(q.q)}<br><b class="good">✔ ${esc(q.a)}</b> <small>${esc(q.x)}</small></div>`}).join(''):'<i>No missed questions right now. Questions you miss show up here until you get them right twice.</i>')}
  else if(menuTab==='prog'){h=`<div class="sub">Level <b>${S.lv}</b> · XP ${S.xp}/${xpNeed(S.lv)} · Battles ${S.st.battles} · Wins ${S.st.wins} · Steps ${S.steps}</div><div class="grid">`+BOSS_ORDER.concat(['champ']).map(id=>{const p=poiById(id),d=p.boss,done=S.bosses[id];return`<div class="card ${done?'won':''}"><div class="ic">${done?'🏆':'🔒'}</div><div><b>${done?d.trophy:'???'}</b><br><small>${p.name} · ${d.name}<br>${p.cat?CATS[p.cat].name:'All categories'} · Lv ${d.lv}</small></div></div>`}).join('')+'</div>'}
- else if(menuTab==='opt'){h=`<div class="opt"><button onclick="G.save()">💾 Save game</button><button onclick="G.snd()">${S.sound?'🔊 Sound: ON':'🔇 Sound: OFF'}</button><button onclick="G.openMap()">🗺 World map</button></div>
+ else if(menuTab==='opt'){h=`<div class="opt"><button class="fsBtn" onclick="G.fs()">⛶ Full screen</button><button onclick="G.save()">💾 Save game</button><button onclick="G.snd()">${S.sound?'🔊 Sound: ON':'🔇 Sound: OFF'}</button><button onclick="G.openMap()">🗺 World map</button></div>
   <div class="sub">Difficulty: <b>${{rookie:'Rookie',pro:'Pro',allpro:'All-Pro',superfan:'Superfan'}[S.diff]}</b> <button onclick="G.cycleDiff()">Change</button></div>
-  <div class="help"><b>Controls</b><br>Move: Arrow keys / WASD · Run: hold Shift<br>Talk / Interact / Confirm: Space, Enter or Z<br>Back: Esc or X · Menu: I or Tab · Map: M<br>Battle answers: 1–4 keys or click/tap<br>Zoom: + / − keys, mouse wheel, pinch, or the 🔍 buttons<br><br><b>Tips</b><br>Tall grass has the most wild dinos. Each region's dinos ask more questions from the local Head Coach's category.<br>Questions you miss come back later so you can master them.</div>
+  <div class="help"><b>Controls</b><br>Move: Arrow keys / WASD · Run: hold Shift<br>Talk / Interact / Confirm: Space, Enter or Z<br>Back: Esc or X · Menu: I or Tab · Map: M<br>Battle answers: 1–4 keys or click/tap<br>Zoom: + / − keys, mouse wheel, pinch, or the 🔍 buttons<br>Full screen: F key or the ⛶ button<br><br><b>Tips</b><br>Tall grass has the most wild dinos. Each region's dinos ask more questions from the local Head Coach's category.<br>Questions you miss come back later so you can master them.</div>
   <div class="help"><b>Save codes</b>: the game auto-saves in this browser. To move your progress to another device or browser, export a save code there and import it here.<div class="opt"><button onclick="G.exportSave()">📤 Export save code</button><button onclick="G.importSave()">📥 Import save code</button></div><div id="saveIO"></div></div>
   <div class="opt"><button class="danger" onclick="G.reset()">🗑 Start a new game</button></div>`}
  $('#menuBody').innerHTML=h;
@@ -1480,13 +1506,13 @@ function bindZoom(){
  $('#game').addEventListener('touchstart',e=>{if(e.touches.length===2)pd=dist(e.touches)},{passive:true});
  $('#game').addEventListener('touchmove',e=>{if(e.touches.length!==2||!pd)return;const d=dist(e.touches);if(d/pd>1.3){setZoom(-1);pd=d}else if(d/pd<.77){setZoom(1);pd=d}},{passive:true});
  $('#game').addEventListener('touchend',e=>{if(e.touches.length<2)pd=0},{passive:true});
- $('#btnZin').onclick=()=>setZoom(-1);$('#btnZout').onclick=()=>setZoom(1);updZoomBtns()}
+ $('#btnZin').onclick=()=>setZoom(-1);$('#btnFs').onclick=()=>toggleFS();$('#btnZout').onclick=()=>setZoom(1);updZoomBtns()}
 function bindTouch(){document.querySelectorAll('[data-d]').forEach(b=>{const d=b.dataset.d;const on=e=>{e.preventDefault();setDir(d,1);if(state!=='world')press('DIR',d)},off=e=>{e.preventDefault();setDir(d,0)};b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointerleave',off);b.addEventListener('pointercancel',off)});
  const tb=(id,fn)=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();fn()});
  tb('#tA',()=>press('A'));tb('#tB',()=>{held.run=1;press('B')});$('#tB').addEventListener('pointerup',()=>held.run=0);tb('#tM',()=>press('MENU'))}
 
 // ---------------- PUBLIC API (for onclick) ----------------
-window.G={nextQ,answer,cont,useHint,useTimeout,bag,run,back:()=>renderQ(),useItem,equip,pickChoice,closeMenu,openMap,
+window.G={fs:()=>{toggleFS();setTimeout(updFsBtn,300)},nextQ,answer,cont,useHint,useTimeout,bag,run,back:()=>renderQ(),useItem,equip,pickChoice,closeMenu,openMap,
  tab:t=>{menuTab=t;renderMenu()},save:()=>saveGame(),snd:()=>{S.sound=!S.sound;updHud();renderMenu()},
  cycleDiff:()=>{S.diff={rookie:'pro',pro:'allpro',allpro:'superfan',superfan:'rookie'}[S.diff];renderMenu()},
  reset:()=>{const b=$('#menuBody');b.innerHTML=`<div class="help"><b>Start over?</b> Your current progress will be erased.<br><br><button class="danger" onclick="G.doReset()">Yes, erase and start over</button> <button onclick="G.tab('opt')">Cancel</button></div>`},
