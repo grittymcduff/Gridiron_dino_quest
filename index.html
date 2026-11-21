@@ -564,7 +564,10 @@ function newSave(diff){return{v:1,x:POIS[0].x,y:POIS[0].y+3,dir:'down',lv:1,xp:0
  inv:{water:3,orange:2,hint:1,timeout:1},gear:['foamball','jersey','sneakers'],equip:{weapon:'foamball',helmet:null,pads:'jersey',cleats:'sneakers'},
  buffs:{},trophies:[],taken:{},bosses:{},npc:{},totem:{},seen:{},missed:{},dex:{},names:{},
  st:{ans:0,cor:0,cat:{},best:0,streak:0,battles:0,wins:0},respawn:{x:POIS[0].x,y:POIS[0].y+3},steps:0,visited:{kickoff:1},diff:diff||'pro',sound:true,gateOpen:false,champion:false,intro:false}}
-function saveGame(silent){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));if(!silent)toast('💾 Game saved')}catch(e){if(!silent)toast('Could not save in this browser')}}
+let saveWarned=false;
+function saveGame(silent){if(!S||state==='title')return false;S.savedAt=Date.now();try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));if(!silent)toast('💾 Game saved');return true}catch(e){if(!silent||!saveWarned){saveWarned=true;toast("⚠️ This browser is blocking saves. Use Menu → Options → Export save code.")}return false}}
+function encodeSave(){return btoa(unescape(encodeURIComponent(JSON.stringify(S))))}
+function decodeSave(code){try{const o=JSON.parse(decodeURIComponent(escape(atob(code.trim()))));if(o&&typeof o.lv==='number'&&typeof o.x==='number'&&o.inv&&o.equip)return o}catch(e){}return null}
 function loadSave(){try{const s=localStorage.getItem(SAVE_KEY);return s?JSON.parse(s):null}catch(e){return null}}
 
 // ---------------- WORLD GEN ----------------
@@ -955,6 +958,7 @@ function onStep(){
  S.x=player.x;S.y=player.y;S.dir=player.dir;S.steps++;
  const i=idx(player.x,player.y);
  // passive regen
+ if(S.steps%20===0)saveGame(true);
  if(S.steps%8===0){const mx=stats().hp;if(S.hp<mx){S.hp++;updHud()}}
  if(S.buffs.horn){S.buffs.horn--;if(S.buffs.horn<=0){delete S.buffs.horn;toast('📯 Air Horn wore off')}updHud()}
  // sparkle pickup
@@ -1208,6 +1212,7 @@ function renderMenu(){
  else if(menuTab==='opt'){h=`<div class="opt"><button onclick="G.save()">💾 Save game</button><button onclick="G.snd()">${S.sound?'🔊 Sound: ON':'🔇 Sound: OFF'}</button><button onclick="G.openMap()">🗺 World map</button></div>
   <div class="sub">Difficulty: <b>${{rookie:'Rookie',pro:'Pro',allpro:'All-Pro'}[S.diff]}</b> <button onclick="G.cycleDiff()">Change</button></div>
   <div class="help"><b>Controls</b><br>Move: Arrow keys / WASD · Run: hold Shift<br>Talk / Interact / Confirm: Space, Enter or Z<br>Back: Esc or X · Menu: I or Tab · Map: M<br>Battle answers: 1–4 keys or click/tap<br><br><b>Tips</b><br>Tall grass has the most wild dinos. Each region's dinos ask more questions from the local Head Coach's category.<br>Questions you miss come back later so you can master them.</div>
+  <div class="help"><b>Save codes</b>: the game auto-saves in this browser. To move your progress to another device or browser, export a save code there and import it here.<div class="opt"><button onclick="G.exportSave()">📤 Export save code</button><button onclick="G.importSave()">📥 Import save code</button></div><div id="saveIO"></div></div>
   <div class="opt"><button class="danger" onclick="G.reset()">🗑 Start a new game</button></div>`}
  $('#menuBody').innerHTML=h;
  if(menuTab==='dex')document.querySelectorAll('.dexc').forEach(c=>{const f=c.dataset.f;const g=c.getContext('2d');g.imageSmoothingEnabled=false;if(S.dex[f]){g.drawImage(dexSpr(f),0,0)}else{g.globalAlpha=.25;g.drawImage(dexSpr(f),0,0);g.globalCompositeOperation='source-atop';g.globalAlpha=1;g.fillStyle='#1a1230';g.fillRect(0,0,58,50)}})}
@@ -1243,7 +1248,7 @@ function renderMap(){const c=$('#mapCv'),g=c.getContext('2d');g.imageSmoothingEn
  if((frame>>4)%2===0){g.fillStyle='#fff';g.fillRect(player.x*3-3,player.y*3-3,7,7);g.fillStyle='#2f6fd6';g.fillRect(player.x*3-2,player.y*3-2,5,5)}}
 
 // ---------------- TITLE / ENDING ----------------
-function showTitle(){state='title';$('#title').classList.remove('hidden');const sv=loadSave();$('#btnCont').style.display=sv?'':'none';
+function showTitle(){state='title';$('#title').classList.remove('hidden');const sv=loadSave();$('#btnCont').style.display=sv?'':'none';if(sv)$('#btnCont').textContent=`▶ Continue (Lv ${sv.lv} · 🏆 ${(sv.trophies||[]).length}/6)`;
  const c=$('#titleBrady'),g=c.getContext('2d');g.imageSmoothingEnabled=false;g.clearRect(0,0,c.width,c.height);g.drawImage(bradySpr.right[0],0,0,72,72);
  const d=$('#titleDino'),gd=d.getContext('2d');gd.imageSmoothingEnabled=false;gd.save();gd.translate(116,0);gd.scale(-1,1);gd.drawImage(makeDino('rex',{B:'#4fae5a',L:'#d8f0b0',P:'#1f5a2a',K:'#f4f4f4'},'stripes',3),0,0,116,100);gd.restore()}
 function startGame(sv,isNew){S=sv;
@@ -1288,6 +1293,8 @@ function fit(){const holder=$('#holder'),g=$('#game');const portrait=innerHeight
  const s=Math.min((innerWidth-8)/640,(innerHeight-tc-8)/416);g.style.transform=`scale(${s})`;holder.style.width=640*s+'px';holder.style.height=416*s+'px';
  document.body.classList.toggle('touch',isTouch);document.body.classList.toggle('portrait',portrait)}
 window.addEventListener('resize',fit);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)saveGame(true)});
+window.addEventListener('pagehide',()=>saveGame(true));
 function bindTouch(){document.querySelectorAll('[data-d]').forEach(b=>{const d=b.dataset.d;const on=e=>{e.preventDefault();setDir(d,1);if(state!=='world')press('DIR',d)},off=e=>{e.preventDefault();setDir(d,0)};b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointerleave',off);b.addEventListener('pointercancel',off)});
  const tb=(id,fn)=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();fn()});
  tb('#tA',()=>press('A'));tb('#tB',()=>{held.run=1;press('B')});$('#tB').addEventListener('pointerup',()=>held.run=0);tb('#tM',()=>press('MENU'))}
@@ -1300,6 +1307,10 @@ window.G={nextQ,answer,cont,useHint,useTimeout,bag,run,back:()=>renderQ(),useIte
  doReset:()=>{try{localStorage.removeItem(SAVE_KEY)}catch(e){}location.reload()},
  drill:()=>{closeMenu();startBattle(makeEnemy('stego',Math.max(1,S.lv-2),{name:'Film Room Dummy-stego',pal:{B:'#8a8a9a',L:'#d8d8e0',P:'#e8443a',K:'#f4f4f4'},pattern:'spots'}),{practice:true,drill:true,cat:null,diff:[1,3]})},
  shopTab:t=>{shopTab=t;renderShop()},
+ exportSave:()=>{saveGame(true);$('#saveIO').innerHTML=`<textarea id="saveCode" readonly rows="3" style="width:100%;font-size:9px">${encodeSave()}</textarea><button onclick="G.copySave()">📋 Copy</button> <small>Paste this into "Import save code" on another device.</small>`;const t=$('#saveCode');t.focus();t.select()},
+ copySave:()=>{const t=$('#saveCode');t.select();const ok=()=>toast('📋 Save code copied!');try{navigator.clipboard.writeText(t.value).then(ok,()=>{document.execCommand('copy');ok()})}catch(e){try{document.execCommand('copy');ok()}catch(e2){toast('Select the text and copy it manually')}}},
+ importSave:()=>{$('#saveIO').innerHTML=`<textarea id="saveCode" rows="3" style="width:100%;font-size:9px" placeholder="Paste a save code here"></textarea><button onclick="G.doImport()">Load this save</button> <small>This replaces your current progress.</small>`;$('#saveCode').focus()},
+ doImport:()=>{const o=decodeSave($('#saveCode').value);if(!o){toast("That save code doesn't look right");return}try{localStorage.setItem(SAVE_KEY,JSON.stringify(o))}catch(e){}closeMenu();if(B)endBattle();startGame(o,false);saveGame(true);toast('📥 Save loaded!')},
  buy:k=>{const c=CONS[k];if(S.coins<c.price)return;S.coins-=c.price;S.inv[k]=(S.inv[k]||0)+1;SFX.item();updHud();renderShop()},
  buyGear:k=>{const p=GEAR_PRICE[GEAR[k].r];if(S.coins<p)return;S.coins-=p;S.gear.push(k);SFX.item();toast(`Bought ${GEAR[k].name}! Equip it in Menu → Gear.`);updHud();renderShop()},
  sell:i=>{const id=S.gear[i];if(!id)return;S.gear.splice(i,1);S.coins+=Math.round(GEAR_PRICE[GEAR[id].r]/2);SFX.item();updHud();renderShop()},
