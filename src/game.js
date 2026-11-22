@@ -1461,8 +1461,7 @@ function renderMap(){const c=$('#mapCv'),g=c.getContext('2d');g.imageSmoothingEn
 // ---------------- TITLE / ENDING ----------------
 function showTitle(){state='title';$('#title').classList.remove('hidden');const sv=loadSave();$('#btnCont').style.display=sv?'':'none';if(sv)$('#btnCont').textContent=`▶ Continue (Lv ${sv.lv} · 🏆 ${(sv.trophies||[]).length}/6)`;
  const th=heroOf(sv),tspr=makeBradySprites(sv?sv.equip:newSave().equip,th);$('#logoName').textContent=`★ ${poss(th.name).toUpperCase()} ★`;
- const c=$('#titleBrady'),g=c.getContext('2d');g.imageSmoothingEnabled=false;g.clearRect(0,0,c.width,c.height);g.drawImage(tspr.right[0],0,0,72,72);
- const d=$('#titleDino'),gd=d.getContext('2d');gd.imageSmoothingEnabled=false;gd.save();gd.translate(116,0);gd.scale(-1,1);const td=makeDino('rex',{B:'#4fae5a',L:'#d8f0b0',P:'#1f5a2a',K:'#f4f4f4'},'stripes',3),tk=Math.min(116/td.width,100/td.height);gd.clearRect(0,0,116,100);gd.drawImage(td,(116-td.width*tk)/2,100-td.height*tk,td.width*tk,td.height*tk);gd.restore()}
+ const c=$('#titleBrady'),g=c.getContext('2d');g.imageSmoothingEnabled=false;g.clearRect(0,0,c.width,c.height);g.drawImage(tspr.right[0],0,0,72,72)}
 function startGame(sv,isNew){S=sv;S.hero=heroOf(S);S.team=Object.assign({roster:[],active:[],next:1},S.team||{});S.team.active=S.team.active.filter(id=>S.team.roster.some(d=>d.id===id)).slice(0,TEAM_ACTIVE);
  for(const k of['buffs','taken','bosses','npc','totem','seen','missed','dex','names','visited','ach','flags'])S[k]=S[k]||{};
  for(const k of['winsBy','bossBy','champBy'])S.st[k]=S.st[k]||{};
