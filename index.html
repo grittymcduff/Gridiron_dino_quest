@@ -1727,26 +1727,34 @@ function refFrame(key,fi){const ck=key+':'+fi;if(picCache[ck])return picCache[ck
  const sleeve=UA*.62;
  const drawArm=(A,type)=>{for(const mode of['o','f']){
    cap(A.sx,A.sy,A.ex,A.ey,4.4,mode,(a,p,l)=>a<sleeve-1.6?stripe(p,l,3):a<sleeve?BK:skin(a,p,l));
-   cap(A.ex,A.ey,A.hx,A.hy,3.7,mode,skin);drawHand(A,type,mode)}};
+   cap(A.ex,A.ey,A.hx,A.hy,3.9,mode,(a,p,l)=>a>FA-4.5?(l>.45?BKH:BK):skin(a,p,l));drawHand(A,type,mode)}};
  // ---- body ----
  const legs=()=>{for(let y=94;y<=121;y++){const sp=y<98?0:Math.min(3,(y-97)*.6);for(let x=51;x<=77;x++){const rel=x-CX;if(Math.abs(rel+.5)<sp)continue;
-   const leftLeg=rel<0,lx=leftLeg?(x-51)/(CX-51):(77-x)/(77-CX);px(x,y,leftLeg?(x<=52?BKH:BK):(x>=75?BKD:BK))}}
-  for(const[x0,x1]of[[48,61],[67,80]])for(let y=121;y<=127;y++)for(let x=x0;x<=x1;x++){if(y===121&&(x===x0||x===x1))continue;px(x,y,y===127?'#2e2e36':y<=122?BKH:BKD)}
-  g.fillStyle='#f4d03f';g.fillRect(53,95,3,5);g.fillStyle='#c9a21f';g.fillRect(55,96,1,4)}; // flag in the pocket
+   const leftLeg=rel<0,sock=y>=112;let col=sock?(leftLeg?(x<=52?'#ffffff':x>=CX-4?'#c8c8d0':'#ececf0'):(x>=75?'#b8b8c2':'#e4e4ea')):(leftLeg?(x<=52?BKH:BK):(x>=75?BKD:BK));
+   if(!sock&&(x===53||x===75))col=y%9===0?'#d0d0d8':'#f4f4f4';                          // white side stripe
+   if(!sock&&y>=103&&y<=106&&(x===56||x===71))col=BKH;px(x,y,col)}}                      // knee crease
+  for(const[x0,x1]of[[48,61],[67,80]])for(let y=121;y<=127;y++)for(let x=x0;x<=x1;x++){if(y===121&&(x===x0||x===x1))continue;px(x,y,y===127?'#3a3a44':y<=122?BKH:BKD)}
+  for(const x0 of[49,68])for(let x=x0;x<x0+10;x+=3)px(x,127,'#8a8a94');                  // cleat studs
+  g.fillStyle='#f4d03f';g.fillRect(52,92,4,7);g.fillStyle='#c9a21f';g.fillRect(55,93,1,6);g.fillStyle='#fff0a0';g.fillRect(52,92,2,1)}; // flag in the pocket
  const torso=()=>{for(let y=46;y<=93;y++){const hw=y<=48?[11,13.5,14.5][y-46]:15-(y-49)*.075;for(let x=Math.floor(CX-hw);x<Math.ceil(CX+hw);x++){const rel=x+.5-CX,e=rel/hw;
     let col=stripe(rel,e<-.72?.6:e>.55?-.6:0,4);if(e>.72&&col===BK)col=BKD;px(x,y,col)}}
   for(let y=89;y<=93;y++)for(let x=50;x<78;x++)px(x,y,y===89?BKH:BK);g.fillStyle='#c8ccd4';g.fillRect(62,90,4,3);g.fillStyle='#8a8f9a';g.fillRect(63,91,2,1);
-  for(let y=42;y<=53;y++){const v=Math.max(0,(53-y)*.62);for(let x=55;x<73;x++){const rel=x+.5-CX;if(Math.abs(rel)<v-1.6)px(x,y,y<47?SKD:SK);else if(Math.abs(rel)<v+.4&&y>=46)px(x,y,BK)}}};
- const head=()=>{const hx=CX,hy=28,r=11;
-  for(let y=hy-r-1;y<=hy+r;y++)for(let x=hx-r-1;x<=hx+r;x++){const dx=x+.5-hx,dy=y+.5-hy,d=Math.hypot(dx,dy*1.05);if(d>r)continue;const l=lit(dx,dy,r);
-   if(y<hy-2)px(x,y,l>.35?WHH:l<-.35?WHD:WH);else px(x,y,skin(0,0,l*.9-(y>hy+8?.25:0)))}
-  for(let x=hx-13;x<=hx+12;x++){px(x,hy-3,x>hx+6?WHD:WH);px(x,hy-2,'#9a9aa6')} // brim + its shadow
-  px(hx,hy-r-1,BK);px(hx-1,hy-r,BK);px(hx,hy-r,BK);px(hx+1,hy-r,BK); // cap button
-  for(const ex of[hx-r-1,hx+r]){for(let y=hy+1;y<=hy+5;y++){px(ex,y,ex<hx?SK:SKD);px(ex<hx?ex-1:ex+1,y,y===hy+1||y===hy+5?null:(ex<hx?SKD:SKDD))}}
-  for(const ex of[hx-6,hx+3]){g.fillStyle='#5a3a26';g.fillRect(ex,hy,4,1);g.fillStyle='#ffffff';g.fillRect(ex+1,hy+2,2,2);g.fillStyle='#1b1b2a';g.fillRect(ex+2,hy+2,2,3)}
-  g.fillStyle=SKD;g.fillRect(hx,hy+4,1,3);g.fillRect(hx+1,hy+6,1,1);
-  g.fillStyle='#9a4a3a';g.fillRect(hx-3,hy+9,6,1);g.fillStyle='#c46a5a';g.fillRect(hx-2,hy+10,4,1);
-  g.fillStyle=SKD;g.fillRect(hx-4,hy+12,9,2)}; // neck shadow under chin
+  for(let y=40;y<=46;y++)for(let x=58;x<70;x++)px(x,y,y<43?SKD:SK);                       // neck
+  for(let y=44;y<=51;y++){const w=y<47?8:Math.max(0,8-(y-46)*1.6);for(let x=Math.floor(CX-w);x<CX+w;x++){const rel=x+.5-CX;if(Math.abs(rel)<1.2&&y>46)continue;px(x,y,y===44?BKH:BK)}}   // collar
+  for(let y=47;y<=51;y++)px(CX,y,SKD);
+  for(let k=0;k<12;k++){px(57+k*.35,50+k,BK);px(70-k*.35,50+k,BK)}                         // lanyard
+  g.fillStyle=OC;g.fillRect(60,61,8,5);g.fillStyle='#c8ccd4';g.fillRect(61,62,6,3);g.fillStyle='#ffffff';g.fillRect(61,62,3,1);g.fillStyle='#8a8f9a';g.fillRect(65,64,2,1)}; // whistle
+ const head=()=>{const hx=CX,hy=28,r=11,HR='#1e1c22',HRH='#45424e',HRD='#0e0d12';
+  for(const ex of[hx-r-1,hx+r]){for(let y=hy-1;y<=hy+5;y++){px(ex,y,ex<hx?SK:SKD);px(ex<hx?ex-1:ex+1,y,y===hy-1||y===hy+5?null:(ex<hx?SKD:SKDD))}}   // ears
+  for(let y=hy-r-1;y<=hy+r+1;y++)for(let x=hx-r-1;x<=hx+r;x++){const dx=x+.5-hx,dy=y+.5-hy,d=Math.hypot(dx*(y>hy+3?1.12:1),dy*1.02);if(d>r)continue;const l=lit(dx,dy,r);
+   px(x,y,skin(0,0,l*.9-(y>hy+8?.2:0)))}
+  for(let y=hy-r-3;y<=hy-3;y++)for(let x=hx-r-1;x<=hx+r;x++){const dx=x+.5-hx,dy=y+.5-(hy-1),d=Math.hypot(dx/(r+.6),dy/(r+1.6));if(d>1)continue;   // short dark hair
+   if(y>hy-6&&Math.abs(dx)<r-2.5&&y>hy-5+Math.round(Math.abs(dx)/4))continue;const l=lit(dx,dy,r);px(x,y,((x+y*2)%5===0)?HRD:l>.4?HRH:l<-.3?HRD:HR)}
+  for(let y=hy-3;y<=hy+3;y++){px(hx-r,y,HR);px(hx+r-1,y,HRD)}                                // sideburns
+  for(const ex of[hx-7,hx+2]){g.fillStyle=HR;g.fillRect(ex,hy-1,5,2);g.fillStyle='#ffffff';g.fillRect(ex+1,hy+2,3,2);g.fillStyle='#3a2a1e';g.fillRect(ex+2,hy+2,2,2);g.fillStyle='#0e0d12';g.fillRect(ex+3,hy+2,1,1);g.fillStyle=SKD;g.fillRect(ex,hy+4,5,1)}  // brows, eyes, under-eye
+  g.fillStyle=SKD;g.fillRect(hx,hy+2,1,5);g.fillRect(hx-1,hy+7,4,1);g.fillStyle=SKDD;g.fillRect(hx-1,hy+6,1,1);g.fillRect(hx+2,hy+6,1,1);   // nose
+  g.fillStyle='#8a3e34';g.fillRect(hx-3,hy+10,7,1);g.fillStyle='#b8645a';g.fillRect(hx-2,hy+11,5,1);                                          // mouth
+  g.fillStyle=SKD;g.fillRect(hx-7,hy+8,1,4);g.fillRect(hx+7,hy+8,1,4);g.fillRect(hx-5,hy+12,11,1);g.fillStyle=SKDD;g.fillRect(hx-3,hy+13,7,1)}; // jaw + chin shadow
  const R=solve(50,54,fr.r),Lsp=Object.assign({},fr.l);if(Lsp.grab){const t=.7;Lsp.h=[R.ex+(R.hx-R.ex)*t+3,R.ey+(R.hy-R.ey)*t]}
  const Lm=Array.isArray(fr.l)?solve(78,54,fr.l):solve(78,54,Lsp);
  const arms=()=>{if(fr.z==='r'){drawArm(Lm,hands.l);drawArm(R,hands.r)}else{drawArm(R,hands.r);drawArm(Lm,hands.l)}};
@@ -1755,8 +1763,20 @@ function refFrame(key,fi){const ck=key+':'+fi;if(picCache[ck])return picCache[ck
  const id=g.getImageData(0,0,W,H),a=id.data,o=document.createElement('canvas');o.width=W;o.height=H;const og=o.getContext('2d');og.fillStyle=OC;
  for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(a[(y*W+x)*4+3])continue;if([[1,0],[-1,0],[0,1],[0,-1]].some(([p,q])=>{const X=x+p,Y=y+q;return X>=0&&Y>=0&&X<W&&Y<H&&a[(Y*W+X)*4+3]}))og.fillRect(x,y,1,1)}
  og.drawImage(c,0,0);return picCache[ck]=o}
+// Night-game stadium behind the referee (drawn once and cached)
+let _stadium=null;
+function stadiumBg(){if(_stadium)return _stadium;const W=SIG_W,H=SIG_H,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d'),r=mulberry32(321),P=(x,y,col,w=1,h=1)=>{g.fillStyle=col;g.fillRect(x,y,w,h)};
+ for(let y=0;y<34;y++)P(0,y,`rgb(${36+y*.6|0},${40+y*.8|0},${78+y*1.1|0})`,W,1);                           // night sky
+ for(const lx of[10,116]){P(lx,4,'#5a5e6e',2,30);P(lx-6,2,'#2a2e3a',14,6);for(let i=0;i<6;i++)P(lx-5+i*2,3,'#fffbe0',1,2);P(lx-5,5,'#fff6c0',12,1);g.fillStyle='rgba(255,250,210,.12)';g.fillRect(lx-12,0,26,14)} // light towers
+ for(let y=30;y<52;y++)for(let x=0;x<W;x++){const v=r();P(x,y,v<.12?'#c8c0d8':v<.2?'#a83a3a':v<.27?'#3a6ac8':v<.33?'#e0c040':v<.42?'#5a5a70':y%3===0?'#2e2e44':'#3a3a52')}  // crowd
+ P(0,50,'#1c3a78',W,8);P(0,50,'#3a62b8',W,1);P(0,57,'#14284e',W,1);                                        // wall
+ for(let y=58;y<H;y++)P(0,y,((y-58)>>3)%2?'#3f8f42':'#47994a',W,1);for(let i=0;i<220;i++)P((r()*W)|0,58+((r()*86)|0),r()<.5?'#3a8a3c':'#52a454');  // turf
+ P(0,72,'#e8f0e8',W,1);P(0,96,'#e8f0e8',W,2);P(0,128,'#f4f8f4',W,3);for(let x=4;x<W;x+=10){P(x,84,'#d8e4d8',3,1);P(x,112,'#d8e4d8',4,1)}  // yard lines + hash marks
+ P(30,4,'#d8c030',2,30);P(96,4,'#d8c030',2,30);P(30,32,'#d8c030',68,2);P(63,34,'#d8c030',2,24);P(30,4,'#f4e070',1,30);P(31,32,'#f4e070',66,1);  // goalpost
+ g.fillStyle='rgba(0,0,0,.3)';for(let y=125;y<=131;y++){const w=34*Math.sqrt(Math.max(0,1-((y-128)/3.6)**2));g.fillRect(Math.round(64-w),y,Math.round(2*w),1)}
+ return _stadium=c}
 function drawPic(cv2,pic,t){const g=cv2.getContext('2d');g.imageSmoothingEnabled=false;const[kind,key]=pic.split(':');
- if(kind==='sig'){const W=SIG_W,H=SIG_H;g.fillStyle='#4caf50';g.fillRect(0,0,W,H);g.fillStyle='#43a047';for(let y=0;y<H;y+=24)g.fillRect(0,y,W,12);g.fillStyle='#ffffff';g.fillRect(0,128,W,3);g.fillStyle='rgba(0,0,0,.28)';for(let y=125;y<=131;y++){const w=34*Math.sqrt(1-((y-128)/3.6)**2);g.fillRect(Math.round(64-w),y,Math.round(2*w),1)}
+ if(kind==='sig'){g.drawImage(stadiumBg(),0,0);
   const sig=SIGNALS[key];const fi=Math.floor((t||0)/450)%sig.f.length;g.drawImage(refFrame(key,fi),0,0);return}
  const F=FORMS[key],W=120,H=84;
  for(let y=0;y<H;y+=10){g.fillStyle=(y/10)%2?'#43a047':'#4caf50';g.fillRect(0,y,W,10);g.fillStyle='#e8f5e8';g.fillRect(0,y+4,W,1)}
