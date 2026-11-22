@@ -76,7 +76,7 @@ small{font-size:10px}
 #enBox{position:absolute;left:10px;top:10px;width:250px;padding:6px 10px}
 #plBox{position:absolute;right:10px;top:194px;width:236px;padding:6px 10px}
 .nm{display:flex;justify-content:space-between;font-weight:800;font-size:13px}
-.hpRow{display:flex;gap:5px;align-items:center;margin-top:3px}.hpRow b{font-size:9px;background:#e8900c;color:#fff;padding:0 3px;border-radius:2px}
+.hpRow{display:flex;gap:5px;align-items:center;margin-top:3px}.hpRow b{font-size:11px;line-height:1}
 #enTag{font-size:9px;font-weight:700;color:#6a5a8a;margin-top:2px}
 #plHpT{text-align:right;font-weight:800;font-size:11px}
 .xpbar{height:4px;background:#2a2440;border-radius:2px;overflow:hidden;margin-top:2px}.xpbar i{display:block;height:100%;background:#3aa0ff;transition:width .5s}
@@ -194,8 +194,8 @@ body.touch:not(.portrait) #touch{position:fixed;left:0;right:0;bottom:10px;max-w
    <div id="hudBtns"><button id="btnDaily" title="Daily Challenge">📅 Daily</button><button id="btnMus" title="Music">🎵</button><button id="btnFs" title="Full screen (F)">⛶</button><button id="btnZin" title="Zoom in (+)">🔍＋</button><button id="btnZout" title="Zoom out (−)">🔍－</button><button id="btnMenu">☰ Menu (I)</button><button id="btnMap">🗺 Map (M)</button><button id="btnSnd">🔊</button></div>
   </div>
   <div id="battle" class="hidden">
-   <div id="enBox" class="box"><div class="nm"><span id="enName"></span><span id="enLv"></span></div><div class="hpRow"><b>HP</b><div class="bar"><i id="enHp"></i></div></div><div id="enTag"></div></div>
-   <div id="plBox" class="box"><div class="nm"><span id="plName">BRADY</span><span id="plLv"></span></div><div class="hpRow"><b>HP</b><div class="bar"><i id="plHp"></i></div></div><div id="plHpT"></div><div class="xpbar"><i id="plXp"></i></div><div id="streak"></div></div>
+   <div id="enBox" class="box"><div class="nm"><span id="enName"></span><span id="enLv"></span></div><div class="hpRow"><b title="Hydration">💧</b><div class="bar"><i id="enHp"></i></div></div><div id="enTag"></div></div>
+   <div id="plBox" class="box"><div class="nm"><span id="plName">BRADY</span><span id="plLv"></span></div><div class="hpRow"><b title="Hydration">💧</b><div class="bar"><i id="plHp"></i></div></div><div id="plHpT"></div><div class="xpbar"><i id="plXp"></i></div><div id="streak"></div></div>
    <div id="qPic" class="box hidden"><canvas id="qPicC" width="64" height="72"></canvas></div><div id="qFeedback" class="box hidden"></div>
    <div id="qPanel" class="box"><div id="qMain"></div><div id="qTools"></div></div>
   </div>
@@ -477,7 +477,7 @@ const TIPS = [
  "An onside kick has to travel 10 yards before the kicking team can grab it.",
  "Waving your arm on a punt means 'fair catch.' Nobody can hit you!",
  "Tip: Wrong answers show up in the Film Room so you can study them.",
- "Tip: Answer fast for a 'Quick Snap' damage bonus!",
+ "Tip: Answer fast for a 'Quick Snap' bonus!",
  "Tip: Get answers right in a row to build a streak and hit harder.",
  "Tip: Hydration Stations in each town heal you fully and save your game.",
  "Tip: Pep Rally Totems around the world give you free buffs!",
@@ -713,16 +713,16 @@ const poiById=id=>POIS.find(p=>p.id===id);
 
 // ---------------- ITEMS ----------------
 const CONS={
- water:{name:'Water Bottle',icon:'💧',desc:'Heal 30 HP',heal:30,price:15},
- orange:{name:'Orange Slices',icon:'🍊',desc:'Heal 20 HP',heal:20,price:10},
- sports:{name:'Sports Drink',icon:'🥤',desc:'Heal 60 HP',heal:60,price:35},
+ water:{name:'Water Bottle',icon:'💧',desc:'Restore 30 hydration',heal:30,price:15},
+ orange:{name:'Orange Slices',icon:'🍊',desc:'Restore 20 hydration',heal:20,price:10},
+ sports:{name:'Sports Drink',icon:'🥤',desc:'Restore 60 hydration',heal:60,price:35},
  icepack:{name:'Ice Pack',icon:'🧊',desc:'Fully heal',heal:9999,price:90},
  hint:{name:"Coach's Clipboard",icon:'📋',desc:'Challenge: remove 2 wrong answers',battle:true,price:25},
- timeout:{name:'Timeout Card',icon:'⏱️',desc:'Challenge: skip a question, no damage',battle:true,price:30},
+ timeout:{name:'Timeout Card',icon:'⏱️',desc:'Challenge: skip a question, no hydration lost',battle:true,price:30},
  horn:{name:'Air Horn',icon:'📯',desc:'No wild dinos for 150 steps',buff:['horn',150],price:40},
- pep:{name:'Pep Talk Card',icon:'📣',desc:'+30% damage for 3 challenges',buff:['pep',3],price:40},
- guard:{name:'Mouthguard',icon:'🦷',desc:'-35% damage taken for 3 challenges',buff:['guard',3],price:40},
- bar:{name:'Energy Bar',icon:'🍫',desc:'Heal 6 HP per correct answer for 3 challenges',buff:['regen',3],price:45},
+ pep:{name:'Pep Talk Card',icon:'📣',desc:'+30% play power for 3 challenges',buff:['pep',3],price:40},
+ guard:{name:'Mouthguard',icon:'🦷',desc:'-35% hydration lost for 3 challenges',buff:['guard',3],price:40},
+ bar:{name:'Energy Bar',icon:'🍫',desc:'+6 hydration per correct answer for 3 challenges',buff:['regen',3],price:45},
  film:{name:'Game Film',icon:'🎞️',desc:'+50% XP for 3 challenges',buff:['film',3],price:50},
  coin:{name:'Lucky Coin',icon:'🪙',desc:'+50% coins for 3 challenges',buff:['lucky',3],price:35},
 };
@@ -759,7 +759,7 @@ const GEAR={
  shoulder:{name:'Shoulder Pads',slot:'pads',r:1,def:5,hp:20,icon:'🛡️'},
  ribs:{name:'Rib Protector',slot:'pads',r:1,def:4,hp:30,icon:'🛡️'},
  probowl:{name:'Pro Bowl Pads',slot:'pads',r:2,def:8,hp:35,icon:'🛡️'},
- dinoscale:{name:'Dino-Scale Armor',slot:'pads',r:3,def:12,hp:50,icon:'🦖'},
+ dinoscale:{name:'Dino-Scale Uniform',slot:'pads',r:3,def:12,hp:50,icon:'🦖'},
  goldjacket:{name:'Hall of Fame Gold Jacket',slot:'pads',r:4,def:15,hp:80,icon:'🧥'},
  // cleats
  sneakers:{name:'Sneakers',slot:'cleats',r:0,dodge:3,icon:'👟'},
@@ -769,9 +769,9 @@ const GEAR={
  raptorcleats:{name:'Raptor-Claw Cleats',slot:'cleats',r:3,dodge:16,crit:5,icon:'🦶'},
  goldcleats:{name:'Golden Cleats',slot:'cleats',r:4,dodge:20,crit:8,atk:3,icon:'✨'},
 };
-const SLOTS=['weapon','helmet','pads','cleats'], SLOTN={weapon:'Equipment',helmet:'Helmet',pads:'Armor',cleats:'Cleats'};
+const SLOTS=['weapon','helmet','pads','cleats'], SLOTN={weapon:'Equipment',helmet:'Helmet',pads:'Uniform',cleats:'Cleats'};
 const GEAR_PRICE=[40,90,180,400,1000,3000];
-function gearDesc(g){const p=[];if(g.atk)p.push('ATK+'+g.atk);if(g.def)p.push('DEF+'+g.def);if(g.hp)p.push('HP+'+g.hp);if(g.crit)p.push('CRIT+'+g.crit+'%');if(g.dodge)p.push('JUKE+'+g.dodge+'%');if(g.heal)p.push('Heal '+g.heal+'/correct');return p.join('  ')}
+function gearDesc(g){const p=[];if(g.atk)p.push('ATK+'+g.atk);if(g.def)p.push('DEF+'+g.def);if(g.hp)p.push('💧+'+g.hp);if(g.crit)p.push('CRIT+'+g.crit+'%');if(g.dodge)p.push('JUKE+'+g.dodge+'%');if(g.heal)p.push('Heal '+g.heal+'/correct');return p.join('  ')}
 function rollGear(lv,minR=0){const w=[50,30,14,5,1].map((v,i)=>i<minR?0:v*Math.pow(1+lv/8,i));let s=w.reduce((a,b)=>a+b,0),r=R()*s,ri=0;for(;ri<w.length;ri++){r-=w[ri];if(r<=0)break}ri=Math.min(ri,4);const ids=Object.keys(GEAR).filter(k=>GEAR[k].r===ri);return pick(ids)}
 function rollCons(){const w={water:30,orange:20,sports:12,hint:10,timeout:8,bar:5,pep:5,guard:5,horn:4,film:3,coin:3,icepack:2};let s=0;for(const k in w)s+=w[k];let r=R()*s;for(const k in w){r-=w[k];if(r<=0)return k}return'water'}
 
@@ -1348,13 +1348,13 @@ function interact(){if(player.moving)return;
  const it=items.find(it=>it.kind==='chest'&&it.x===fx&&it.y===fy);if(it){openChest(it);return}
  const b=bosses.find(b=>fx>=b.x-1&&fx<=b.x+1&&fy>=b.y-1&&fy<=b.y);if(b){bossTalk(b);return}
  const t=map[idx(fx,fy)];
- if(t===T.FOUNTAIN){S.hp=stats().hp;S.respawn={x:player.x,y:player.y};SFX.heal();updHud();saveGame(true);dialog([`${NM()} takes a big drink at the Hydration Station.','HP fully restored! Respawn point set and game saved. 💾`]);return}
+ if(t===T.FOUNTAIN){S.hp=stats().hp;S.respawn={x:player.x,y:player.y};SFX.heal();updHud();saveGame(true);dialog([`${NM()} takes a big drink at the Hydration Station.','Hydration fully restored! Respawn point set and game saved. 💾`]);return}
  if(t===T.MONO){useMonolith(fx,fy);return}
  if(t===T.SIGN&&town[idx(fx,fy)]===SANCT_ID){dialog(['THE FOSSIL SANCTUM','Only those who have won challenges on every difficulty may stand here.','The GOAT-osaurus waits on the ancient field. The monolith returns you home.']);return}
  if(t===T.SIGN){const p=POIS[(town[idx(fx,fy)]||1)-1];const lines=[p.id==='champ'?'LAST CHANCE CAMP. Championship Stadium lies north, past the lava gate.':`Welcome to ${p.name.toUpperCase()}!`];if(p.boss&&p.id!=='champ')lines.push(`Home of ${p.boss.name}, Head Coach of ${CATS[p.cat].name.toUpperCase()}. The coach waits on the practice field to the north.`);if(p.id==='kickoff')lines.push('Hydration Station (fountain): heal and save. Pro Shop: buy gear. Tall grass: wild dinos!');dialog(lines);return}
  if(t===T.TOTEM){const tt=totems.find(o=>o.x===fx&&o.y===fy);const last=S.totem[tt.id];if(last!=null&&S.steps-last<300){dialog([`The Pep Rally Totem is quiet... Come back after ${300-(S.steps-last)} more steps.`]);return}
   S.totem[tt.id]=S.steps;S.st.totems=(S.st.totems||0)+1;const k=pick(['pep','guard','regen','film','lucky','horn']);const amt=k==='horn'?150:3;S.buffs[k]=(S.buffs[k]||0)+amt;const heal=Math.round(stats().hp*.3);S.hp=Math.min(stats().hp,S.hp+heal);SFX.level();updHud();
-  dialog([`📣 The Pep Rally Totem ROARS with crowd noise!`,`${NM()} gains ${BUFFS[k].icon} ${BUFFS[k].name} ${k==='horn'?'(150 steps)':'(3 challenges)'} and recovers ${heal} HP!`]);return}
+  dialog([`📣 The Pep Rally Totem ROARS with crowd noise!`,`${NM()} gains ${BUFFS[k].icon} ${BUFFS[k].name} ${k==='horn'?'(150 steps)':'(3 challenges)'} and recovers ${heal} hydration!`]);return}
  if(t===T.GATE){if(S.trophies.length>=6){openGate();return}dialog([`A heavy gate guards Championship Stadium.`,`Only a player with all 6 Coach Trophies may enter. (You have ${S.trophies.length}/6)`]);return}
  if(t===T.DOOR){dialog(['The door is locked. Everyone is outside watching football!']);return}
 }
@@ -1390,7 +1390,7 @@ function talk(n){
  const key=n.id;
  if(n.kind==='shop'){dialog([`${n.name}: Welcome! Need gear for the Gridiron?`],()=>openShop(n));return}
  if(n.kind==='mom'){if(!S.npc.mom){S.npc.mom=1;S.inv.water=(S.inv.water||0)+3;SFX.item();dialog([`Mom: ${NM()}! Be careful out there with all those dinosaurs.`,"Here, take 3 more Water Bottles. Stay hydrated!","And remember: the Hydration Station fountain heals you and saves your game."]);updHud()}else dialog([pick(["Mom: Don't forget your sunscreen, sweetie!","Mom: I'm so proud of you! Keep studying that playbook.","Mom: Dinner's at six. Finish your challenges by then!"])]);return}
- if(n.kind==='coach'){choice(`Coach Dale: Hey ${NM()}! Want a practice rep against a training dino? Questions are easy and it's a good warm-up.`,['Let\'s go!','Not now'],i=>{if(i===0){startBattle(makeEnemy('raptor',1,{name:'Tackle Dummy-raptor',pal:{B:'#c8a060',L:'#f0e0c0',P:'#8a2a2a',K:'#f4f4f4'},pattern:'stripes'}),{practice:true,cat:null,diff:[1,1]})}else dialog(["Coach Dale: Remember: right answers hit hard, and answering in a row builds your streak!"])});return}
+ if(n.kind==='coach'){choice(`Coach Dale: Hey ${NM()}! Want a practice rep against a training dino? Questions are easy and it's a good warm-up.`,['Let\'s go!','Not now'],i=>{if(i===0){startBattle(makeEnemy('raptor',1,{name:'Tackle Dummy-raptor',pal:{B:'#c8a060',L:'#f0e0c0',P:'#8a2a2a',K:'#f4f4f4'},pattern:'stripes'}),{practice:true,cat:null,diff:[1,1]})}else dialog(["Coach Dale: Remember: right answers make big plays, and answering in a row builds your streak!"])});return}
  if(n.kind==='tip'){dialog([`${n.name}: ${TIPS[(n.tip+S.steps)%TIPS.length]}`]);return}
  if(n.kind==='giver'){if(!S.npc[key]){S.npc[key]=1;const k=rollCons();S.inv[k]=(S.inv[k]||0)+1;SFX.item();updHud();dialog([`${n.name}: You look like you could use this!`,`${NM()} received ${CONS[k].icon} ${CONS[k].name}! (${CONS[k].desc})`])}else dialog([`${n.name}: ${TIPS[(n.tip+3)%TIPS.length]}`]);return}
  if(n.kind==='quiz'){const reg=regionPoi(n.x,n.y);let q;for(let t=0;t<12;t++){q=pickQuestion(reg.cat&&R()<.6?reg.cat:null,1,reg.diff[1]);if(!q.pic)break}const opts=shuffle([q.a,...q.w]);const first=!S.npc[key];
@@ -1593,11 +1593,11 @@ function answer(i){
   let dmg=s.atk*(.9+R()*.2)*(1+Math.min(B.streak-1,5)*.1)*(S.buffs.pep?1.3:1)*(quick?1.15:1)*(crit?1.6:1);dmg=Math.max(1,Math.round(dmg));
   B.en.hp=Math.max(0,B.en.hp-dmg);let heal=s.heal+(S.buffs.regen?6:0);if(heal){S.hp=Math.min(s.hp,S.hp+heal)}
   B.anim={type:'atk',t:0,dmg,crit,proj:GEAR[S.equip.weapon]?.proj||'ball'};SFX.correct();setTimeout(()=>SFX.hit(),380);
-  msg=`<b class="good">✔ CORRECT!</b> ${crit?'<b class="crit">CRITICAL HIT!</b> ':''}${quick?'<b class="quick">Quick Snap!</b> ':''}${B.streak>=3?`<b class="fire">🔥x${B.streak}</b> `:''}<b>${dmg} damage!</b>${heal?` <span class="good">+${heal} HP</span>`:''}<br>${esc(q.x)}`}
+  msg=`<b class="good">✔ CORRECT!</b> ${crit?'<b class="crit">BIG PLAY!</b> ':''}${quick?'<b class="quick">Quick Snap!</b> ':''}${B.streak>=3?`<b class="fire">🔥x${B.streak}</b> `:''}<b>${esc(B.en.name)} loses ${dmg} hydration! 💧</b>${heal?` <span class="good">+${heal} 💧</span>`:''}<br>${esc(q.x)}`}
  else{B.streak=0;B.wrong=(B.wrong||0)+1;const dodge=R()<s.dodge;let dmg=0;
   if(!dodge){dmg=B.en.atk*(.9+R()*.2)*30/(30+s.def)*(S.buffs.guard?.65:1)*({rookie:.7,pro:1,allpro:1.25,superfan:1.5}[S.diff]||1);if(B.opts.practice)dmg*=.3;dmg=Math.max(1,Math.round(dmg));S.hp=Math.max(0,S.hp-dmg)}
   B.anim={type:'hit',t:0,dmg,dodge};SFX.wrong();
-  msg=`<b class="bad">${i===-1?'⏱ SHOT CLOCK EXPIRED! ':''}✘ ${dodge?`Wrong... but ${NMH()} JUKED the attack!`:'WRONG!'}</b> ${dodge?'':`<b>${NMH()} takes ${dmg} damage.</b>`}<br>Answer: <b>${esc(q.a)}</b>. ${esc(q.x)}`}
+  msg=`<b class="bad">${i===-1?'⏱ SHOT CLOCK EXPIRED! ':''}✘ ${dodge?`Wrong... but ${NMH()} JUKED the play!`:'WRONG!'}</b> ${dodge?'':`<b>${NMH()} loses ${dmg} hydration. 💧</b>`}<br>Answer: <b>${esc(q.a)}</b>. ${esc(q.x)}`}
  $('#qTools').innerHTML='';B.fbReady=false;
  setTimeout(()=>{if(!B||B.phase!=='feedback')return;const fb=$('#qFeedback');fb.innerHTML=msg;fb.className=(ok?'box ok':'box no')+(q.pic?' picfb':'');$('#qTools').innerHTML=`<button class="tool go" onclick="G.cont()">Continue ▶</button>`;B.fbReady=true},700);
  setTimeout(()=>B&&updBattleBoxes(),400);
@@ -1613,17 +1613,17 @@ function run(){if(!B||B.phase!=='question')return;
  if(B.en.boss){toast("You can't run from a Head Coach!");return}
  if(R()<.7+stats().dodge){B.phase='end';B.after=null;setPanel(`<div class="qIntro">🏃 ${NMH()} got away safely!</div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}
  else{const dmg=Math.max(1,Math.round(B.en.atk*.6));S.hp=Math.max(0,S.hp-dmg);B.anim={type:'hit',t:0,dmg};SFX.wrong();updBattleBoxes();B.phase='feedback';B.fbReady=true;
-  setPanel(`<div class="qIntro">🏃 ${NMH()} tried to run... but ${esc(B.en.name)} blocked the way! <b>-${dmg} HP</b></div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}}
+  setPanel(`<div class="qIntro">🏃 ${NMH()} tried to run... but ${esc(B.en.name)} blocked the way! <b>-${dmg} 💧 hydration</b></div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}}
 function victory(){const e=B.en;B.phase='end';SFX.win();S.st.wins++;S.dex[e.fam].def++;
  if(!B.opts.practice){S.st.winsBy[S.diff]=(S.st.winsBy[S.diff]||0)+1;if(e.shiny)S.st.golden=(S.st.golden||0)+1;if(S.hp<=stats().hp*.1)S.flags.comeback=1;if(e.boss&&!B.wrong)S.flags.flawless=1;
   if(B.opts.boss){S.st.bossBy[S.diff]=(S.st.bossBy[S.diff]||0)+1;if(B.opts.boss.def.final)S.st.champBy[S.diff]=(S.st.champBy[S.diff]||0)+1}}
- const lines=[`<b>${esc(e.name)}</b> ${e.boss?'has been defeated!':'fainted!'}`];
+ const lines=[`<b>${esc(e.name)}</b> ${e.boss?'has been out-coached!':'is dehydrated!'}`];
  if(B.opts.practice){lines.push('Nice practice rep! +5 XP. Coach Dale gives you a high five. ✋');S.xp+=5;}
  else{
   const tp=teamPerks();let xp=Math.round((10+e.lv*6)*(e.boss?3:1)*(S.buffs.film?1.5:1)*(e.shiny?2:1)*(1+tp.xp/100)),coins=Math.round((6+e.lv*3)*(e.boss?4:1)*(S.buffs.lucky?1.5:1)*(e.shiny?3:1)*(1+tp.coin/100));
   S.xp+=xp;S.coins+=coins;lines.push(`+${xp} XP   +${coins} coins 🪙`);
-  const drops=[];if(B.opts.secretBoss){S.bosses.goat=1;S.gear.push('fossilball','dinocrown');lines.push(`✦ THE GOAT HAS FALLEN! ${NMH()} claims the <span style="color:${RAR[5].c}">🦴 Fossil Football</span> and the <span style="color:${RAR[5].c}">👑 Dino King Crown</span> [Mythic]!`);drops.push(['c','icepack'],['c','icepack'])}
-  else if(B.opts.legend){const it=B.opts.legend,g=GEAR[it.legend];S.taken[it.id]=1;S.gear.push(it.legend);lines.push(`🏆 LEGEND DEFEATED! ${NMH()} claims the <span style="color:${RAR[4].c}">${g.icon} ${g.name}</span>!`);drops.push(['c','icepack'])}
+  const drops=[];if(B.opts.secretBoss){S.bosses.goat=1;S.gear.push('fossilball','dinocrown');lines.push(`✦ THE GOAT HAS BEEN OUT-COACHED! ${NMH()} claims the <span style="color:${RAR[5].c}">🦴 Fossil Football</span> and the <span style="color:${RAR[5].c}">👑 Dino King Crown</span> [Mythic]!`);drops.push(['c','icepack'],['c','icepack'])}
+  else if(B.opts.legend){const it=B.opts.legend,g=GEAR[it.legend];S.taken[it.id]=1;S.gear.push(it.legend);lines.push(`🏆 LEGEND OUT-COACHED! ${NMH()} claims the <span style="color:${RAR[4].c}">${g.icon} ${g.name}</span>!`);drops.push(['c','icepack'])}
   else if(e.boss){const p=poiById(B.opts.boss.poi);drops.push(['g',rollGear(e.lv+8,BOSS_ORDER.indexOf(p.id)>=2||p.id==='champ'?3:2)]);drops.push(['c',rollCons()],['c',rollCons()])}
   else{if(R()<.45)drops.push(['c',rollCons()]);if(R()<.14||e.shiny)drops.push(['g',rollGear(e.lv)])}
   drops.forEach(([t,k])=>{if(t==='c'){S.inv[k]=(S.inv[k]||0)+1;lines.push(`Loot: ${CONS[k].icon} ${CONS[k].name}`)}else{S.gear.push(k);const g=GEAR[k];lines.push(`Loot: <span style="color:${RAR[g.r].c}">${g.icon} ${g.name} [${RAR[g.r].n}]</span>`)}});
@@ -1631,7 +1631,7 @@ function victory(){const e=B.en;B.phase='end';SFX.win();S.st.wins++;S.dex[e.fam]
   // buff countdown
   for(const k of Object.keys(S.buffs)){if(k==='horn')continue;S.buffs[k]--;if(S.buffs[k]<=0){delete S.buffs[k];lines.push(`${BUFFS[k].icon} ${BUFFS[k].name} wore off.`)}}
  }
- while(S.xp>=xpNeed(S.lv)){S.xp-=xpNeed(S.lv);S.lv++;S.hp=stats().hp;lines.push(`<b class="good">⭐ LEVEL UP! ${NMH()} is now Lv ${S.lv}! HP fully restored.</b>`);if(S.lv===10)lines.push(`✨ ${NMH()} now sparkles with confidence!`);if(S.lv===20)lines.push(`🌟 A golden aura now surrounds ${NMH()}!`);if(S.lv===30)lines.push(`💫 ${NMH()} glows like a true legend!`);setTimeout(SFX.level,600)}
+ while(S.xp>=xpNeed(S.lv)){S.xp-=xpNeed(S.lv);S.lv++;S.hp=stats().hp;lines.push(`<b class="good">⭐ LEVEL UP! ${NMH()} is now Lv ${S.lv}! Hydration fully restored.</b>`);if(S.lv===10)lines.push(`✨ ${NMH()} now sparkles with confidence!`);if(S.lv===20)lines.push(`🌟 A golden aura now surrounds ${NMH()}!`);if(S.lv===30)lines.push(`💫 ${NMH()} glows like a true legend!`);setTimeout(SFX.level,600)}
  let after=null;
  if(B.opts.secretBoss){after=()=>dialog(GOAT.outro.map(l=>`${GOAT.name}: ${l}`).concat(['Equip your Mythic gear from Menu → Gear.']))}
  else if(B.opts.legend){const L=LEGENDS[B.opts.legend.legend];after=()=>dialog(L.outro.map(l=>`${L.name}: ${l}`).concat(['Equip your legendary gear from Menu → Gear.']))}
@@ -1641,8 +1641,8 @@ function victory(){const e=B.en;B.phase='end';SFX.win();S.st.wins++;S.dex[e.fam]
  B.after=after;updBattleBoxes();saveGame(true);
  setPanel(`<div class="qIntro vic">${lines.join('<br>')}</div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}
 function defeat(){B.phase='end';const lost=Math.floor(S.coins*.25);S.coins-=lost;
- B.after=()=>{S.hp=stats().hp;S.x=S.respawn.x;S.y=S.respawn.y;startPlayer();lastRegion=-1;updHud();dialog([`${NM()} is out of breath and heads back to the locker room...`,`Dropped ${lost} coins on the way. Wrong answers were added to the Film Room. Study up and try again!`])};
- setPanel(`<div class="qIntro">😵 ${NMH()} can't keep going!</div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}
+ B.after=()=>{S.hp=stats().hp;S.x=S.respawn.x;S.y=S.respawn.y;startPlayer();lastRegion=-1;updHud();dialog([`${NM()} is dehydrated and heads back to the locker room to rehydrate...`,`Dropped ${lost} coins on the way. Wrong answers were added to the Film Room. Study up and try again!`])};
+ setPanel(`<div class="qIntro">😵 ${NMH()} is too dehydrated to keep going!</div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}
 function endBattle(){B=null;state='world';graceSteps=4;$('#battle').classList.add('hidden');$('#hud').classList.remove('hidden');updHud();setTimeout(checkAch,400)}
 function drawBattle(){
  const sky=BIOME_SKY[B.biome]||BIOME_SKY.plains;const g=ctx.createLinearGradient(0,0,0,140);g.addColorStop(0,sky[0]);g.addColorStop(1,sky[1]);ctx.fillStyle=g;ctx.fillRect(0,0,CW,CH);
@@ -1690,7 +1690,7 @@ const st=()=>S.st,legendsBeat=()=>items.filter(i=>i.legend&&S.taken[i.id]).lengt
 const ACH=[
  {g:'Dino Team',id:'recruit1',n:'Welcome Aboard',d:'Recruit your first dino.',i:'🥚',t:'bronze',c:()=>(S.team&&S.team.roster.length)>=1},
  {g:'Dino Team',id:'fullteam',n:'Full Squad',d:'Bring 3 dinos along on your team.',i:'🦖',t:'silver',c:()=>(S.team&&S.team.active.length)>=3},
- {g:'Dino Team',id:'allfam',n:'Jurassic Roster',d:'Recruit a dino from all 8 families.',i:'🌋',t:'gold',c:()=>S.team&&new Set(S.team.roster.map(d=>d.fam)).size>=8},
+ {g:'Dino Team',id:'allfam',n:'Jurassic Roster',d:'Recruit a teammate of all 8 dino types.',i:'🌋',t:'gold',c:()=>S.team&&new Set(S.team.roster.map(d=>d.fam)).size>=8},
  {g:'Getting Started',id:'first_win',n:'First Down',d:'Win your first challenge.',i:'🏈',t:'bronze',c:()=>st().wins>=1},
  {g:'Getting Started',id:'streak3',n:'Hat Trick',d:'Answer 3 questions in a row correctly.',i:'🎩',t:'bronze',c:()=>st().best>=3},
  {g:'Getting Started',id:'lv5',n:'Rookie of the Year',d:'Reach level 5.',i:'⭐',t:'bronze',c:()=>S.lv>=5},
@@ -1706,17 +1706,17 @@ const ACH=[
  {g:'Mastery',id:'ans500',n:'Walking Encyclopedia',d:'Answer 500 questions.',i:'🧠',t:'silver',c:()=>st().ans>=500},
  {g:'Mastery',id:'mastered10',n:'Film Room Rat',d:'Master 10 questions from your Film Room.',i:'🎬',t:'silver',c:()=>(st().mastered||0)>=10},
  {g:'Mastery',id:'allcat',n:'Well-Rounded',d:'Get 20 correct in every category.',i:'🎯',t:'silver',c:()=>Object.keys(CATS).every(k=>(st().cat[k]||[0,0])[1]>=20)},
- {g:'Mastery',id:'comeback',n:'Comeback Kid',d:'Win a challenge with 10% HP or less.',i:'💪',t:'silver',c:()=>S.flags.comeback},
+ {g:'Mastery',id:'comeback',n:'Comeback Kid',d:'Win a challenge with 10% hydration or less.',i:'💪',t:'silver',c:()=>S.flags.comeback},
  {g:'Mastery',id:'buzzer',n:'Buzzer Beater',d:'Answer correctly with 2 seconds or less on a shot clock.',i:'⏱️',t:'silver',c:()=>S.flags.buzzer},
  {g:'Mastery',id:'flawless',n:'Flawless',d:'Beat a coach without a single wrong answer.',i:'💎',t:'gold',c:()=>S.flags.flawless},
  {g:'Exploration',id:'explorer',n:'Road Trip',d:'Visit all 7 towns.',i:'🗺️',t:'silver',c:()=>['kickoff','harbor','dunes','rulebook','springs','peak','canton'].every(k=>S.visited[k])},
  {g:'Exploration',id:'chests20',n:'Treasure Hunter',d:'Open 20 chests.',i:'🧰',t:'silver',c:()=>(st().chests||0)>=20},
- {g:'Exploration',id:'dex',n:'Paleontologist',d:'Discover all 8 dino families.',i:'🦕',t:'silver',c:()=>Object.keys(S.dex).length>=8},
- {g:'Exploration',id:'golden',n:'Golden Ticket',d:'Defeat a rare golden dino.',i:'✨',t:'gold',c:()=>(st().golden||0)>=1},
+ {g:'Exploration',id:'dex',n:'Paleontologist',d:'Discover all 8 dino types.',i:'🦕',t:'silver',c:()=>Object.keys(S.dex).length>=8},
+ {g:'Exploration',id:'golden',n:'Golden Ticket',d:'Out-coach a rare golden dino.',i:'✨',t:'gold',c:()=>(st().golden||0)>=1},
  {g:'Exploration',id:'trophy6',n:'Six-Pack',d:'Collect all 6 Coach Trophies.',i:'🏅',t:'gold',c:()=>S.trophies.length>=6},
- {g:'Exploration',id:'champion',n:'Gridiron Legend',d:'Defeat Commissioner Spino.',i:'👑',t:'gold',c:()=>S.champion},
- {g:'Exploration',id:'legend1',n:'Old-School Respect',d:'Defeat a legendary coach guarding a gold chest.',i:'🧢',t:'gold',c:()=>legendsBeat()>=1},
- {g:'Exploration',id:'legend5',n:'Legends Never Die',d:'Defeat all 5 legendary coaches.',i:'🏛️',t:'plat',c:()=>legendsBeat()>=5},
+ {g:'Exploration',id:'champion',n:'Gridiron Legend',d:'Out-coach Commissioner Spino.',i:'👑',t:'gold',c:()=>S.champion},
+ {g:'Exploration',id:'legend1',n:'Old-School Respect',d:'Out-coach a legendary coach guarding a gold chest.',i:'🧢',t:'gold',c:()=>legendsBeat()>=1},
+ {g:'Exploration',id:'legend5',n:'Legends Never Die',d:'Out-coach all 5 legendary coaches.',i:'🏛️',t:'plat',c:()=>legendsBeat()>=5},
  {g:'Difficulty Challenges',id:'rookie10',n:'Rookie Camp',d:'Win 10 challenges on Rookie.',i:'🟢',t:'bronze',c:()=>tierWins('rookie')>=10},
  {g:'Difficulty Challenges',id:'pro10',n:'Making the Team',d:'Win 10 challenges on Pro.',i:'🟡',t:'silver',c:()=>tierWins('pro')>=10},
  {g:'Difficulty Challenges',id:'allpro10',n:'All-Pro Grind',d:'Win 10 challenges on All-Pro.',i:'🔴',t:'gold',c:()=>tierWins('allpro')>=10},
@@ -1733,7 +1733,7 @@ const ACH=[
  {g:'Daily Challenge',id:'daily7',n:'Week-Long Streak',d:'Play the Daily Challenge 7 days in a row.',i:'🗓️',t:'silver',c:()=>(loadDaily().bestStreak||0)>=7},
  {g:'Daily Challenge',id:'dailyperfect',n:'Perfect Day',d:'Get all 10 Daily Challenge questions right.',i:'🌞',t:'gold',c:()=>!!loadDaily().perfect},
  {g:'Secrets',id:'sanctum',n:'Into the Sanctum',d:'Find the hidden Fossil Sanctum.',hint:'Win challenges on every difficulty, then visit the monolith in Kickoff Town.',i:'🌋',t:'plat',secret:true,c:()=>S.sanctum},
- {g:'Secrets',id:'goat',n:'The GOAT',d:'Defeat the GOAT-osaurus.',hint:'Something ancient waits in a hidden place.',i:'🐐',t:'plat',secret:true,c:()=>S.bosses.goat},
+ {g:'Secrets',id:'goat',n:'The GOAT',d:'Out-coach the GOAT-osaurus.',hint:'Something ancient waits in a hidden place.',i:'🐐',t:'plat',secret:true,c:()=>S.bosses.goat},
 ];
 const achQ=[];let achShowing=false;
 function checkAch(){if(!S||state==='title')return;for(const a of ACH){if(S.ach[a.id])continue;let ok=false;try{ok=!!a.c()}catch(e){}if(ok){S.ach[a.id]=Date.now();const r=ATIER[a.t].pts*2;S.coins+=r;achQ.push([a,r])}}if(achQ.length){updHud();saveGame(true);showAch()}}
@@ -1782,13 +1782,13 @@ function renderMenu(){
  const tabs=[['bag','🎒 Bag'],['gear','🏈 Gear'],['team','🤝 Team'],['dex','🦖 Dino-Dex'],['film','🎬 Film Room'],['prog','🏆 Progress'],['ach','🏅 Awards'],['guide','📖 Guide'],['opt','⚙️ Options']];
  $('#menuTabs').innerHTML=tabs.map(([k,n])=>`<button class="${k===menuTab?'on':''}" onclick="G.tab('${k}')">${n}</button>`).join('')+`<button class="x" onclick="G.closeMenu()">✕</button>`;
  const s=stats();let h='';
- if(menuTab==='bag'){const ks=Object.keys(CONS).filter(k=>S.inv[k]);h=`<div class="sub">HP ${Math.ceil(S.hp)}/${s.hp} · 🪙 ${S.coins} coins</div><div class="grid">`+(ks.length?ks.map(k=>{const c=CONS[k];const usable=!c.battle;return`<div class="card"><div class="ic">${c.icon}</div><div><b>${c.name}</b> x${S.inv[k]}<br><small>${c.desc}</small></div>${usable?`<button onclick="G.useItem('${k}')">Use</button>`:'<small class="muted">challenges only</small>'}</div>`}).join(''):'<i>Your bag is empty. Check chests ✨ and win challenges for loot!</i>')+'</div>'}
- else if(menuTab==='gear'){h=`<div class="gearPrev"><canvas id="gp1" width="54" height="54"></canvas><canvas id="gp2" width="54" height="54"></canvas><canvas id="gp3" width="54" height="54"></canvas><div><b>${esc(poss(NM()))} look</b><br><small>Helmets, armor and cleats change how you look, and your equipment shows in your hand. Higher levels and legendary gear add sparkles and auras!</small><br><button onclick="G.editLook()" style="margin-top:3px">✂️ Change look</button></div></div><div class="stats">ATK <b>${s.atk}</b> · DEF <b>${s.def}</b> · Max HP <b>${s.hp}</b> · CRIT <b>${Math.round(s.crit*100)}%</b> · JUKE <b>${Math.round(s.dodge*100)}%</b>${s.heal?` · Heal <b>${s.heal}</b>/correct`:''}</div>`;
+ if(menuTab==='bag'){const ks=Object.keys(CONS).filter(k=>S.inv[k]);h=`<div class="sub">💧 Hydration ${Math.ceil(S.hp)}/${s.hp} · 🪙 ${S.coins} coins</div><div class="grid">`+(ks.length?ks.map(k=>{const c=CONS[k];const usable=!c.battle;return`<div class="card"><div class="ic">${c.icon}</div><div><b>${c.name}</b> x${S.inv[k]}<br><small>${c.desc}</small></div>${usable?`<button onclick="G.useItem('${k}')">Use</button>`:'<small class="muted">challenges only</small>'}</div>`}).join(''):'<i>Your bag is empty. Check chests ✨ and win challenges for loot!</i>')+'</div>'}
+ else if(menuTab==='gear'){h=`<div class="gearPrev"><canvas id="gp1" width="54" height="54"></canvas><canvas id="gp2" width="54" height="54"></canvas><canvas id="gp3" width="54" height="54"></canvas><div><b>${esc(poss(NM()))} look</b><br><small>Helmets, uniforms and cleats change how you look, and your equipment shows in your hand. Higher levels and legendary gear add sparkles and auras!</small><br><button onclick="G.editLook()" style="margin-top:3px">✂️ Change look</button></div></div><div class="stats">ATK <b>${s.atk}</b> · DEF <b>${s.def}</b> · Max 💧 <b>${s.hp}</b> · CRIT <b>${Math.round(s.crit*100)}%</b> · JUKE <b>${Math.round(s.dodge*100)}%</b>${s.heal?` · Heal <b>${s.heal}</b>/correct`:''}</div>`;
   h+='<div class="slots">'+SLOTS.map(sl=>{const id=S.equip[sl],g=id&&GEAR[id];return`<div class="slot"><small>${SLOTN[sl]}</small><br>${g?`<span style="color:${RAR[g.r].c}">${g.icon} <b>${g.name}</b></span><br><small>${gearDesc(g)}</small>`:'<i>empty</i>'}</div>`}).join('')+'</div>';
   const counts={};S.gear.forEach(id=>counts[id]=(counts[id]||0)+1);
   h+='<div class="grid">'+Object.keys(counts).sort((a,b)=>GEAR[b].r-GEAR[a].r).map(id=>{const g=GEAR[id],eq=S.equip[g.slot]===id;return`<div class="card" style="border-color:${RAR[g.r].c}"><div class="ic">${g.icon}</div><div><b style="color:${RAR[g.r].c}">${g.name}</b>${counts[id]>1?' x'+counts[id]:''}<br><small>${RAR[g.r].n} ${SLOTN[g.slot]} · ${gearDesc(g)}</small></div>${eq?'<small class="good">equipped</small>':`<button onclick="G.equip('${id}')">Equip</button>`}</div>`}).join('')+'</div>'}
  else if(menuTab==='team')h=teamTabHtml();
- else if(menuTab==='dex'){const seen=Object.keys(S.names).length;h=`<div class="sub">Unique dinos met: <b>${seen}</b> · Families: <b>${Object.keys(S.dex).length}/8</b></div><div class="grid dex">`+FAMS.map(f=>{const d=S.dex[f];return`<div class="card"><canvas class="dexc" data-f="${f}" width="58" height="50"></canvas><div><b>${d?FAMN[f]:'???'}</b><br><small>${d?`Seen ${d.seen} · Beaten ${d.def}`:'Not discovered'}</small></div></div>`}).join('')+'</div>'}
+ else if(menuTab==='dex'){const seen=Object.keys(S.names).length;h=`<div class="sub">Unique dinos met: <b>${seen}</b> · Types: <b>${Object.keys(S.dex).length}/8</b></div><div class="grid dex">`+FAMS.map(f=>{const d=S.dex[f];return`<div class="card"><canvas class="dexc" data-f="${f}" width="58" height="50"></canvas><div><b>${d?FAMN[f]:'???'}</b><br><small>${d?`Seen ${d.seen} · Beaten ${d.def}`:'Not discovered'}</small></div></div>`}).join('')+'</div>'}
  else if(menuTab==='film'){const ids=Object.keys(S.missed).map(Number);const acc=S.st.ans?Math.round(S.st.cor/S.st.ans*100):0;
   h=`<div class="sub">Accuracy: <b>${acc}%</b> (${S.st.cor}/${S.st.ans}) · Best streak: <b>${S.st.best}</b></div><div class="catbars">`+Object.keys(CATS).map(k=>{const c=S.st.cat[k]||[0,0];const p=c[0]?Math.round(c[1]/c[0]*100):0;return`<div class="cb"><span>${CATS[k].name}</span><div class="bar"><i style="width:${p}%;background:${CATS[k].c}"></i></div><small>${c[1]}/${c[0]}</small></div>`}).join('')+'</div>';
   h+=`<h4>Plays to review (${ids.length}) ${ids.length?`<button onclick="G.drill()">🏋️ Practice Drill</button>`:''}</h4>`+(ids.length?ids.map(id=>{const q=QB[id];return`<div class="film">${q.pic?`<canvas class="filmPic" data-pic="${q.pic}"></canvas>`:''}<span class="cat" style="background:${CATS[q.cat].c}">${CATS[q.cat].name}</span> ${esc(q.q)}<br><b class="good">✔ ${esc(q.a)}</b> <small>${esc(q.x)}</small></div>`}).join(''):'<i>No missed questions right now. Questions you miss show up here until you get them right twice.</i>')}
@@ -1824,7 +1824,7 @@ const TEAM_MAX=30,TEAM_ACTIVE=3;
 const PERKS={rex:{n:'Power Roar',i:'💪',k:'atk',b:3,s:1,u:''},raptor:{n:'Quick Feet',i:'💨',k:'dodge',b:5,s:1,u:'%'},sauro:{n:'Big Heart',i:'❤️',k:'hp',b:12,s:4,u:''},
  trike:{n:'Horn Charge',i:'🎯',k:'crit',b:4,s:1,u:'%'},stego:{n:'Study Buddy',i:'📚',k:'xp',b:10,s:2,u:'%'},ankylo:{n:'Armor Shell',i:'🛡️',k:'def',b:3,s:1,u:''},
  ptero:{n:'Tailwind',i:'🪶',k:'spd',b:25,s:0,u:'%'},spino:{n:'Treasure Nose',i:'🪙',k:'coin',b:15,s:3,u:'%'}};
-const PERK_LBL={atk:'ATK',def:'DEF',hp:'Max HP',crit:'CRIT',dodge:'JUKE',xp:'XP from challenges',coin:'coins from challenges',spd:'walking speed'};
+const PERK_LBL={atk:'ATK',def:'DEF',hp:'max hydration',crit:'CRIT',dodge:'JUKE',xp:'XP from challenges',coin:'coins from challenges',spd:'walking speed'};
 function perkVal(d){const p=PERKS[d.fam];return p.b+Math.floor(d.lv/5)*p.s}
 function perkText(d){const p=PERKS[d.fam];return`${p.i} ${p.n} (+${perkVal(d)}${p.u} ${PERK_LBL[p.k]})`}
 function teamDinos(){const t=S&&S.team;if(!t)return[];return t.active.map(id=>t.roster.find(d=>d.id===id)).filter(Boolean)}
@@ -1871,13 +1871,13 @@ function teamCard(d,active){const t=S.team,lead=t.active[0]===d.id,full=t.active
  btns+=`<button title="Rename" onclick="G.team('edit',${d.id})">✏️</button>`+(active?'':`<button title="Release" onclick="G.team('rel',${d.id})">👋</button>`);
  return`<div class="card tcard${lead?' lead':''}${teamUI.swap===d.id?' picking':''}"><canvas class="tdino" data-id="${d.id}" width="58" height="50"></canvas><div class="tinfo"><b>${lead?'⭐ ':''}${d.shiny?'✨ ':''}${esc(d.nick)}</b> <small>Lv ${d.lv}</small><br><small>${FAMN[d.fam]}${d.nick!==d.name?` · ${esc(d.name)}`:''}</small><br><small class="perk">${perkText(d)}</small><div class="tbtns">${btns}</div></div></div>`}
 function teamTabHtml(){const t=S.team,act=teamDinos(),bench=t.roster.filter(d=>!t.active.includes(d.id)),tp=teamPerks();
- if(!t.roster.length)return`<div class="help"><b>🥚 No dinos on your team yet!</b><br><br>After you beat a wild dino, it sometimes asks to join your team. Bring up to <b>3</b> dinos along: each one gives a perk based on its family, and your <b>lead</b> dino follows you around the map.<br><br>${teamPerkList()}</div>`;
+ if(!t.roster.length)return`<div class="help"><b>🥚 No dinos on your team yet!</b><br><br>After you beat a wild dino, it sometimes asks to join your team. Bring up to <b>3</b> dinos along: each teammate gives a perk based on its dino type, and your <b>lead</b> dino follows you around the map.<br><br>${teamPerkList()}</div>`;
  const sum=Object.keys(tp).filter(k=>tp[k]).map(k=>`+${tp[k]}${['atk','def','hp'].includes(k)?'':'%'} ${PERK_LBL[k]}`).join(' · ')||'none yet';
  let h=`<div class="sub">Team perks: <b>${sum}</b> · Roster ${t.roster.length}/${TEAM_MAX}</div>`;
  if(teamUI.swap){const d=t.roster.find(x=>x.id===teamUI.swap);h+=`<div class="tswap">Pick an active dino to swap with <b>${esc(d.nick)}</b>. <button onclick="G.team('cancel')">Cancel</button></div>`}
  h+=`<h4>Active team (${act.length}/${TEAM_ACTIVE})</h4><div class="sub">⭐ Your lead dino follows you on the map. Dinos on the team level up as you win challenges.</div><div class="grid team">`+act.map(d=>teamCard(d,true)).join('')+Array(TEAM_ACTIVE-act.length).fill(`<div class="card tcard empty"><div class="tinfo"><i>Empty slot</i><br><small>Bring a dino along from the bench.</small></div></div>`).join('')+'</div>';
  h+=`<h4>Bench (${bench.length})</h4>`+(bench.length?`<div class="grid team">`+bench.map(d=>teamCard(d,false)).join('')+'</div>':'<i>No dinos on the bench. Win more challenges to recruit!</i>');
- return h+`<details class="tperks"><summary>What does each family do?</summary>${teamPerkList()}</details>`}
+ return h+`<details class="tperks"><summary>What does each teammate do?</summary>${teamPerkList()}</details>`}
 function teamPerkList(){return'<div class="plist">'+FAMS.map(f=>{const p=PERKS[f];return`<span><b>${FAMN[f]}</b>: ${p.i} ${p.n}, +${p.b}${p.u} ${PERK_LBL[p.k]}${p.s?` (more every 5 Lv)`:''}</span>`}).join('')+'</div>'}
 function teamTabAfter(){document.querySelectorAll('.tdino').forEach(c=>{const d=S.team.roster.find(x=>x.id===+c.dataset.id);if(!d)return;const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.clearRect(0,0,c.width,c.height);g.drawImage(dinoFull(d),0,0)});
  const inp=$('#tmName');if(inp){inp.focus();inp.select();inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();teamAct('save',teamUI.edit)}else if(e.key==='Escape'){e.preventDefault();teamAct('cancel')}}}}
@@ -1967,7 +1967,7 @@ function startGame(sv,isNew){S=sv;S.hero=heroOf(S);S.team=Object.assign({roster:
  if(S.gateOpen)for(let i=0;i<map.length;i++)if(map[i]===T.GATE)map[i]=T.BRIDGE;
  zoomI=S.zoom??1;updZoomBtns();
  startPlayer();state='world';lastRegion=region[idx(S.x,S.y)];lastTown=town[idx(S.x,S.y)];rebuildBrady();updHud();ac();setTimeout(checkAch,2500);
- if(isNew){dialog(["🦖 THE GRIDIRON ISLES are overrun by DINOSAURS!","These dinos only respect one thing: FOOTBALL KNOWLEDGE.",`In a challenge, a question pops up. Answer RIGHT and ${NM()} attacks. Answer WRONG and the dino attacks ${NM()}!`,"Beat the 6 Head Coach dinos to earn their trophies, then face COMMISSIONER SPINO in the volcano at the center of the isles.","Follow the red compass (top-right) to your next goal. Talk to people with Space/Enter. Press M for the map and I for your menu.",`Ready, ${NM()}? Let's go! 🏈`],()=>{S.intro=true;saveGame(true)})}
+ if(isNew){dialog(["🦖 THE GRIDIRON ISLES are overrun by DINOSAURS!","These dinos only respect one thing: FOOTBALL KNOWLEDGE.",`In a challenge, a question pops up. Answer RIGHT and ${NM()} makes a play. Answer WRONG and the dino makes a play on ${NM()}!`,"Beat the 6 Head Coach dinos to earn their trophies, then face COMMISSIONER SPINO in the volcano at the center of the isles.","Follow the red compass (top-right) to your next goal. Talk to people with Space/Enter. Press M for the map and I for your menu.",`Ready, ${NM()}? Let's go! 🏈`],()=>{S.intro=true;saveGame(true)})}
  else{banner(POIS[lastRegion].region);toast(`Welcome back, ${NM()}!`)}}
 function showEnding(){state='menu';$('#endName').textContent=NM();const acc=S.st.ans?Math.round(S.st.cor/S.st.ans*100):0;$('#ending').classList.remove('hidden');
  $('#endStats').innerHTML=`Level <b>${S.lv}</b> · Questions answered <b>${S.st.ans}</b> · Accuracy <b>${acc}%</b><br>Best streak <b>${S.st.best}</b> · Dinos challenged <b>${S.st.battles}</b> · Steps <b>${S.steps}</b>`;SFX.win()}

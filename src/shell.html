@@ -76,7 +76,7 @@ small{font-size:10px}
 #enBox{position:absolute;left:10px;top:10px;width:250px;padding:6px 10px}
 #plBox{position:absolute;right:10px;top:194px;width:236px;padding:6px 10px}
 .nm{display:flex;justify-content:space-between;font-weight:800;font-size:13px}
-.hpRow{display:flex;gap:5px;align-items:center;margin-top:3px}.hpRow b{font-size:9px;background:#e8900c;color:#fff;padding:0 3px;border-radius:2px}
+.hpRow{display:flex;gap:5px;align-items:center;margin-top:3px}.hpRow b{font-size:11px;line-height:1}
 #enTag{font-size:9px;font-weight:700;color:#6a5a8a;margin-top:2px}
 #plHpT{text-align:right;font-weight:800;font-size:11px}
 .xpbar{height:4px;background:#2a2440;border-radius:2px;overflow:hidden;margin-top:2px}.xpbar i{display:block;height:100%;background:#3aa0ff;transition:width .5s}
@@ -194,8 +194,8 @@ body.touch:not(.portrait) #touch{position:fixed;left:0;right:0;bottom:10px;max-w
    <div id="hudBtns"><button id="btnDaily" title="Daily Challenge">📅 Daily</button><button id="btnMus" title="Music">🎵</button><button id="btnFs" title="Full screen (F)">⛶</button><button id="btnZin" title="Zoom in (+)">🔍＋</button><button id="btnZout" title="Zoom out (−)">🔍－</button><button id="btnMenu">☰ Menu (I)</button><button id="btnMap">🗺 Map (M)</button><button id="btnSnd">🔊</button></div>
   </div>
   <div id="battle" class="hidden">
-   <div id="enBox" class="box"><div class="nm"><span id="enName"></span><span id="enLv"></span></div><div class="hpRow"><b>HP</b><div class="bar"><i id="enHp"></i></div></div><div id="enTag"></div></div>
-   <div id="plBox" class="box"><div class="nm"><span id="plName">BRADY</span><span id="plLv"></span></div><div class="hpRow"><b>HP</b><div class="bar"><i id="plHp"></i></div></div><div id="plHpT"></div><div class="xpbar"><i id="plXp"></i></div><div id="streak"></div></div>
+   <div id="enBox" class="box"><div class="nm"><span id="enName"></span><span id="enLv"></span></div><div class="hpRow"><b title="Hydration">💧</b><div class="bar"><i id="enHp"></i></div></div><div id="enTag"></div></div>
+   <div id="plBox" class="box"><div class="nm"><span id="plName">BRADY</span><span id="plLv"></span></div><div class="hpRow"><b title="Hydration">💧</b><div class="bar"><i id="plHp"></i></div></div><div id="plHpT"></div><div class="xpbar"><i id="plXp"></i></div><div id="streak"></div></div>
    <div id="qPic" class="box hidden"><canvas id="qPicC" width="64" height="72"></canvas></div><div id="qFeedback" class="box hidden"></div>
    <div id="qPanel" class="box"><div id="qMain"></div><div id="qTools"></div></div>
   </div>

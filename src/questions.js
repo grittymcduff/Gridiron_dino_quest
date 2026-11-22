@@ -254,7 +254,7 @@ const TIPS = [
  "An onside kick has to travel 10 yards before the kicking team can grab it.",
  "Waving your arm on a punt means 'fair catch.' Nobody can hit you!",
  "Tip: Wrong answers show up in the Film Room so you can study them.",
- "Tip: Answer fast for a 'Quick Snap' damage bonus!",
+ "Tip: Answer fast for a 'Quick Snap' bonus!",
  "Tip: Get answers right in a row to build a streak and hit harder.",
  "Tip: Hydration Stations in each town heal you fully and save your game.",
  "Tip: Pep Rally Totems around the world give you free buffs!",
