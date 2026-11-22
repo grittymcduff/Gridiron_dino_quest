@@ -1,6 +1,6 @@
 # Brady's Gridiron Dino Quest
 
-A Pokémon-style pixel-art RPG where you battle dinosaurs by answering NFL trivia.
+A Pokémon-style pixel-art RPG where you challenge dinosaurs by answering NFL trivia.
 
 **Play:** https://grittymcduff.github.io/Gridiron_dino_quest/
 
