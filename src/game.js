@@ -342,6 +342,7 @@ function renderGrid(rows,pal,flip,hat){const h=rows.length,w=rows[0].length;cons
 //     fr freckles, style hair style, helm {c,x,mask,visor,crown}}
 const P_LX=-.6,P_LY=-.8;
 function personFrame(o,dir,f){
+ // Chibi style: big head (~60% of height), voluminous textured hair, small body. 32x32 art.
  const W=32,H=32,G=new Array(W*H).fill(null),GR=new Int8Array(W*H);let grp=0;
  const P=(x,y,c)=>{x=Math.floor(x);y=Math.floor(y);if(c&&x>=0&&y>=0&&x<W&&y<H){G[y*W+x]=c;GR[y*W+x]=grp}};
  const at=(x,y)=>x>=0&&y>=0&&x<W&&y<H?G[y*W+x]:null;
@@ -350,90 +351,96 @@ function personFrame(o,dir,f){
  const tri=(pts,c)=>{let x0=99,x1=-99,y0=99,y1=-99;pts.forEach(([x,y])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)});
   for(let y=Math.floor(y0);y<=y1;y++)for(let x=Math.floor(x0);x<=x1;x++){let ins=false;const X=x+.5,Y=y+.5;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const[xi,yi]=pts[i],[xj,yj]=pts[j];if((yi>Y)!==(yj>Y)&&X<(xj-xi)*(Y-yi)/(yj-yi)+xi)ins=!ins}if(ins)P(x,y,c)}};
  const sc={};const SH=(c,k)=>{const key=c+k;return sc[key]||(sc[key]=k?shade(c,k):c)};
- // 3-tone shading from an ellipse position (a,b in -1..1): lit from the top-left
- const vol=(c,hi=.18,dk=-.2)=>(x,y,a,b)=>{const l=-(a*P_LX+b*P_LY)*-1;return l>.42?SH(c,hi):l<-.38?SH(c,dk):c};
- const flat=(c,x,x0,x1)=>x<=x0?SH(c,.14):x>=x1?SH(c,-.2):c;
+ const lit=(a,b)=>a*P_LX+b*P_LY;            // >0 faces the top-left light
  const s=o.s,h=o.h,t=o.t,p=o.p,b=o.b||'#f0f0f0',HM=o.helm,st=o.style||'shaggy';
  const side=dir==='left',up=dir==='up',down=dir==='down';
- const step=f===0?0:f===1?1:-1;               // walk cycle: +1 / -1
+ const step=f===0?0:f===1?1:-1;
  const bulk=o.bulk||0;
  const shirt=(x,y)=>{let c=t;if(o.k&&((x+y*2)%5===0||(x+y*2)%5===2&&y%2))c=o.k;return c};
-
+ const flat=(c,x,x0,x1)=>x<=x0?SH(c,.16):x>=x1?SH(c,-.24):c;
+ const hx=side?15:16,hy=12;                 // head centre
  // ---------- legs & shoes ----------
  grp=0;
- if(!side){
-  const lf=step>0?-1:0,rf=step<0?-1:0;
-  for(const[x0,lift]of[[11,lf],[17,rf]]){R(x0,26,4,3+lift,xx=>flat(p,xx,x0,x0+3));
-   R(x0-(x0<16?1:0),29+lift,5,2,xx=>SH(b,xx<=x0?.12:0));R(x0-(x0<16?1:0),31+lift,5,1,SH(b,-.35))}
- }else{
-  const fx=13-step*3,bx=15+step*3;                 // front / back leg x
-  const leg=(x,dark)=>{R(x,26,3,3,xx=>SH(p,dark?-.22:(xx===x?.1:0)));R(x-2,29,5,2,SH(b,dark?-.2:0));R(x-2,31,5,1,SH(b,-.4))};
-  leg(bx,true);leg(fx,false);
- }
- // ---------- torso ----------
- const tw0=side?11:9,tw1=side?20:22;
- R(tw0+1,25,tw1-tw0-1,2,xx=>flat(p,xx,tw0+1,tw1-1));                      // waist
- for(let y=18;y<=25;y++){const in1=y===18?1:0;for(let x=tw0+in1;x<=tw1-in1;x++)P(x,y,flat(shirt(x,y),x,tw0+in1,tw1-in1-1))}
- if(o.z&&!side)for(let y=18;y<=25;y++){P(tw0+2,y,o.z);P(tw1-2,y,o.z)}    // jersey side stripes
- if(o.z&&side)for(let y=18;y<=25;y++)P(tw0+4,y,o.z);
- if(down){P(15,18,SH(s,-.1));P(16,18,SH(s,-.1));P(15,19,SH(t,-.3));P(16,19,SH(t,-.3))}   // collar V
- if(up){R(13,18,6,1,SH(t,-.25));const nc=SH(t,.28);for(const[x,y]of[[14,20],[15,20],[16,20],[17,20],[17,21],[16,22],[15,23],[15,24]])P(x,y,o.z||nc)} // collar + number 7
- if(bulk){const e=bulk;for(let y=18;y<=19+e;y++){R(tw0-e,y,e+1,1,SH(t,.08));R(tw1,y,e+1,1,SH(t,-.15))}if(!side){R(tw0-e+1,17,4,1,SH(t,.2));R(tw1-3+e,17,4,1,SH(t,.1))}}
- // ---------- arms ----------
+ if(!side){const lf=step>0?-1:0,rf=step<0?-1:0;
+  for(const[x0,lift]of[[12,lf],[17,rf]]){R(x0,27,3,2+lift,xx=>flat(p,xx,x0,x0+2));R(x0-(x0<16?1:0),29+lift,4,2,xx=>SH(b,xx<=x0-1+(x0<16?0:1)?.18:0));R(x0-(x0<16?1:0),31+lift,4,1,SH(b,-.38))}}
+ else{const fx=13-step*2,bx=15+step*2;const leg=(x,dark)=>{R(x,27,3,2,xx=>SH(p,dark?-.24:(xx===x?.12:0)));R(x-2,29,5,2,(xx,yy)=>SH(b,dark?-.22:yy===29?.15:0));R(x-2,31,5,1,SH(b,-.4))};leg(bx,true);leg(fx,false)}
+ // ---------- torso (small) ----------
+ const tw0=side?12:11,tw1=side?19:20;
+ for(let y=21;y<=27;y++){const in1=y===21?1:0;for(let x=tw0+in1;x<=tw1-in1;x++)P(x,y,y===27?SH(p,-.05):flat(shirt(x,y),x,tw0+in1,tw1-in1-1))}
+ if(o.z){if(!side)for(let y=21;y<=26;y++){P(tw0+1,y,o.z);P(tw1-1,y,o.z)}else for(let y=21;y<=26;y++)P(tw0+3,y,o.z)}
+ if(up){const nc=o.z||SH(t,.3);for(const[x,y]of[[14,22],[15,22],[16,22],[17,22],[17,23],[16,24],[16,25]])P(x,y,nc)}
+ if(down){P(15,21,SH(t,-.35));P(16,21,SH(t,-.35))}
+ if(bulk){const e=bulk;for(let y=21;y<=22+e;y++){R(tw0-e,y,e,1,SH(t,.1));R(tw1+1,y,e,1,SH(t,-.18))}}
+ // ---------- arms (short) ----------
  grp=2;
- const arm=(x,swing,front)=>{const y0=19,len=6+(swing>0?1:swing<0?-1:0);
-  R(x,y0,3,3,xx=>flat(shirt(xx,y0),xx,x,x+2));if(o.z)R(x,y0+2,3,1,o.z);
-  R(x,y0+3,3,len-3,xx=>flat(s,xx,x,x+2));R(x,y0+len,3,1,SH(s,-.12))};
- if(!side){arm(tw0-3-(bulk?1:0),step,true);arm(tw1+1+(bulk?1:0),-step,true)}
- else{const ax=14-step*2;arm(ax,0,true)}
- // ---------- head ----------
+ const arm=(x,swing)=>{const y0=22,len=4+(swing>0?1:swing<0?-1:0);R(x,y0,2,2,xx=>flat(shirt(xx,y0),xx,x,x+1));if(o.z)R(x,y0+1,2,1,o.z);R(x,y0+2,2,len-2,xx=>xx===x?SH(s,.08):SH(s,-.08));R(x,y0+len,2,1,SH(s,-.2))};
+ if(!side){arm(tw0-2-bulk,step);arm(tw1+1+bulk,-step)}else arm(15-step*2,0);
+ // ---------- hair geometry ----------
  grp=1;
- const hx=side?15:16,hy=10.5,hrx=side?8.8:9,hry=8.6;
  const hasHelm=!!(HM&&!HM.crown);
- // big hair behind the head (puffy / long)
+ const hc=[hx+(side?1.2:0),hy-1.5];               // hair mass centre
+ const tuft=(ang)=>{                              // outline bumps by style, ang: 0=right, -PI/2=up
+  const u=((ang/(Math.PI*2))%1+1)%1;
+  if(st==='spiky'){const n=9,w=Math.abs(((u*n+.25)%1)*2-1);return 4.2*Math.pow(1-w,1.3)*(Math.sin(ang)<.35?1:.25)}
+  if(st==='puffy'){const n=13,w=Math.abs(((u*n)%1)*2-1);return 1.6+1.1*(1-w)}
+  if(st==='buzz')return 0;
+  const n=11,w=Math.abs(((u*n+.5)%1)*2-1);return .9+1.5*Math.pow(1-w,2)*(Math.sin(ang)<.5?1:.4)};
+ const baseRX=(st==='puffy'?11.2:st==='buzz'?9.7:10.3)-(side?.4:0),baseRY=st==='puffy'?10.4:st==='buzz'?9.2:9.8;
+ const inHair=(x,y)=>{const dx=x+.5-hc[0],dy=y+.5-hc[1],ang=Math.atan2(dy,dx),d=Math.hypot(dx/baseRX,dy/baseRY);return d<=1+tuft(ang)/Math.max(baseRX,baseRY)};
+ // strands radiate from the crown; sheen arc on the lit side
+ const crown=[hx+(side?2.5:0),hy-9];
+ const hairCol=(x,y)=>{const dx=x+.5-hc[0],dy=y+.5-hc[1],a=dx/(baseRX+2),bq=dy/(baseRY+2),l=lit(a,bq);
+  let k=l>.55?.24:l>.25?.1:l<-.5?-.3:l<-.18?-.14:0;
+  const ca=Math.atan2(y+.5-crown[1],x+.5-crown[0]),stripe=Math.floor(ca*14/Math.PI+((x*7+y*3)%5)*.12);
+  if(stripe%3===0)k-=.14;else if(stripe%3===1&&l>.1)k+=.06;
+  const dr=Math.hypot((x+.5-crown[0])/9,(y+.5-crown[1])/8);if(dr>.55&&dr<.8&&l>.15&&stripe%2===0)k+=.2;   // sheen
+  if(st==='buzz')k=(x+y)%2?k+.06:k-.06;
+  return SH(h,Math.max(-.45,Math.min(.4,k)))};
+ const tipLen=(x)=>((x*37)%5)+((x*11)%3);
+ // ---------- back hair (behind the head) ----------
  if(!hasHelm){
-  if(st==='puffy')E(hx+(side?1.5:0),hy-2,side?11:11.5,9,(x,y,a,b)=>{const l=a*P_LX+b*P_LY;let k=l>.55?.22:l>.25?.1:l<-.4?-.25:l<-.1?-.1:0;if(((x*3+y*5)%7)===0)k-=.12;return SH(h,k)});
-  if(st==='long'){if(up)R(9,12,14,13,xx=>flat(h,xx,9,22));else if(side)R(15,9,7,14,xx=>flat(h,xx,15,21));else{R(5,9,4,14,SH(h,-.12));R(23,9,4,14,SH(h,-.22))}}
-  if(st==='ponytail'){const q='#e8443a';if(up){R(15,17,3,8,xx=>flat(h,xx,15,17));R(15,17,3,1,q)}else if(side){R(22,8,3,2,q);tri([[24,8],[29,10],[27,17],[23,12]],SH(h,-.1))}else{R(25,5,3,2,q);R(25,7,3,7,SH(h,-.15))}}
+  E(hc[0],hc[1],baseRX+5,baseRY+5,hairCol,(x,y)=>inHair(x,y)&&(up||side?true:y<hy+4));
+  if(st==='long'){const y1=24;if(up)for(let x=8;x<=23;x++)R(x,hy,1,y1-hy+tipLen(x)-2,hairCol);else if(side)for(let x=hx+1;x<=hx+8;x++)R(x,hy-2,1,y1-hy+tipLen(x)-1,hairCol);else{for(let x=5;x<=8;x++)R(x,hy-2,1,y1-hy+tipLen(x),hairCol);for(let x=23;x<=26;x++)R(x,hy-2,1,y1-hy+tipLen(x),hairCol)}}
+  if(st==='ponytail'){const q='#e8443a';if(up){for(let x=14;x<=17;x++)R(x,hy+6,1,8+tipLen(x)%3,hairCol);R(14,hy+5,4,1,q)}else if(side){tri([[hx+8,hy-4],[hx+16,hy+1],[hx+14,hy+10],[hx+9,hy+3]],SH(h,-.05));for(let k=0;k<6;k++)P(hx+10+k,hy-2+k,SH(h,-.25));R(hx+7,hy-5,2,3,q)}else{tri([[25,hy-5],[30,hy-1],[28,hy+8],[25,hy+2]],SH(h,-.12));R(24,hy-6,3,2,q)}}
  }
- if(!side){P(6,12,s);P(6,13,SH(s,-.15));P(25,12,SH(s,-.1));P(25,13,SH(s,-.25))}           // ears
- E(hx,hy,hrx,hry,vol(s,.14,-.16));                                                       // head
- if(side){P(6,13,s);P(5,13,s);P(5,14,SH(s,-.1));P(6,14,SH(s,-.08));P(16,12,SH(s,-.2));P(16,13,SH(s,-.25));P(17,12,SH(s,-.1))} // nose, ear
- // ---------- face ----------
- const E_='#1b1b2a',M='#b5534a',BL=mix(s,'#ff6a6a',.28);
- if(down){for(const ex of[11,18]){R(ex,11,2,3,E_);P(ex,11,'#ffffff')}R(15,15,3,1,M);P(14,14,SH(s,-.1));P(18,14,SH(s,-.1));P(16,13,SH(s,-.12));
-  P(9,14,BL);P(10,14,BL);P(21,14,BL);P(22,14,BL);if(o.fr)for(const[x,y]of[[10,13],[12,15],[19,15],[21,13],[11,14],[20,14]])P(x,y,o.frc)}
- if(side){R(8,11,2,3,E_);P(8,11,'#ffffff');R(7,15,3,1,M);P(10,14,BL);P(11,14,BL);if(o.fr)for(const[x,y]of[[9,15],[11,13],[12,15]])P(x,y,o.frc)}
- // ---------- hair / hat / helmet ----------
- const hair=(x,y,a,b)=>{const l=a*P_LX+b*P_LY;let k=l>.62?.26:l>.34?.12:l<-.45?-.24:l<-.15?-.1:0;if(((x*5+y*2)%9)===0)k-=.1;return SH(h,k)},hairD=SH(h,-.25);
+ // ---------- head + face ----------
+ if(!side){E(hx-10,hy+2,1.6,2.2,SH(s,-.05));E(hx+10,hy+2,1.6,2.2,SH(s,-.2))}
+ E(hx,hy+1,side?9:9.6,9,(x,y,a,bq)=>{const l=lit(a,bq);return l>.45?SH(s,.14):l<-.4?SH(s,-.18):s});
+ if(side){P(hx-9,hy+3,s);P(hx-10,hy+4,s);P(hx-10,hy+5,SH(s,-.12));P(hx+2,hy+2,SH(s,-.2));P(hx+3,hy+3,SH(s,-.25))}
+ const E_='#1b1b2a',M='#a8443a',BL=mix(s,'#ff6a6a',.3);
+ if(down&&!up){for(const ex of[hx-5,hx+3]){R(ex,hy+1,2,4,E_);P(ex,hy+1,'#ffffff');P(ex+1,hy+4,SH(E_,.25))}R(hx-1,hy+7,2,1,M);
+  P(hx-7,hy+5,BL);P(hx-6,hy+5,BL);P(hx+5,hy+5,BL);P(hx+6,hy+5,BL);if(o.fr)for(const[x,y]of[[hx-7,hy+4],[hx-5,hy+6],[hx+4,hy+6],[hx+6,hy+4]])P(x,y,o.frc)}
+ if(side){R(hx-6,hy+1,2,4,E_);P(hx-6,hy+1,'#ffffff');R(hx-8,hy+7,2,1,M);P(hx-4,hy+5,BL);P(hx-3,hy+5,BL);if(o.fr)for(const[x,y]of[[hx-4,hy+4],[hx-2,hy+5]])P(x,y,o.frc)}
+ // ---------- front hair / hat / helmet ----------
  if(hasHelm){
-  const c=HM.c,cx=side?15.5:16;
-  E(cx,9.5,side?10:10.2,9.6,(x,y,a,b)=>{const l=-(a*P_LX+b*P_LY)*-1;return l>.55?SH(c,.45):l>.3?SH(c,.2):l<-.4?SH(c,-.28):c},(x,y)=>y<=(up?17:side?(x<11?8:16):9)||(!up&&!side&&(x<=9||x>=22)&&y<=16));
-  if(HM.x)for(let y=1;y<=(up?17:8);y++){P(side?13:15,y,HM.x);if(!side)P(16,y,HM.x)}
-  if(!up){const ex=side?15:7;E(ex+.5,13,1.6,1.6,SH(c,-.45));if(!side)E(25.5,13,1.6,1.6,SH(c,-.45))}
-  if(HM.visor&&!up){const x0=side?5:10,x1=side?12:21;R(x0,10,x1-x0+1,3,'#22304a');P(x0+1,10,'#8fd0ff');P(x0+2,10,'#8fd0ff')}
-  if(HM.mask&&!up){const g='#9aa0aa',gd='#5a6070';if(side){R(3,13,8,1,g);R(3,16,8,1,g);R(3,13,1,4,gd);R(10,12,1,6,gd)}else{R(9,13,14,1,g);R(9,16,14,1,g);for(const x of[9,13,18,22])R(x,13,1,4,gd)}}
-  if(st==='long'){if(up){R(11,18,10,3,SH(h,-.1));R(12,21,8,2,SH(h,-.2))}else if(!side){R(6,17,2,5,hairD);R(24,17,2,5,hairD)}else R(17,17,4,5,hairD)}
-  if(st==='ponytail'&&!down){if(up)R(15,18,2,6,hair);else tri([[23,12],[28,14],[25,19]],hairD)}
+  const c=HM.c,cx=hx+(side?1:0),cy=hy-.5,rx=side?11:11.5,ry=11;
+  const shell=(x,y,a,bq)=>{const l=lit(a,bq),d=a*a+bq*bq;if(d>.86)return SH(c,-.32);if(l>.62&&d<.5)return SH(c,.6);return l>.38?SH(c,.28):l>.1?SH(c,.1):l<-.4?SH(c,-.25):c};
+  E(cx,cy,rx,ry,shell,(x,y)=>up?y<=hy+9:side?(x>=hx-4?y<=hy+8:y<=hy-1):(y<=hy-1||((x<=hx-7||x>=hx+7)&&y<=hy+7)));
+  const rim=SH(c,.55);if(!up){if(side){for(let x=hx-4;x<=hx+9;x++)P(x,hy+8,rim);for(let y=hy-1;y<=hy+8;y++)P(hx-4,y,rim);for(let x=hx-9;x<=hx-4;x++)P(x,hy-1,rim)}else{for(let x=hx-9;x<=hx+9;x++)if(x<=hx-7||x>=hx+7)P(x,hy+7,rim);for(let x=hx-7;x<=hx+7;x++)P(x,hy-1,rim)}}
+  const sx=HM.x||'#ffffff';if(side){for(let k=0;k<12;k++){const ang=-2.9+k*.2;P(cx+Math.cos(ang)*(rx-2),cy+Math.sin(ang)*(ry-2),sx)}}else for(let y=Math.floor(cy-ry)+1;y<=(up?hy+8:hy-2);y++){P(hx-1,y,sx);P(hx,y,sx)}
+  if(side){E(hx+3,hy+3,2.2,2.2,SH(c,-.45));P(hx+3,hy+2,SH(c,.2))}
+  if(HM.visor&&!up){if(side)R(hx-9,hy,6,3,'#22304a');else R(hx-6,hy,12,3,'#22304a');P(side?hx-8:hx-5,hy,'#8fd0ff');P(side?hx-7:hx-4,hy,'#8fd0ff')}
+  if(HM.mask&&!up){const g='#f0f2f6',gd='#7a808e';
+   if(side){R(hx-13,hy+3,9,1,gd);R(hx-13,hy+2,9,1,g);R(hx-13,hy+6,9,1,gd);R(hx-13,hy+5,9,1,g);R(hx-13,hy+2,2,6,g);R(hx-12,hy+2,1,6,gd);R(hx-6,hy+1,2,8,g)}
+   else{for(const yy of[hy+4,hy+7]){R(hx-8,yy,17,1,g);R(hx-8,yy+1,17,1,gd)}for(const xx of[hx-8,hx-3,hx+2,hx+7])R(xx,hy+3,2,6,(x2)=>x2===xx?g:gd)}}
+  if(st==='long'&&!up){if(side)for(let x=hx+5;x<=hx+9;x++)R(x,hy+9,1,3+tipLen(x)%3,hairCol);else for(const x of[hx-10,hx-9,hx+9,hx+10])R(x,hy+8,1,4+tipLen(x)%3,hairCol)}
+  if(st==='ponytail'&&!down){if(up)for(let x=15;x<=16;x++)R(x,hy+9,1,6,hairCol);else tri([[hx+9,hy+2],[hx+15,hy+5],[hx+12,hy+11]],hairCol)}
+ }else if(up){E(hc[0],hc[1],baseRX+5,baseRY+5,hairCol,(x,y)=>inHair(x,y)&&y<=hy+(st==='buzz'?4:7))
  }else{
-  if(up){E(hx,hy,hrx+.3,hry+.2,hair,(x,y)=>y<=(st==='buzz'?13:16));if(st==='buzz')E(hx,hy,hrx,hry,(x,y)=>(x+y)%2?SH(h,.1):SH(h,-.05),(x,y)=>y<=12)}
-  else{
-   const hl=side?(x=>x>=15?15:st==='buzz'?6:x<=8?9+((x+1)%2):8+[0,1,2,1][x%4]):
-                  (x=>st==='buzz'?(x<=8||x>=23?8:6):(x<=8||x>=23)?13:8+[0,1,2,1][x%4]);
-   E(hx,hy,hrx+.4,hry+.3,hair,(x,y)=>y<=hl(x));
-   if(st!=='buzz'){P(side?11:12,3,SH(h,.45));P(side?12:13,3,SH(h,.45));P(side?10:11,4,SH(h,.35))}
-  }
-  if(st==='spiky'){const sp=side?[[[8,4],[10,-1],[12,3]],[[12,3],[15,-2],[17,3]],[[16,4],[21,0],[21,6]],[[19,6],[25,4],[22,10]]]:[[[7,6],[7,0],[11,3]],[[10,3],[13,-1],[15,3]],[[15,3],[18,-1],[20,3]],[[19,3],[24,0],[24,6]]];for(const tr of sp)tri(tr,SH(h,.12))}
-  if(o.hat&&!o.helm){const hc=o.hat;E(hx,hy-2.5,hrx+.6,7,vol(hc,.2,-.2),(x,y)=>y<=(side?7:7));
-   if(down){R(7,7,18,2,SH(hc,-.22));R(8,9,16,1,SH(hc,-.4))}else if(side){R(1,7,8,2,SH(hc,-.2));R(2,9,6,1,SH(hc,-.4))}else R(13,7,6,1,SH(hc,-.35));
-   P(hx,1,SH(hc,.3))}
-  if(HM&&HM.crown){const g='#f5c542',gd='#b8860b';R(8,4,16,3,(x,y)=>y===4?SH(g,.3):y===6?gd:g);for(const x of[8,12,16,20,23])tri([[x-1.5,5],[x+1,0],[x+2.5,5]],g);for(const x of[10,15,21])P(x,5,HM.x||'#e0408a')}
+  // front hair: bangs over the forehead + sides
+  const bang=x=>{const k=Math.abs(((x*.55)%2)-1);return hy-1+Math.round(k*2.4)};
+  if(side)E(hc[0],hc[1],baseRX+5,baseRY+5,hairCol,(x,y)=>inHair(x,y)&&(y<=hy-1+(x<hx-6?Math.round(Math.abs(((x*.6)%2)-1)*2):0)||x>=hx+1));
+  else if(st==='buzz')E(hc[0],hc[1],baseRX+2,baseRY+2,hairCol,(x,y)=>inHair(x,y)&&y<=hy-3);
+  else E(hc[0],hc[1],baseRX+5,baseRY+5,hairCol,(x,y)=>inHair(x,y)&&(y<=bang(x)||x<=hx-8||x>=hx+8&&y<=hy+3));
+  if(st==='long'&&!side){for(const x of[hx-10,hx-9,hx-8,hx+8,hx+9,hx+10])R(x,hy,1,12+tipLen(x)%3,hairCol)}
  }
+ if(o.hat&&!o.helm){const hcol=o.hat;E(hx+(side?1:0),hy-4,side?10.5:10.8,7.2,(x,y,a,bq)=>{const l=lit(a,bq);return l>.4?SH(hcol,.22):l<-.35?SH(hcol,-.22):hcol},(x,y)=>y<=hy-2);
+  if(down){R(hx-11,hy-2,22,2,SH(hcol,-.2));R(hx-10,hy,20,1,SH(hcol,-.42))}else if(side){R(hx-14,hy-2,9,2,SH(hcol,-.18));R(hx-13,hy,7,1,SH(hcol,-.42))}else R(hx-3,hy-2,6,1,SH(hcol,-.35));P(hx,hy-11,SH(hcol,.35))}
+ if(HM&&HM.crown){const g='#f5c542',gd='#b8860b';R(hx-8,hy-7,16,3,(x,y)=>y===hy-7?SH(g,.3):y===hy-5?gd:g);for(const x of[hx-8,hx-4,hx,hx+4,hx+7])tri([[x-1.5,hy-6],[x+1,hy-12],[x+2.5,hy-6]],g);for(const x of[hx-6,hx-1,hx+5])P(x,hy-6,HM.x||'#e0408a')}
  // ---------- contours + outline ----------
  const c=hdCanvas(W+2,H+2,2),g=c.getContext('2d');
  for(let y=-1;y<=H;y++)for(let x=-1;x<=W;x++){const v=at(x,y);
-  if(v){let col=v;const gi=GR[y*W+x];let edge=false;
-   for(const[dx,dy]of[[1,0],[-1,0],[0,1]]){const xx=x+dx,yy=y+dy;if(at(xx,yy)&&GR[yy*W+xx]<gi&&gi===2)edge=true}
+  if(v){let col=v;const gi=GR[y*W+x];let edge=false;for(const[dx,dy]of[[1,0],[-1,0],[0,1]]){const xx=x+dx,yy=y+dy;if(at(xx,yy)&&GR[yy*W+xx]<gi&&gi===2)edge=true}
    if(edge)col=SH(v,-.38);g.fillStyle=col;g.fillRect(x+1,y+1,1,1)}
   else if(at(x+1,y)||at(x-1,y)||at(x,y+1)||at(x,y-1)){g.fillStyle=OUT;g.fillRect(x+1,y+1,1,1)}}
  return c}
