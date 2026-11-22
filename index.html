@@ -100,6 +100,13 @@ small{font-size:10px}
 .bagList{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}.bagList .tool{text-align:left;font-size:10px}
 #qFeedback{position:absolute;left:8px;top:8px;width:384px;padding:8px 11px;font-size:11.5px;line-height:1.4;font-weight:600;animation:pop .2s}
 #qFeedback.ok{background:#effbe9;border-color:#1f8a3a}#qFeedback.no{background:#fff0ee;border-color:#c62828}
+#qPic{position:absolute;left:8px;top:8px;padding:5px;z-index:2;background:#1a1230}#qPic canvas{display:block;image-rendering:pixelated;border-radius:3px}
+#qFeedback.picfb{left:auto;right:8px;width:360px}
+.filmPic{float:left;width:48px;height:auto;image-rendering:pixelated;margin:0 7px 3px 0;border:2px solid #1a1230;border-radius:3px}.film{overflow:hidden}
+.ggrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.ggrid.wide{grid-template-columns:repeat(3,1fr)}
+.gcard{border:2px solid #cbbd98;border-radius:6px;background:#fffdf6;padding:5px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;font-size:11px}
+.gcard canvas{width:96px;height:108px;image-rendering:pixelated;border:2px solid #1a1230;border-radius:4px}.ggrid.wide .gcard canvas{width:150px;height:105px}
+.gcard small{font-size:9.5px;line-height:1.3}
 @keyframes pop{from{transform:scale(.9);opacity:0}}
 /* menu */
 #menu,#shop,#mapView,#ending,#newGameBox{position:absolute;inset:8px;z-index:20;display:flex;flex-direction:column;padding:8px}
@@ -167,7 +174,7 @@ body.touch:not(.portrait) #touch{position:fixed;left:0;right:0;bottom:10px;max-w
   <div id="battle" class="hidden">
    <div id="enBox" class="box"><div class="nm"><span id="enName"></span><span id="enLv"></span></div><div class="hpRow"><b>HP</b><div class="bar"><i id="enHp"></i></div></div><div id="enTag"></div></div>
    <div id="plBox" class="box"><div class="nm"><span>BRADY</span><span id="plLv"></span></div><div class="hpRow"><b>HP</b><div class="bar"><i id="plHp"></i></div></div><div id="plHpT"></div><div class="xpbar"><i id="plXp"></i></div><div id="streak"></div></div>
-   <div id="qFeedback" class="box hidden"></div>
+   <div id="qPic" class="box hidden"><canvas id="qPicC" width="64" height="72"></canvas></div><div id="qFeedback" class="box hidden"></div>
    <div id="qPanel" class="box"><div id="qMain"></div><div id="qTools"></div></div>
   </div>
   <div id="dialog" class="box hidden"><div id="dlgText"></div><div id="dlgChoices"></div><div id="dlgNext">▼</div></div>
@@ -1324,7 +1331,7 @@ function talk(n){
  if(n.kind==='coach'){choice("Coach Dale: Hey Brady! Want a practice rep against a training dino? Questions are easy and it's a good warm-up.",['Let\'s go!','Not now'],i=>{if(i===0){startBattle(makeEnemy('raptor',1,{name:'Tackle Dummy-raptor',pal:{B:'#c8a060',L:'#f0e0c0',P:'#8a2a2a',K:'#f4f4f4'},pattern:'stripes'}),{practice:true,cat:null,diff:[1,1]})}else dialog(["Coach Dale: Remember: right answers hit hard, and answering in a row builds your streak!"])});return}
  if(n.kind==='tip'){dialog([`${n.name}: ${TIPS[(n.tip+S.steps)%TIPS.length]}`]);return}
  if(n.kind==='giver'){if(!S.npc[key]){S.npc[key]=1;const k=rollCons();S.inv[k]=(S.inv[k]||0)+1;SFX.item();updHud();dialog([`${n.name}: You look like you could use this!`,`Brady received ${CONS[k].icon} ${CONS[k].name}! (${CONS[k].desc})`])}else dialog([`${n.name}: ${TIPS[(n.tip+3)%TIPS.length]}`]);return}
- if(n.kind==='quiz'){const reg=regionPoi(n.x,n.y);const q=pickQuestion(reg.cat&&R()<.6?reg.cat:null,1,reg.diff[1]);const opts=shuffle([q.a,...q.w]);const first=!S.npc[key];
+ if(n.kind==='quiz'){const reg=regionPoi(n.x,n.y);let q;for(let t=0;t<12;t++){q=pickQuestion(reg.cat&&R()<.6?reg.cat:null,1,reg.diff[1]);if(!q.pic)break}const opts=shuffle([q.a,...q.w]);const first=!S.npc[key];
   choice(`${n.name}: POP QUIZ! ${first?'(Get it right for 25 coins!) ':''}${q.q}`,opts,i=>{const ok=opts[i]===q.a;recordAnswer(q,ok);
    if(ok){SFX.correct();let l=[`✔ Correct! ${q.x}`];if(first){S.npc[key]=1;S.coins+=25;l.push('Brady earned 25 coins! 🪙')}updHud();dialog(l)}
    else{SFX.wrong();dialog([`✘ Not quite. The answer is: ${q.a}.`,q.x,'(Added to your Film Room for review.)'])}});return}
@@ -1348,9 +1355,79 @@ function pickQuestion(cat,dmin,dmax,preferMissed){
  if(missed.length&&(preferMissed||R()<.25))q=pick(missed);
  else{const fresh=P.filter(q=>!S.seen[q.id]);q=pick(fresh.length?fresh:P)}
  recent.push(q.id);if(recent.length>15)recent.shift();return q}
-function recordAnswer(q,ok){S.seen[q.id]=(S.seen[q.id]||0)+1;S.st.ans++;const c=S.st.cat[q.cat]||(S.st.cat[q.cat]=[0,0]);c[0]++;
+function recordAnswer(q,ok){if(ok&&q.pic){if(q.pic.startsWith('sig'))S.st.sig=(S.st.sig||0)+1;else S.st.form=(S.st.form||0)+1}S.seen[q.id]=(S.seen[q.id]||0)+1;S.st.ans++;const c=S.st.cat[q.cat]||(S.st.cat[q.cat]=[0,0]);c[0]++;
  if(ok){S.st.cor++;c[1]++;S.st.streak++;S.st.best=Math.max(S.st.best,S.st.streak);if(S.missed[q.id]){S.missed[q.id]--;if(S.missed[q.id]<=0){delete S.missed[q.id];S.st.mastered=(S.st.mastered||0)+1}}}
  else{S.st.streak=0;S.missed[q.id]=2}}
+
+// ---------------- PICTURE QUESTIONS ----------------
+const N_=[100,95],NL_=[80,85];
+const SIGNALS={
+ touchdown:{n:'Touchdown',d:1,x:'Both arms straight up means touchdown. The same signal means a field goal or extra point is good.',f:[{r:[-100,-95],l:[-80,-85]}]},
+ firstdown:{n:'First down',d:1,x:'Pointing toward the defense\'s end zone means first down.',f:[{r:N_,l:[0,0]}]},
+ incomplete:{n:'Incomplete pass',d:1,x:'Arms swinging back and forth across the body means incomplete pass. It also means a penalty was declined or a kick was missed.',f:[{r:[150,170],l:[30,10]},{r:[60,0],l:[120,180]}]},
+ timeout:{n:'Timeout',d:1,x:'Hands crossed above the head means timeout.',f:[{r:[-100,-25],l:[-80,-155]}]},
+ holding:{n:'Holding',d:1,x:'Grabbing one wrist in front of the chest means holding.',f:[{r:[70,-30],l:[110,190]}]},
+ safety:{n:'Safety',d:2,x:'Palms pressed together above the head means safety: 2 points for the defense.',f:[{r:[-105,-30],l:[-75,-150]}]},
+ falsestart:{n:'False start',d:2,x:'Forearms rolling over each other in front of the body means false start (or illegal formation).',f:[{r:[70,-40],l:[110,220]},{r:[70,20],l:[110,160]},{r:[75,75],l:[105,105]}]},
+ offside:{n:'Offside',d:2,x:'Hands on the hips means offside (or encroachment).',f:[{r:[135,45],l:[45,135]}]},
+ pi:{n:'Pass interference',d:2,x:'Open hands pushing forward from the shoulders means pass interference.',f:[{r:[85,-85],l:[95,-95]},{r:[70,-70],l:[110,-110]}]},
+ personalfoul:{n:'Personal foul',d:2,x:'One wrist chopping down on the other above the head means personal foul.',f:[{r:[-100,-30],l:[-65,-110]},{r:[-100,-30],l:[-80,-150]}]},
+ delay:{n:'Delay of game',d:2,x:'Arms folded across the chest means delay of game.',f:[{r:[75,-5],l:[105,185]}]},
+ facemask:{n:'Face mask',d:2,x:'Grabbing the face mask and pulling down means face mask penalty.',front:1,f:[{r:[40,-100],l:NL_},{r:[55,-80],l:NL_}]},
+ unsportsmanlike:{n:'Unsportsmanlike conduct',d:3,x:'Arms stretched straight out to the sides, palms down, means unsportsmanlike conduct.',f:[{r:[180,180],l:[0,0]}]},
+ grounding:{n:'Intentional grounding',d:3,x:'Both arms waving together on a diagonal across the body means intentional grounding.',f:[{r:[-35,-35],l:[-35,-35]},{r:[145,145],l:[145,145]}]},
+ lossofdown:{n:'Loss of down',d:3,x:'Both hands held behind the head means loss of down.',behind:1,f:[{r:[-140,15],l:[-40,165]}]},
+};
+const OFF_BASE=[[48,48],[54,48],[60,48],[66,48],[72,48]];
+const FORMS={
+ iform:{n:'I-formation',d:1,side:'o',x:'The I-formation puts the QB under center with the fullback and tailback stacked in a straight line behind him, like the letter I.',o:[[78,48],[12,48],[108,49]],qb:[60,53],b:[[60,60],[60,67]]},
+ shotgun:{n:'Shotgun',d:1,side:'o',x:'In the shotgun, the QB stands several yards behind the center with a running back beside him.',o:[[78,48],[12,48],[108,49],[92,50]],qb:[60,62],b:[[68,62]]},
+ victory:{n:'Victory formation',d:1,side:'o',x:'In the victory formation the QB takes the snap and kneels to run out the clock, with backs close by to guard against a fumble.',o:[[78,48],[42,48]],qb:[60,53],b:[[53,56],[67,56],[60,66]],kneel:1},
+ pistol:{n:'Pistol',d:2,side:'o',x:'The pistol puts the QB about 4 yards behind the center (closer than the shotgun) with the running back directly behind him.',o:[[78,48],[12,48],[108,49]],qb:[60,58],b:[[60,67]]},
+ singleback:{n:'Singleback',d:2,side:'o',x:'Singleback has the QB under center with just one running back behind him.',o:[[78,48],[42,48],[12,48],[108,49]],qb:[60,53],b:[[60,64]]},
+ empty:{n:'Empty backfield',d:2,side:'o',x:'An empty backfield has no running backs behind the QB: five receivers spread out to pass.',o:[[8,48],[20,50],[96,50],[108,48],[78,48]],qb:[60,60],b:[]},
+ wishbone:{n:'Wishbone',d:3,side:'o',x:'The wishbone has a fullback right behind the QB and two halfbacks behind him, forming a Y like a wishbone.',o:[[78,48],[12,48]],qb:[60,53],b:[[60,59],[51,65],[69,65]]},
+ d43:{n:'4-3 defense',d:2,side:'d',x:'A 4-3 defense has 4 defensive linemen and 3 linebackers.',dl:[49,56,64,71],lb:[48,60,72],cb:[[12,38],[108,38]],s:[[44,24],[76,24]]},
+ d34:{n:'3-4 defense',d:2,side:'d',x:'A 3-4 defense has 3 defensive linemen and 4 linebackers.',dl:[52,60,68],lb:[38,52,68,82],cb:[[12,38],[108,38]],s:[[44,24],[76,24]]},
+ nickel:{n:'Nickel defense',d:3,side:'d',x:'Nickel defense swaps a linebacker for a 5th defensive back (like a nickel is 5 cents) to defend the pass.',dl:[49,56,64,71],lb:[54,66],cb:[[12,38],[108,38],[92,38]],s:[[44,24],[76,24]]},
+};
+function fillC(g,cx,cy,r,c){g.fillStyle=c;for(let y=Math.floor(cy-r);y<=cy+r;y++)for(let x=Math.floor(cx-r);x<=cx+r;x++){const dx=x+.5-cx,dy=y+.5-cy;if(dx*dx+dy*dy<=r*r)g.fillRect(x,y,1,1)}}
+const picCache={};
+function refFrame(key,fi){const ck=key+':'+fi;if(picCache[ck])return picCache[ck];
+ const W=64,H=72,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');const sig=SIGNALS[key],fr=sig.f[fi];
+ const SK='#e8b48a',UA=11,FA=11;
+ const head=()=>{fillC(g,32,15,6.2,SK);g.fillStyle='#f4f4f4';for(let y=8;y<14;y++)for(let x=25;x<40;x++){const dx=x+.5-32,dy=y+.5-15;if(dx*dx+dy*dy<=40)g.fillRect(x,y,1,1)}g.fillRect(25,13,15,1);g.fillStyle='#1b1b2a';g.fillRect(29,16,1,1);g.fillRect(35,16,1,1);g.fillStyle='#b5534a';g.fillRect(31,19,3,1)};
+ const arm=(sx,sy,[u,f])=>{const ru=u*Math.PI/180,rf=f*Math.PI/180;const ex=sx+Math.cos(ru)*UA,ey=sy+Math.sin(ru)*UA,hx=ex+Math.cos(rf)*FA,hy=ey+Math.sin(rf)*FA;let d=0;
+  const seg=(x0,y0,x1,y1)=>{const n=Math.ceil(Math.hypot(x1-x0,y1-y0)*2);for(let i=0;i<=n;i++){const t=i/n;fillC(g,x0+(x1-x0)*t,y0+(y1-y0)*t,1.9,(Math.floor(d/2.5)%2)?'#151515':'#f4f4f4');d+=.5}};
+  seg(sx,sy,ex,ey);seg(ex,ey,hx,hy);fillC(g,hx,hy,2.3,SK)};
+ // legs & body
+ g.fillStyle='#1a1a22';g.fillRect(26,45,5,15);g.fillRect(33,45,5,15);g.fillRect(25,59,7,3);g.fillRect(32,59,7,3);
+ for(let x=24;x<=40;x++){g.fillStyle=(((x-24)>>1)%2)?'#151515':'#f4f4f4';g.fillRect(x,23,1,22)}g.fillStyle='#151515';g.fillRect(24,44,17,2);g.fillStyle=SK;g.fillRect(30,20,4,3);
+ if(sig.behind){arm(25,27,fr.r);arm(39,27,fr.l);head()}else{head();arm(25,27,fr.r);arm(39,27,fr.l)}
+ // outline pass
+ const id=g.getImageData(0,0,W,H),a=id.data,o=document.createElement('canvas');o.width=W;o.height=H;const og=o.getContext('2d');
+ og.fillStyle='#1a1230';for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(a[(y*W+x)*4+3])continue;if([[1,0],[-1,0],[0,1],[0,-1]].some(([p,q])=>{const X=x+p,Y=y+q;return X>=0&&Y>=0&&X<W&&Y<H&&a[(Y*W+X)*4+3]}))og.fillRect(x,y,1,1)}
+ og.drawImage(c,0,0);return picCache[ck]=o}
+function drawPic(cv2,pic,t){const g=cv2.getContext('2d');g.imageSmoothingEnabled=false;const[kind,key]=pic.split(':');
+ if(kind==='sig'){const W=64,H=72;g.fillStyle='#4caf50';g.fillRect(0,0,W,H);g.fillStyle='#43a047';for(let y=0;y<H;y+=12)g.fillRect(0,y,W,6);g.fillStyle='#ffffff';g.fillRect(0,63,W,2);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(21,61,23,3);
+  const sig=SIGNALS[key];const fi=Math.floor((t||0)/450)%sig.f.length;g.drawImage(refFrame(key,fi),0,0);return}
+ const F=FORMS[key],W=120,H=84;
+ for(let y=0;y<H;y+=10){g.fillStyle=(y/10)%2?'#43a047':'#4caf50';g.fillRect(0,y,W,10);g.fillStyle='#e8f5e8';g.fillRect(0,y+4,W,1)}
+ g.fillStyle='#ffffff';for(let y=0;y<H;y+=2){g.fillRect(44,y,1,1);g.fillRect(75,y,1,1)}
+ g.fillStyle='#3a7bd5';g.fillRect(0,44,W,1);
+ const O=(x,y,col)=>{fillC(g,x,y,3.4,'#1a1230');fillC(g,x,y,2.5,col)};
+ const X=(x,y,col)=>{g.fillStyle='#1a1230';for(let i=-3;i<=3;i++){g.fillRect(x+i-1,y+i-1,3,3);g.fillRect(x+i-1,y-i-1,3,3)}g.fillStyle=col;for(let i=-2;i<=2;i++){g.fillRect(x+i,y+i,1,1);g.fillRect(x+i,y-i,1,1)}};
+ if(F.side==='o'){OFF_BASE.forEach(([x,y])=>O(x,y,'#ffffff'));F.o.forEach(([x,y])=>O(x,y,'#ffffff'));F.b.forEach(([x,y])=>O(x,y,'#ffffff'));O(F.qb[0],F.qb[1],'#f5c542');if(F.kneel){g.fillStyle='#1a1230';g.fillRect(F.qb[0]-3,F.qb[1]+4,7,1)}}
+ else{g.globalAlpha=.45;OFF_BASE.forEach(([x,y])=>O(x,y,'#ffffff'));[[78,48],[12,48],[108,49],[60,53],[60,62]].forEach(([x,y])=>O(x,y,'#ffffff'));g.globalAlpha=1;
+  F.dl.forEach(x=>X(x,41,'#ff5a4a'));F.lb.forEach(x=>X(x,33,'#ff5a4a'));F.cb.forEach(([x,y])=>X(x,y,'#ff5a4a'));F.s.forEach(([x,y])=>X(x,y,'#ff5a4a'))}}
+// build picture questions into the bank
+(function(){const r=mulberry32(4242);const P=a=>a[(r()*a.length)|0];
+ const add=(cat,d,qtext,pic,ans,pool,x)=>{const others=pool.filter(n=>n!==ans);const w=[];while(w.length<3){const o=P(others);if(!w.includes(o))w.push(o)}QB.push({id:QB.length,cat,d,q:qtext,a:ans,w,x,pic})};
+ const sigNames=Object.values(SIGNALS).map(s=>s.n);for(const k in SIGNALS){const s=SIGNALS[k];add('rules',s.d,'What is the referee signaling?','sig:'+k,s.n,sigNames,s.x)}
+ const offN=Object.values(FORMS).filter(f=>f.side==='o').map(f=>f.n),defN=Object.values(FORMS).filter(f=>f.side==='d').map(f=>f.n).concat(['Dime defense','Goal-line defense']);
+ for(const k in FORMS){const f=FORMS[k];add('strategy',f.d,f.side==='o'?'The offense (O\'s, QB in gold) is moving up the field. What formation is this?':'What defensive alignment are the red X\'s in?','form:'+k,f.n,f.side==='o'?offN:defN,f.x)}})();
+function pickPic(cat,dmax){const pool=QB.filter(q=>q.pic&&(!cat||q.cat===cat)&&q.d<=Math.max(dmax,1)&&!recent.includes(q.id));if(!pool.length)return null;const miss=pool.filter(q=>S.missed[q.id]);const q=(miss.length&&R()<.4)?pick(miss):pick(pool);recent.push(q.id);if(recent.length>15)recent.shift();return q}
+function showPic(q){const card=$('#qPic');if(!q||!q.pic){card.classList.add('hidden');return}card.classList.remove('hidden');const sig=q.pic.startsWith('sig');const c=$('#qPicC');c.width=sig?64:120;c.height=sig?72:84;c.style.width=(sig?168:252)+'px';c.style.height=(sig?189:176)+'px';drawPic(c,q.pic,0)}
 
 // ---------------- ENEMIES ----------------
 const BIOME_FAMS={plains:FAMS.slice(0,7),forest:['raptor','rex','stego','raptor'],coast:['sauro','ptero','trike','sauro'],desert:['raptor','ankylo','rex','spino'],mountain:['ptero','ankylo','trike','ptero'],ruins:['trike','sauro','stego','spino'],springs:['sauro','stego','ptero','trike'],volcano:['rex','spino','ankylo','ptero']};
@@ -1372,7 +1449,7 @@ function startBattle(en,opts){
  const intro=opts.secretBoss?`✦ SECRET BOSS! ${en.name} rises from the fossil field! 10-second shot clock`:opts.legend?`⚠️ LEGEND CHALLENGE! ${en.name} wants to battle! Superfan questions · 12-second shot clock`:opts.boss?`${en.name} wants to battle!`:opts.practice?`Practice time! ${en.name} (Lv ${en.lv}) steps up!`:`A wild ${en.shiny?'✨':''}${en.name} (Lv ${en.lv}) appeared!`;
  setPanel(`<div class="qIntro">${esc(intro)}${opts.cat?`<br><small>Category: <b style="color:${CATS[opts.cat].c}">${CATS[opts.cat].name}</b></small>`:''}</div>`,`<button class="tool go" onclick="G.nextQ()">Ready! ▶</button>`);
 }
-function setPanel(main,tools){$('#qMain').innerHTML=main;$('#qTools').innerHTML=tools||'';$('#qFeedback').classList.add('hidden')}
+function setPanel(main,tools){if(!(B&&B.phase==='feedback'&&B.q&&B.q.pic))$('#qPic').classList.add('hidden');$('#qMain').innerHTML=main;$('#qTools').innerHTML=tools||'';$('#qFeedback').classList.add('hidden')}
 function updBattleBoxes(instant){const e=B.en,s=stats();
  $('#enName').textContent=e.name;$('#enLv').textContent='Lv'+e.lv;$('#enTag').textContent=e.legend?'⭐ LEGENDARY COACH':e.boss?'HEAD COACH':FAMN[e.fam]+(e.shiny?' ✨':'');
  setBar('#enHp',e.hp/e.maxHp,instant);setBar('#plHp',S.hp/s.hp,instant);$('#plLv').textContent='Lv'+S.lv;$('#plHpT').textContent=`${Math.max(0,Math.ceil(S.hp))}/${s.hp}`;
@@ -1383,14 +1460,15 @@ function setBar(sel,f,instant){const el=$(sel);f=clamp(f,0,1);if(instant){el.sty
 function nextQ(){
  if(!B)return;B.phase='question';B.bag=false;B.removed=new Set();
  const o=B.opts;let d=o.diff||[1,2];if(B.en.boss&&B.en.hp<B.en.maxHp*.5)d=[Math.min(3,d[0]+1),3];
- const q=pickQuestion(o.cat||(o.drill?null:null),d[0],d[1],o.drill);B.q=q;B.ans=shuffle([q.a,...q.w]);B.qStart=performance.now();B.sel=0;renderQ();}
+ let q=null;if(!o.legend&&!o.secretBoss&&!o.drill&&(!o.cat||o.cat==='rules'||o.cat==='strategy')&&S.diff!=='superfan'&&R()<.22)q=pickPic(o.cat,d[1]);
+ if(!q)q=pickQuestion(o.cat||null,d[0],d[1],o.drill);B.q=q;B.ans=shuffle([q.a,...q.w]);B.qStart=performance.now();B.sel=0;renderQ();}
 function renderQ(){B.bag=false;if(B.pausedAt){B.qStart+=performance.now()-B.pausedAt;B.pausedAt=0}const q=B.q;const c=CATS[q.cat];
  const main=`<div id="qHead"><span class="cat" style="background:${c.c}">${c.name}</span><span class="diff">${q.d>=4?'<b style="color:#9b40c6">★★★★ SUPERFAN</b>':'★'.repeat(q.d)+'☆'.repeat(3-q.d)}</span><span id="qTimer"></span></div>
  <div id="qText">${esc(q.q)}</div>
  <div id="qAns">${B.ans.map((a,i)=>`<button class="ans${B.removed.has(i)?' gone':''}${i===B.sel?' sel':''}" data-i="${i}" onclick="G.answer(${i})"><b>${i+1}</b> ${esc(a)}</button>`).join('')}</div>`;
  const n=k=>S.inv[k]||0;
  const tools=`<button class="tool" ${n('hint')&&!B.removed.size?'':'disabled'} onclick="G.useHint()">📋 Hint (${n('hint')})</button><button class="tool" ${n('timeout')?'':'disabled'} onclick="G.useTimeout()">⏱️ Timeout (${n('timeout')})</button><button class="tool" onclick="G.bag()">🎒 Bag</button><button class="tool" onclick="G.run()">🏃 Run</button>`;
- setPanel(main,tools)}
+ setPanel(main,tools);showPic(B.q)}
 function answer(i){
  if(!B||B.phase!=='question'||B.removed.has(i))return;
  B.phase='feedback';const q=B.q,ok=B.ans[i]===q.a,s=stats();const secs=(performance.now()-B.qStart)/1000;
@@ -1407,7 +1485,7 @@ function answer(i){
   B.anim={type:'hit',t:0,dmg,dodge};SFX.wrong();
   msg=`<b class="bad">${i===-1?'⏱ SHOT CLOCK EXPIRED! ':''}✘ ${dodge?'Wrong... but Brady JUKED the attack!':'WRONG!'}</b> ${dodge?'':`<b>Brady takes ${dmg} damage.</b>`}<br>Answer: <b>${esc(q.a)}</b>. ${esc(q.x)}`}
  $('#qTools').innerHTML='';B.fbReady=false;
- setTimeout(()=>{if(!B||B.phase!=='feedback')return;const fb=$('#qFeedback');fb.innerHTML=msg;fb.className=ok?'box ok':'box no';$('#qTools').innerHTML=`<button class="tool go" onclick="G.cont()">Continue ▶</button>`;B.fbReady=true},700);
+ setTimeout(()=>{if(!B||B.phase!=='feedback')return;const fb=$('#qFeedback');fb.innerHTML=msg;fb.className=(ok?'box ok':'box no')+(q.pic?' picfb':'');$('#qTools').innerHTML=`<button class="tool go" onclick="G.cont()">Continue ▶</button>`;B.fbReady=true},700);
  setTimeout(()=>B&&updBattleBoxes(),400);
 }
 function cont(){if(!B)return;if(B.phase==='feedback'){if(B.fbReady===false)return;if(B.en.hp<=0)return victory();if(S.hp<=0)return defeat();return nextQ()}
@@ -1530,6 +1608,8 @@ const ACH=[
  {g:'Difficulty Challenges',id:'coach_superfan',n:'Superfan Showdown',d:'Beat a Head Coach on Superfan.',i:'💜',t:'plat',c:()=>(st().bossBy.superfan||0)>=1},
  {g:'Difficulty Challenges',id:'champ_allpro',n:'All-Pro Champion',d:'Beat Commissioner Spino on All-Pro.',i:'🏆',t:'plat',c:()=>(st().champBy.allpro||0)>=1},
  {g:'Difficulty Challenges',id:'champ_superfan',n:'Superfan Supreme',d:'Beat Commissioner Spino on Superfan.',i:'👑',t:'plat',c:()=>(st().champBy.superfan||0)>=1},
+ {g:'Mastery',id:'zebra',n:'Speaks Zebra',d:'Correctly read 15 referee signals.',i:'🦓',t:'silver',c:()=>(st().sig||0)>=15},
+ {g:'Mastery',id:'xo',n:'X\'s and O\'s',d:'Correctly identify 10 formations.',i:'📐',t:'silver',c:()=>(st().form||0)>=10},
  {g:'Daily Challenge',id:'daily1',n:'Daily Habit',d:'Finish your first Daily Challenge.',i:'📅',t:'bronze',c:()=>(loadDaily().played||0)>=1},
  {g:'Daily Challenge',id:'daily7',n:'Week-Long Streak',d:'Play the Daily Challenge 7 days in a row.',i:'🗓️',t:'silver',c:()=>(loadDaily().bestStreak||0)>=7},
  {g:'Daily Challenge',id:'dailyperfect',n:'Perfect Day',d:'Get all 10 Daily Challenge questions right.',i:'🌞',t:'gold',c:()=>!!loadDaily().perfect},
@@ -1580,7 +1660,7 @@ let menuTab='bag';
 function openMenu(tab){state='menu';menuTab=tab||menuTab;$('#menu').classList.remove('hidden');renderMenu()}
 function closeMenu(){$('#menu').classList.add('hidden');$('#shop').classList.add('hidden');$('#mapView').classList.add('hidden');state=B?'battle':'world';updHud()}
 function renderMenu(){
- const tabs=[['bag','🎒 Bag'],['gear','🏈 Gear'],['dex','🦖 Dino-Dex'],['film','🎬 Film Room'],['prog','🏆 Progress'],['ach','🏅 Awards'],['opt','⚙️ Options']];
+ const tabs=[['bag','🎒 Bag'],['gear','🏈 Gear'],['dex','🦖 Dino-Dex'],['film','🎬 Film Room'],['prog','🏆 Progress'],['ach','🏅 Awards'],['guide','📖 Guide'],['opt','⚙️ Options']];
  $('#menuTabs').innerHTML=tabs.map(([k,n])=>`<button class="${k===menuTab?'on':''}" onclick="G.tab('${k}')">${n}</button>`).join('')+`<button class="x" onclick="G.closeMenu()">✕</button>`;
  const s=stats();let h='';
  if(menuTab==='bag'){const ks=Object.keys(CONS).filter(k=>S.inv[k]);h=`<div class="sub">HP ${Math.ceil(S.hp)}/${s.hp} · 🪙 ${S.coins} coins</div><div class="grid">`+(ks.length?ks.map(k=>{const c=CONS[k];const usable=!c.battle;return`<div class="card"><div class="ic">${c.icon}</div><div><b>${c.name}</b> x${S.inv[k]}<br><small>${c.desc}</small></div>${usable?`<button onclick="G.useItem('${k}')">Use</button>`:'<small class="muted">battle only</small>'}</div>`}).join(''):'<i>Your bag is empty. Check chests ✨ and win battles for loot!</i>')+'</div>'}
@@ -1591,8 +1671,9 @@ function renderMenu(){
  else if(menuTab==='dex'){const seen=Object.keys(S.names).length;h=`<div class="sub">Unique dinos met: <b>${seen}</b> · Families: <b>${Object.keys(S.dex).length}/8</b></div><div class="grid dex">`+FAMS.map(f=>{const d=S.dex[f];return`<div class="card"><canvas class="dexc" data-f="${f}" width="58" height="50"></canvas><div><b>${d?FAMN[f]:'???'}</b><br><small>${d?`Seen ${d.seen} · Beaten ${d.def}`:'Not discovered'}</small></div></div>`}).join('')+'</div>'}
  else if(menuTab==='film'){const ids=Object.keys(S.missed).map(Number);const acc=S.st.ans?Math.round(S.st.cor/S.st.ans*100):0;
   h=`<div class="sub">Accuracy: <b>${acc}%</b> (${S.st.cor}/${S.st.ans}) · Best streak: <b>${S.st.best}</b></div><div class="catbars">`+Object.keys(CATS).map(k=>{const c=S.st.cat[k]||[0,0];const p=c[0]?Math.round(c[1]/c[0]*100):0;return`<div class="cb"><span>${CATS[k].name}</span><div class="bar"><i style="width:${p}%;background:${CATS[k].c}"></i></div><small>${c[1]}/${c[0]}</small></div>`}).join('')+'</div>';
-  h+=`<h4>Plays to review (${ids.length}) ${ids.length?`<button onclick="G.drill()">🏋️ Practice Drill</button>`:''}</h4>`+(ids.length?ids.map(id=>{const q=QB[id];return`<div class="film"><span class="cat" style="background:${CATS[q.cat].c}">${CATS[q.cat].name}</span> ${esc(q.q)}<br><b class="good">✔ ${esc(q.a)}</b> <small>${esc(q.x)}</small></div>`}).join(''):'<i>No missed questions right now. Questions you miss show up here until you get them right twice.</i>')}
+  h+=`<h4>Plays to review (${ids.length}) ${ids.length?`<button onclick="G.drill()">🏋️ Practice Drill</button>`:''}</h4>`+(ids.length?ids.map(id=>{const q=QB[id];return`<div class="film">${q.pic?`<canvas class="filmPic" data-pic="${q.pic}"></canvas>`:''}<span class="cat" style="background:${CATS[q.cat].c}">${CATS[q.cat].name}</span> ${esc(q.q)}<br><b class="good">✔ ${esc(q.a)}</b> <small>${esc(q.x)}</small></div>`}).join(''):'<i>No missed questions right now. Questions you miss show up here until you get them right twice.</i>')}
  else if(menuTab==='prog'){h=`<div class="sub">Level <b>${S.lv}</b> · XP ${S.xp}/${xpNeed(S.lv)} · Battles ${S.st.battles} · Wins ${S.st.wins} · Steps ${S.steps}</div><div class="grid">`+BOSS_ORDER.concat(['champ']).map(id=>{const p=poiById(id),d=p.boss,done=S.bosses[id];return`<div class="card ${done?'won':''}"><div class="ic">${done?'🏆':'🔒'}</div><div><b>${done?d.trophy:'???'}</b><br><small>${p.name} · ${d.name}<br>${p.cat?CATS[p.cat].name:'All categories'} · Lv ${d.lv}</small></div></div>`}).join('')+'</div>'}
+ else if(menuTab==='guide'){h=`<div class="sub">Study the referee signals and formations you'll see in picture questions. Moving signals are animated.</div><h4>🦓 Referee signals</h4><div class="ggrid">`+Object.entries(SIGNALS).map(([k,s2])=>`<div class="gcard"><canvas class="gpic" data-pic="sig:${k}" width="64" height="72"></canvas><b>${s2.n}</b><small>${esc(s2.x)}</small></div>`).join('')+`</div><h4>📐 Formations</h4><div class="ggrid wide">`+Object.entries(FORMS).map(([k,f])=>`<div class="gcard"><canvas class="gpic" data-pic="form:${k}" width="120" height="84"></canvas><b>${f.n}</b><small>${esc(f.x)}</small></div>`).join('')+'</div>'}
  else if(menuTab==='ach'){const got=ACH.filter(a=>S.ach[a.id]).length,maxP=ACH.reduce((n,a)=>n+ATIER[a.t].pts,0);
   h=`<div class="stats">🏅 ${got}/${ACH.length} achievements · ${achPoints()}/${maxP} points · Harder difficulties earn rarer awards!</div><div class="tierprog">`+TIERS.map(([t,n,c])=>`<span style="border-color:${c}">${tierWins(t)>=SECRET_WINS?'💎':'⬛'} ${n}: ${tierWins(t)} wins</span>`).join('')+`</div>`;
   const groups=[...new Set(ACH.map(a=>a.g))];
@@ -1603,6 +1684,8 @@ function renderMenu(){
   <div class="help"><b>Save codes</b>: the game auto-saves in this browser. To move your progress to another device or browser, export a save code there and import it here.<div class="opt"><button onclick="G.exportSave()">📤 Export save code</button><button onclick="G.importSave()">📥 Import save code</button></div><div id="saveIO"></div></div>
   <div class="opt"><button class="danger" onclick="G.reset()">🗑 Start a new game</button></div>`}
  $('#menuBody').innerHTML=h;updMusicBtn();
+ document.querySelectorAll('.filmPic').forEach(c=>{const sig=c.dataset.pic.startsWith('sig');c.width=sig?64:120;c.height=sig?72:84;drawPic(c,c.dataset.pic,0)});
+ document.querySelectorAll('.gpic').forEach(c=>drawPic(c,c.dataset.pic,0));
  if(menuTab==='gear')[['gp1','down'],['gp2','right'],['gp3','up']].forEach(([id,d])=>{const c=$('#'+id),g=c.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(bradySpr[d][0],0,0,54,54)});
  if(menuTab==='dex')document.querySelectorAll('.dexc').forEach(c=>{const f=c.dataset.f;const g=c.getContext('2d');g.imageSmoothingEnabled=false;if(S.dex[f]){g.drawImage(dexSpr(f),0,0)}else{g.globalAlpha=.25;g.drawImage(dexSpr(f),0,0);g.globalCompositeOperation='source-atop';g.globalAlpha=1;g.fillStyle='#1a1230';g.fillRect(0,0,58,50)}})}
 const dexCache={};function dexSpr(f){if(!dexCache[f]){const r=mulberry32(FAMS.indexOf(f)+3);const h=r()*360;dexCache[f]=makeDino(f,{B:hsl(h,50,48),L:hsl(h+30,45,78),P:hsl(h+180,50,30),K:'#f0e6cc'},'none',5)}return dexCache[f]}
@@ -1710,7 +1793,7 @@ const dStr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+Str
 function todayStr(){return dStr(new Date())}
 function dailyNum(ds){const[y,m,d]=ds.split('-').map(Number);return Math.round((Date.UTC(y,m-1,d)-DAILY_LAUNCH)/864e5)+1}
 function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
-function dailyQs(ds){const r=mulberry32(hashStr('daily:'+ds));const take=(d,n)=>{const pool=QB.filter(q=>q.d===d);const out=[];while(out.length<n&&pool.length)out.push(pool.splice((r()*pool.length)|0,1)[0]);return out};
+function dailyQs(ds){const r=mulberry32(hashStr('daily:'+ds));const take=(d,n)=>{const pool=QB.filter(q=>q.d===d&&!q.pic);const out=[];while(out.length<n&&pool.length)out.push(pool.splice((r()*pool.length)|0,1)[0]);return out};
  return[...take(1,3),...take(2,3),...take(3,3),...take(4,1)].map(q=>{const a=[q.a,...q.w];for(let i=a.length-1;i>0;i--){const j=(r()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]]}return{q,ans:a}})}
 let D=null;
 function openDaily(){if(state!=='world'&&state!=='title')return;const ds=todayStr(),dd=loadDaily();D={ret:state,ds,n:dailyNum(ds),fromGame:state==='world'};state='daily';$('#daily').classList.remove('hidden');
@@ -1769,6 +1852,7 @@ function loop(t){requestAnimationFrame(loop);const dt=Math.min(100,t-lastT||16);
  if(state==='battle'||(B&&state==='menu')){drawBattle();if(B&&B.phase==='question'&&!B.bag){const el=$('#qTimer');const s=(performance.now()-B.qStart)/1000;if(B.opts.shotclock){const r=B.opts.shotclock-s;if(el){el.textContent=`⏱ ${Math.max(0,Math.ceil(r))}s`;el.style.color=r<4?'#c62828':'#1f6fd6'}if(r<=0)answer(-1)}else if(el){el.textContent=s<7?`⚡ ${Math.ceil(7-s)}s`:''}}}
  else{drawWorld();if(state!=='title')drawCompass()}
  if(state==='daily'&&D&&D.phase==='q'){const r=1-(performance.now()-D.qStart)/1000/DAILY_SECS,el=$('#dTimer');if(el){el.style.width=Math.max(0,r*100)+'%';el.style.background=r>.5?'#3ccf5a':r>.2?'#f0c030':'#e84030'}if(r<=0)dailyAnswer(-1)}
+ if(frame%6===0){const t=performance.now();if(B&&B.q&&B.q.pic&&!$('#qPic').classList.contains('hidden'))drawPic($('#qPicC'),B.q.pic,t);if(state==='menu'&&menuTab==='guide'&&!$('#menu').classList.contains('hidden'))document.querySelectorAll('.gpic').forEach(c=>{if(c.dataset.pic.startsWith('sig'))drawPic(c,c.dataset.pic,t)})}
  if(!$('#mapView').classList.contains('hidden'))renderMap();
 }
 
