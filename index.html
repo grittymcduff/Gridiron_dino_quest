@@ -1414,22 +1414,25 @@ function recordAnswer(q,ok){if(ok&&q.pic){if(q.pic.startsWith('sig'))S.st.sig=(S
 
 // ---------------- PICTURE QUESTIONS ----------------
 const N_=[100,95],NL_=[80,85];
+// Signal poses. Arms: [upperAngle, forearmAngle] in degrees (0 = image right, 90 = down), or {h:[x,y], e:[x,y]}:
+// put the wrist at h, bending the elbow toward e. Hands: fist | palm | flat | point | grab | hide. z:'r' draws the
+// ref's right arm (image left) in front. grab:1 aims the left hand at the right wrist.
 const SIGNALS={
- touchdown:{n:'Touchdown',d:1,x:'Both arms straight up means touchdown. The same signal means a field goal or extra point is good.',f:[{r:[-100,-95],l:[-80,-85]}]},
- firstdown:{n:'First down',d:1,x:'Pointing toward the defense\'s end zone means first down.',f:[{r:N_,l:[0,0]}]},
- incomplete:{n:'Incomplete pass',d:1,x:'Arms swinging back and forth across the body means incomplete pass. It also means a penalty was declined or a kick was missed.',f:[{r:[150,170],l:[30,10]},{r:[60,0],l:[120,180]}]},
- timeout:{n:'Timeout',d:1,x:'Hands crossed above the head means timeout.',f:[{r:[-100,-25],l:[-80,-155]}]},
- holding:{n:'Holding',d:1,x:'Grabbing one wrist in front of the chest means holding.',f:[{r:[70,-30],l:[110,190]}]},
- safety:{n:'Safety',d:2,x:'Palms pressed together above the head means safety: 2 points for the defense.',f:[{r:[-105,-30],l:[-75,-150]}]},
- falsestart:{n:'False start',d:2,x:'Forearms rolling over each other in front of the body means false start (or illegal formation).',f:[{r:[70,-40],l:[110,220]},{r:[70,20],l:[110,160]},{r:[75,75],l:[105,105]}]},
- offside:{n:'Offside',d:2,x:'Hands on the hips means offside (or encroachment).',f:[{r:[135,45],l:[45,135]}]},
- pi:{n:'Pass interference',d:2,x:'Open hands pushing forward from the shoulders means pass interference.',f:[{r:[85,-85],l:[95,-95]},{r:[70,-70],l:[110,-110]}]},
- personalfoul:{n:'Personal foul',d:2,x:'One wrist chopping down on the other above the head means personal foul.',f:[{r:[-100,-30],l:[-65,-110]},{r:[-100,-30],l:[-80,-150]}]},
- delay:{n:'Delay of game',d:2,x:'Arms folded across the chest means delay of game.',f:[{r:[75,-5],l:[105,185]}]},
- facemask:{n:'Face mask',d:2,x:'Grabbing the face mask and pulling down means face mask penalty.',front:1,f:[{r:[40,-100],l:NL_},{r:[55,-80],l:NL_}]},
- unsportsmanlike:{n:'Unsportsmanlike conduct',d:3,x:'Arms stretched straight out to the sides, palms down, means unsportsmanlike conduct.',f:[{r:[180,180],l:[0,0]}]},
- grounding:{n:'Intentional grounding',d:3,x:'Both arms waving together on a diagonal across the body means intentional grounding.',f:[{r:[-35,-35],l:[-35,-35]},{r:[145,145],l:[145,145]}]},
- lossofdown:{n:'Loss of down',d:3,x:'Both hands held behind the head means loss of down.',behind:1,f:[{r:[-140,15],l:[-40,165]}]},
+ touchdown:{n:'Touchdown',d:1,x:'Both arms straight up means touchdown. The same signal means a field goal or extra point is good.',hands:{r:'palm',l:'palm'},f:[{r:[-98,-94],l:[-82,-86]}]},
+ firstdown:{n:'First down',d:1,x:'Pointing toward the defense\'s end zone means first down.',hands:{r:'fist',l:'point'},f:[{r:N_,l:[0,0]}]},
+ incomplete:{n:'Incomplete pass',d:1,x:'Arms swinging back and forth across the body means incomplete pass. It also means a penalty was declined or a kick was missed.',hands:{r:'flat',l:'flat'},f:[{r:[150,170],l:[30,10]},{r:[60,0],l:[120,180],z:'r'}]},
+ timeout:{n:'Timeout',d:1,x:'Hands crossed above the head means timeout.',hands:{r:'palm',l:'palm'},f:[{r:{h:[76,8],e:[34,30]},l:{h:[52,8],e:[94,30]}}]},
+ holding:{n:'Holding',d:1,x:'Grabbing one wrist in front of the chest means holding.',hands:{r:'fist',l:'grab'},f:[{r:{h:[58,52],e:[56,80]},l:{grab:1,e:[86,80]}}]},
+ safety:{n:'Safety',d:2,x:'Palms pressed together above the head means safety: 2 points for the defense.',hands:{r:'palm',l:'palm'},f:[{r:{h:[61,13],e:[34,32]},l:{h:[67,13],e:[94,32]}}]},
+ falsestart:{n:'False start',d:2,x:'Forearms rolling over each other in front of the body means false start (or illegal formation).',hands:{r:'fist',l:'fist'},f:[{r:{h:[72,62],e:[46,80]},l:{h:[58,74],e:[82,82]}},{r:{h:[70,70],e:[46,80]},l:{h:[56,64],e:[82,82]},z:'r'},{r:{h:[66,74],e:[46,80]},l:{h:[62,60],e:[82,82]}}]},
+ offside:{n:'Offside',d:2,x:'Hands on the hips means offside (or encroachment).',hands:{r:'fist',l:'fist'},f:[{r:{h:[48,86],e:[30,70]},l:{h:[80,86],e:[98,70]}}]},
+ pi:{n:'Pass interference',d:2,x:'Open hands pushing forward from the shoulders means pass interference.',hands:{r:'palm',l:'palm'},f:[{r:{h:[50,48],e:[44,76]},l:{h:[78,48],e:[84,76]}},{r:{h:[46,40],e:[36,70]},l:{h:[82,40],e:[92,70]}}]},
+ personalfoul:{n:'Personal foul',d:2,x:'One wrist chopping down on the other above the head means personal foul.',hands:{r:'flat',l:'flat'},f:[{r:{h:[76,10],e:[34,26]},l:{h:[90,8],e:[104,40]}},{r:{h:[76,10],e:[34,26]},l:{h:[72,4],e:[100,40]}}]},
+ delay:{n:'Delay of game',d:2,x:'Arms folded across the chest means delay of game.',hands:{r:'fist',l:'fist'},f:[{r:{h:[76,66],e:[50,76]},l:{h:[52,72],e:[78,82]},z:'r'}]},
+ facemask:{n:'Face mask',d:2,x:'Grabbing the face mask and pulling down means face mask penalty.',hands:{r:'grab',l:'fist'},front:1,f:[{r:{h:[62,45],e:[58,78]},l:NL_},{r:{h:[62,60],e:[54,86]},l:NL_}]},
+ unsportsmanlike:{n:'Unsportsmanlike conduct',d:3,x:'Arms stretched straight out to the sides, palms down, means unsportsmanlike conduct.',hands:{r:'flat',l:'flat'},f:[{r:[180,180],l:[0,0]}]},
+ grounding:{n:'Intentional grounding',d:3,x:'Both arms waving together on a diagonal across the body means intentional grounding.',hands:{r:'flat',l:'flat'},f:[{r:[-35,-35],l:[-35,-35],z:'r'},{r:[145,145],l:[145,145]}]},
+ lossofdown:{n:'Loss of down',d:3,x:'Both hands held behind the head means loss of down.',hands:{r:'hide',l:'hide'},behind:1,f:[{r:{h:[56,24],e:[28,30]},l:{h:[72,24],e:[100,30]}}]},
 };
 const OFF_BASE=[[48,48],[54,48],[60,48],[66,48],[72,48]];
 const FORMS={
@@ -1446,23 +1449,72 @@ const FORMS={
 };
 function fillC(g,cx,cy,r,c){g.fillStyle=c;for(let y=Math.floor(cy-r);y<=cy+r;y++)for(let x=Math.floor(cx-r);x<=cx+r;x++){const dx=x+.5-cx,dy=y+.5-cy;if(dx*dx+dy*dy<=r*r)g.fillRect(x,y,1,1)}}
 const picCache={};
+const SIG_W=128,SIG_H=144;
+// Referee signal frame, 128x144 pixel art with light from the top-left. Each arm gets its own outline so arms
+// crossing the body (or each other) stay readable; striped short sleeves + bare forearms contrast with the shirt.
 function refFrame(key,fi){const ck=key+':'+fi;if(picCache[ck])return picCache[ck];
- const W=64,H=72,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');const sig=SIGNALS[key],fr=sig.f[fi];
- const SK='#e8b48a',UA=11,FA=11;
- const head=()=>{fillC(g,32,15,6.2,SK);g.fillStyle='#f4f4f4';for(let y=8;y<14;y++)for(let x=25;x<40;x++){const dx=x+.5-32,dy=y+.5-15;if(dx*dx+dy*dy<=40)g.fillRect(x,y,1,1)}g.fillRect(25,13,15,1);g.fillStyle='#1b1b2a';g.fillRect(29,16,1,1);g.fillRect(35,16,1,1);g.fillStyle='#b5534a';g.fillRect(31,19,3,1)};
- const arm=(sx,sy,[u,f])=>{const ru=u*Math.PI/180,rf=f*Math.PI/180;const ex=sx+Math.cos(ru)*UA,ey=sy+Math.sin(ru)*UA,hx=ex+Math.cos(rf)*FA,hy=ey+Math.sin(rf)*FA;let d=0;
-  const seg=(x0,y0,x1,y1)=>{const n=Math.ceil(Math.hypot(x1-x0,y1-y0)*2);for(let i=0;i<=n;i++){const t=i/n;fillC(g,x0+(x1-x0)*t,y0+(y1-y0)*t,1.9,(Math.floor(d/2.5)%2)?'#151515':'#f4f4f4');d+=.5}};
-  seg(sx,sy,ex,ey);seg(ex,ey,hx,hy);fillC(g,hx,hy,2.3,SK)};
- // legs & body
- g.fillStyle='#1a1a22';g.fillRect(26,45,5,15);g.fillRect(33,45,5,15);g.fillRect(25,59,7,3);g.fillRect(32,59,7,3);
- for(let x=24;x<=40;x++){g.fillStyle=(((x-24)>>1)%2)?'#151515':'#f4f4f4';g.fillRect(x,23,1,22)}g.fillStyle='#151515';g.fillRect(24,44,17,2);g.fillStyle=SK;g.fillRect(30,20,4,3);
- if(sig.behind){arm(25,27,fr.r);arm(39,27,fr.l);head()}else{head();arm(25,27,fr.r);arm(39,27,fr.l)}
- // outline pass
- const id=g.getImageData(0,0,W,H),a=id.data,o=document.createElement('canvas');o.width=W;o.height=H;const og=o.getContext('2d');
- og.fillStyle='#1a1230';for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(a[(y*W+x)*4+3])continue;if([[1,0],[-1,0],[0,1],[0,-1]].some(([p,q])=>{const X=x+p,Y=y+q;return X>=0&&Y>=0&&X<W&&Y<H&&a[(Y*W+X)*4+3]}))og.fillRect(x,y,1,1)}
+ const W=SIG_W,H=SIG_H,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');const sig=SIGNALS[key],fr=sig.f[fi];
+ const OC='#1a1230',SK='#e8b48a',SKH='#f8d6b2',SKD='#c48a62',SKDD='#9e6a48',WH='#f4f4f0',WHH='#ffffff',WHD='#c4c4cc',BK='#18181e',BKH='#40404c',BKD='#0b0b0f';
+ const LX=-.6,LY=-.8,UA=22,FA=21,CX=64;
+ const px=(x,y,col)=>{if(col){g.fillStyle=col;g.fillRect(x,y,1,1)}};
+ const lit=(dx,dy,r)=>(dx*LX+dy*LY)/r; // >0 faces the light
+ // capsule raster: mode 'o' = outline disk, 'f' = fill with col(along, across, light)
+ const cap=(x0,y0,x1,y1,r,mode,col)=>{const dx=x1-x0,dy=y1-y0,L2=dx*dx+dy*dy||1e-9,len=Math.sqrt(L2),nx=-dy/len,ny=dx/len,R=mode==='o'?r+1.15:r;
+  for(let y=Math.floor(Math.min(y0,y1)-R-1);y<=Math.ceil(Math.max(y0,y1)+R+1);y++)for(let x=Math.floor(Math.min(x0,x1)-R-1);x<=Math.ceil(Math.max(x0,x1)+R+1);x++){
+   const X=x+.5,Y=y+.5;let t=((X-x0)*dx+(Y-y0)*dy)/L2;t=Math.max(0,Math.min(1,t));const qx=x0+dx*t,qy=y0+dy*t,ex=X-qx,ey=Y-qy,d=Math.hypot(ex,ey);if(d>R)continue;
+   px(x,y,mode==='o'?OC:col(t*len,(X-x0)*nx+(Y-y0)*ny,lit(ex,ey,r)))}};
+ const skin=(a,p,l)=>l>.42?SKH:l<-.55?SKDD:l<-.2?SKD:SK;
+ const stripe=(p,l,w)=>(Math.floor((p+20)/w)&1)?(l>.45?BKH:BK):(l>.45?WHH:l<-.3?WHD:WH);
+ // ---- arms ----
+ const solve=(sx,sy,spec)=>{if(Array.isArray(spec)){const u=spec[0]*Math.PI/180,f=spec[1]*Math.PI/180,ex=sx+Math.cos(u)*UA,ey=sy+Math.sin(u)*UA;return{sx,sy,ex,ey,hx:ex+Math.cos(f)*FA,hy:ey+Math.sin(f)*FA}}
+  let[tx,ty]=spec.h;const vx=tx-sx,vy=ty-sy;let D=Math.hypot(vx,vy);const ux=vx/D,uy=vy/D;
+  if(D>=UA+FA-.5){const ex=sx+ux*UA,ey=sy+uy*UA;return{sx,sy,ex,ey,hx:ex+ux*FA,hy:ey+uy*FA}}
+  D=Math.max(D,Math.abs(UA-FA)+1);const a=(UA*UA-FA*FA+D*D)/(2*D),h=Math.sqrt(Math.max(0,UA*UA-a*a)),bx=sx+ux*a,by=sy+uy*a;
+  const c1=[bx-uy*h,by+ux*h],c2=[bx+uy*h,by-ux*h],e=spec.e||[sx,sy+40],pick=Math.hypot(c1[0]-e[0],c1[1]-e[1])<Math.hypot(c2[0]-e[0],c2[1]-e[1])?c1:c2;
+  return{sx,sy,ex:pick[0],ey:pick[1],hx:tx,hy:ty}};
+ const hands=Object.assign({r:'fist',l:'fist'},sig.hands||{},fr.hands||{});
+ const handGeo=(A,type)=>{const dx=A.hx-A.ex,dy=A.hy-A.ey,l=Math.hypot(dx,dy)||1,ux=dx/l,uy=dy/l;return{ux,uy,cx:A.hx+ux*3,cy:A.hy+uy*3,type}};
+ const drawHand=(A,type,mode)=>{if(type==='hide')return;const H=handGeo(A,type),{ux,uy}=H,vx=-uy,vy=ux;
+  if(type==='fist'||type==='grab'){cap(A.hx,A.hy,A.hx+ux*3.5,A.hy+uy*3.5,type==='grab'?4.4:4.7,mode,skin);
+   if(mode==='f'){const k=type==='grab'?3:2;for(let i=-1;i<=1;i++){const fx=A.hx+ux*(5-k*.4)+vx*i*2.2,fy=A.hy+uy*(5-k*.4)+vy*i*2.2;px(Math.floor(fx),Math.floor(fy),SKDD)}
+    if(type==='grab')for(let i=-1;i<=1;i++)px(Math.floor(A.hx+ux*2+vx*i*2.2),Math.floor(A.hy+uy*2+vy*i*2.2),SKD)}}
+  else if(type==='point'){cap(A.hx,A.hy,A.hx+ux*3,A.hy+uy*3,4,mode,skin);cap(A.hx+ux*3,A.hy+uy*3,A.hx+ux*10,A.hy+uy*10,1.6,mode,skin)}
+  else{const wd=type==='flat'?3.1:3.6;cap(A.hx,A.hy,A.hx+ux*6.5,A.hy+uy*6.5,wd,mode,skin);
+   cap(A.hx+ux*1.5+vx*(wd+.4),A.hy+uy*1.5+vy*(wd+.4),A.hx+ux*4+vx*(wd+1.6),A.hy+uy*4+vy*(wd+1.6),1.3,mode,skin); // thumb
+   if(mode==='f')for(const i of[-1.3,0,1.3])for(const t of[7.2,8.4])px(Math.floor(A.hx+ux*t+vx*i*1.15),Math.floor(A.hy+uy*t+vy*i*1.15),SKD)}};
+ const sleeve=UA*.62;
+ const drawArm=(A,type)=>{for(const mode of['o','f']){
+   cap(A.sx,A.sy,A.ex,A.ey,4.4,mode,(a,p,l)=>a<sleeve-1.6?stripe(p,l,3):a<sleeve?BK:skin(a,p,l));
+   cap(A.ex,A.ey,A.hx,A.hy,3.7,mode,skin);drawHand(A,type,mode)}};
+ // ---- body ----
+ const legs=()=>{for(let y=94;y<=121;y++){const sp=y<98?0:Math.min(3,(y-97)*.6);for(let x=51;x<=77;x++){const rel=x-CX;if(Math.abs(rel+.5)<sp)continue;
+   const leftLeg=rel<0,lx=leftLeg?(x-51)/(CX-51):(77-x)/(77-CX);px(x,y,leftLeg?(x<=52?BKH:BK):(x>=75?BKD:BK))}}
+  for(const[x0,x1]of[[48,61],[67,80]])for(let y=121;y<=127;y++)for(let x=x0;x<=x1;x++){if(y===121&&(x===x0||x===x1))continue;px(x,y,y===127?'#2e2e36':y<=122?BKH:BKD)}
+  g.fillStyle='#f4d03f';g.fillRect(53,95,3,5);g.fillStyle='#c9a21f';g.fillRect(55,96,1,4)}; // flag in the pocket
+ const torso=()=>{for(let y=46;y<=93;y++){const hw=y<=48?[11,13.5,14.5][y-46]:15-(y-49)*.075;for(let x=Math.floor(CX-hw);x<Math.ceil(CX+hw);x++){const rel=x+.5-CX,e=rel/hw;
+    let col=stripe(rel,e<-.72?.6:e>.55?-.6:0,4);if(e>.72&&col===BK)col=BKD;px(x,y,col)}}
+  for(let y=89;y<=93;y++)for(let x=50;x<78;x++)px(x,y,y===89?BKH:BK);g.fillStyle='#c8ccd4';g.fillRect(62,90,4,3);g.fillStyle='#8a8f9a';g.fillRect(63,91,2,1);
+  for(let y=42;y<=53;y++){const v=Math.max(0,(53-y)*.62);for(let x=55;x<73;x++){const rel=x+.5-CX;if(Math.abs(rel)<v-1.6)px(x,y,y<47?SKD:SK);else if(Math.abs(rel)<v+.4&&y>=46)px(x,y,BK)}}};
+ const head=()=>{const hx=CX,hy=28,r=11;
+  for(let y=hy-r-1;y<=hy+r;y++)for(let x=hx-r-1;x<=hx+r;x++){const dx=x+.5-hx,dy=y+.5-hy,d=Math.hypot(dx,dy*1.05);if(d>r)continue;const l=lit(dx,dy,r);
+   if(y<hy-2)px(x,y,l>.35?WHH:l<-.35?WHD:WH);else px(x,y,skin(0,0,l*.9-(y>hy+8?.25:0)))}
+  for(let x=hx-13;x<=hx+12;x++){px(x,hy-3,x>hx+6?WHD:WH);px(x,hy-2,'#9a9aa6')} // brim + its shadow
+  px(hx,hy-r-1,BK);px(hx-1,hy-r,BK);px(hx,hy-r,BK);px(hx+1,hy-r,BK); // cap button
+  for(const ex of[hx-r-1,hx+r]){for(let y=hy+1;y<=hy+5;y++){px(ex,y,ex<hx?SK:SKD);px(ex<hx?ex-1:ex+1,y,y===hy+1||y===hy+5?null:(ex<hx?SKD:SKDD))}}
+  for(const ex of[hx-6,hx+3]){g.fillStyle='#5a3a26';g.fillRect(ex,hy,4,1);g.fillStyle='#ffffff';g.fillRect(ex+1,hy+2,2,2);g.fillStyle='#1b1b2a';g.fillRect(ex+2,hy+2,2,3)}
+  g.fillStyle=SKD;g.fillRect(hx,hy+4,1,3);g.fillRect(hx+1,hy+6,1,1);
+  g.fillStyle='#9a4a3a';g.fillRect(hx-3,hy+9,6,1);g.fillStyle='#c46a5a';g.fillRect(hx-2,hy+10,4,1);
+  g.fillStyle=SKD;g.fillRect(hx-4,hy+12,9,2)}; // neck shadow under chin
+ const R=solve(50,54,fr.r),Lsp=Object.assign({},fr.l);if(Lsp.grab){const t=.7;Lsp.h=[R.ex+(R.hx-R.ex)*t+3,R.ey+(R.hy-R.ey)*t]}
+ const Lm=Array.isArray(fr.l)?solve(78,54,fr.l):solve(78,54,Lsp);
+ const arms=()=>{if(fr.z==='r'){drawArm(Lm,hands.l);drawArm(R,hands.r)}else{drawArm(R,hands.r);drawArm(Lm,hands.l)}};
+ legs();torso();if(sig.behind){arms();head()}else{head();arms()}
+ // outer silhouette outline
+ const id=g.getImageData(0,0,W,H),a=id.data,o=document.createElement('canvas');o.width=W;o.height=H;const og=o.getContext('2d');og.fillStyle=OC;
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(a[(y*W+x)*4+3])continue;if([[1,0],[-1,0],[0,1],[0,-1]].some(([p,q])=>{const X=x+p,Y=y+q;return X>=0&&Y>=0&&X<W&&Y<H&&a[(Y*W+X)*4+3]}))og.fillRect(x,y,1,1)}
  og.drawImage(c,0,0);return picCache[ck]=o}
 function drawPic(cv2,pic,t){const g=cv2.getContext('2d');g.imageSmoothingEnabled=false;const[kind,key]=pic.split(':');
- if(kind==='sig'){const W=64,H=72;g.fillStyle='#4caf50';g.fillRect(0,0,W,H);g.fillStyle='#43a047';for(let y=0;y<H;y+=12)g.fillRect(0,y,W,6);g.fillStyle='#ffffff';g.fillRect(0,63,W,2);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(21,61,23,3);
+ if(kind==='sig'){const W=SIG_W,H=SIG_H;g.fillStyle='#4caf50';g.fillRect(0,0,W,H);g.fillStyle='#43a047';for(let y=0;y<H;y+=24)g.fillRect(0,y,W,12);g.fillStyle='#ffffff';g.fillRect(0,128,W,3);g.fillStyle='rgba(0,0,0,.28)';for(let y=125;y<=131;y++){const w=34*Math.sqrt(1-((y-128)/3.6)**2);g.fillRect(Math.round(64-w),y,Math.round(2*w),1)}
   const sig=SIGNALS[key];const fi=Math.floor((t||0)/450)%sig.f.length;g.drawImage(refFrame(key,fi),0,0);return}
  const F=FORMS[key],W=120,H=84;
  for(let y=0;y<H;y+=10){g.fillStyle=(y/10)%2?'#43a047':'#4caf50';g.fillRect(0,y,W,10);g.fillStyle='#e8f5e8';g.fillRect(0,y+4,W,1)}
@@ -1480,7 +1532,7 @@ function drawPic(cv2,pic,t){const g=cv2.getContext('2d');g.imageSmoothingEnabled
  const offN=Object.values(FORMS).filter(f=>f.side==='o').map(f=>f.n),defN=Object.values(FORMS).filter(f=>f.side==='d').map(f=>f.n).concat(['Dime defense','Goal-line defense']);
  for(const k in FORMS){const f=FORMS[k];add('strategy',f.d,f.side==='o'?'The offense (O\'s, QB in gold) is moving up the field. What formation is this?':'What defensive alignment are the red X\'s in?','form:'+k,f.n,f.side==='o'?offN:defN,f.x)}})();
 function pickPic(cat,dmax){const pool=QB.filter(q=>q.pic&&(!cat||q.cat===cat)&&q.d<=Math.max(dmax,1)&&!recent.includes(q.id));if(!pool.length)return null;const miss=pool.filter(q=>S.missed[q.id]);const q=(miss.length&&R()<.4)?pick(miss):pick(pool);recent.push(q.id);if(recent.length>15)recent.shift();return q}
-function showPic(q){const card=$('#qPic');if(!q||!q.pic){card.classList.add('hidden');return}card.classList.remove('hidden');const sig=q.pic.startsWith('sig');const c=$('#qPicC');c.width=sig?64:120;c.height=sig?72:84;c.style.width=(sig?168:252)+'px';c.style.height=(sig?189:176)+'px';drawPic(c,q.pic,0)}
+function showPic(q){const card=$('#qPic');if(!q||!q.pic){card.classList.add('hidden');return}card.classList.remove('hidden');const sig=q.pic.startsWith('sig');const c=$('#qPicC');c.width=sig?SIG_W:120;c.height=sig?SIG_H:84;c.style.width=(sig?168:252)+'px';c.style.height=(sig?189:176)+'px';drawPic(c,q.pic,0)}
 
 // ---------------- ENEMIES ----------------
 const BIOME_FAMS={plains:FAMS.slice(0,7),forest:['raptor','rex','stego','raptor'],coast:['sauro','ptero','trike','sauro'],desert:['raptor','ankylo','rex','spino'],mountain:['ptero','ankylo','trike','ptero'],ruins:['trike','sauro','stego','spino'],springs:['sauro','stego','ptero','trike'],volcano:['rex','spino','ankylo','ptero']};
@@ -1726,7 +1778,7 @@ function renderMenu(){
   h=`<div class="sub">Accuracy: <b>${acc}%</b> (${S.st.cor}/${S.st.ans}) · Best streak: <b>${S.st.best}</b></div><div class="catbars">`+Object.keys(CATS).map(k=>{const c=S.st.cat[k]||[0,0];const p=c[0]?Math.round(c[1]/c[0]*100):0;return`<div class="cb"><span>${CATS[k].name}</span><div class="bar"><i style="width:${p}%;background:${CATS[k].c}"></i></div><small>${c[1]}/${c[0]}</small></div>`}).join('')+'</div>';
   h+=`<h4>Plays to review (${ids.length}) ${ids.length?`<button onclick="G.drill()">🏋️ Practice Drill</button>`:''}</h4>`+(ids.length?ids.map(id=>{const q=QB[id];return`<div class="film">${q.pic?`<canvas class="filmPic" data-pic="${q.pic}"></canvas>`:''}<span class="cat" style="background:${CATS[q.cat].c}">${CATS[q.cat].name}</span> ${esc(q.q)}<br><b class="good">✔ ${esc(q.a)}</b> <small>${esc(q.x)}</small></div>`}).join(''):'<i>No missed questions right now. Questions you miss show up here until you get them right twice.</i>')}
  else if(menuTab==='prog'){h=`<div class="sub">Level <b>${S.lv}</b> · XP ${S.xp}/${xpNeed(S.lv)} · Battles ${S.st.battles} · Wins ${S.st.wins} · Steps ${S.steps}</div><div class="grid">`+BOSS_ORDER.concat(['champ']).map(id=>{const p=poiById(id),d=p.boss,done=S.bosses[id];return`<div class="card ${done?'won':''}"><div class="ic">${done?'🏆':'🔒'}</div><div><b>${done?d.trophy:'???'}</b><br><small>${p.name} · ${d.name}<br>${p.cat?CATS[p.cat].name:'All categories'} · Lv ${d.lv}</small></div></div>`}).join('')+'</div>'}
- else if(menuTab==='guide'){h=`<div class="sub">Study the referee signals and formations you'll see in picture questions. Moving signals are animated.</div><h4>🦓 Referee signals</h4><div class="ggrid">`+Object.entries(SIGNALS).map(([k,s2])=>`<div class="gcard"><canvas class="gpic" data-pic="sig:${k}" width="64" height="72"></canvas><b>${s2.n}</b><small>${esc(s2.x)}</small></div>`).join('')+`</div><h4>📐 Formations</h4><div class="ggrid wide">`+Object.entries(FORMS).map(([k,f])=>`<div class="gcard"><canvas class="gpic" data-pic="form:${k}" width="120" height="84"></canvas><b>${f.n}</b><small>${esc(f.x)}</small></div>`).join('')+'</div>'}
+ else if(menuTab==='guide'){h=`<div class="sub">Study the referee signals and formations you'll see in picture questions. Moving signals are animated.</div><h4>🦓 Referee signals</h4><div class="ggrid">`+Object.entries(SIGNALS).map(([k,s2])=>`<div class="gcard"><canvas class="gpic" data-pic="sig:${k}" width="${SIG_W}" height="${SIG_H}"></canvas><b>${s2.n}</b><small>${esc(s2.x)}</small></div>`).join('')+`</div><h4>📐 Formations</h4><div class="ggrid wide">`+Object.entries(FORMS).map(([k,f])=>`<div class="gcard"><canvas class="gpic" data-pic="form:${k}" width="120" height="84"></canvas><b>${f.n}</b><small>${esc(f.x)}</small></div>`).join('')+'</div>'}
  else if(menuTab==='ach'){const got=ACH.filter(a=>S.ach[a.id]).length,maxP=ACH.reduce((n,a)=>n+ATIER[a.t].pts,0);
   h=`<div class="stats">🏅 ${got}/${ACH.length} achievements · ${achPoints()}/${maxP} points · Harder difficulties earn rarer awards!</div><div class="tierprog">`+TIERS.map(([t,n,c])=>`<span style="border-color:${c}">${tierWins(t)>=SECRET_WINS?'💎':'⬛'} ${n}: ${tierWins(t)} wins</span>`).join('')+`</div>`;
   const groups=[...new Set(ACH.map(a=>a.g))];
@@ -1737,7 +1789,7 @@ function renderMenu(){
   <div class="help"><b>Save codes</b>: the game auto-saves in this browser. To move your progress to another device or browser, export a save code there and import it here.<div class="opt"><button onclick="G.exportSave()">📤 Export save code</button><button onclick="G.importSave()">📥 Import save code</button></div><div id="saveIO"></div></div>
   <div class="opt"><button class="danger" onclick="G.reset()">🗑 Start a new game</button></div>`}
  $('#menuBody').innerHTML=h;updMusicBtn();
- document.querySelectorAll('.filmPic').forEach(c=>{const sig=c.dataset.pic.startsWith('sig');c.width=sig?64:120;c.height=sig?72:84;drawPic(c,c.dataset.pic,0)});
+ document.querySelectorAll('.filmPic').forEach(c=>{const sig=c.dataset.pic.startsWith('sig');c.width=sig?SIG_W:120;c.height=sig?SIG_H:84;drawPic(c,c.dataset.pic,0)});
  document.querySelectorAll('.gpic').forEach(c=>drawPic(c,c.dataset.pic,0));
  if(menuTab==='gear')[['gp1','down'],['gp2','right'],['gp3','up']].forEach(([id,d])=>{const c=$('#'+id),g=c.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(bradySpr[d][0],0,0,54,54)});
  if(menuTab==='dex')document.querySelectorAll('.dexc').forEach(c=>{const f=c.dataset.f;const g=c.getContext('2d');g.imageSmoothingEnabled=false;if(S.dex[f]){g.drawImage(dexSpr(f),0,0)}else{g.globalAlpha=.25;g.drawImage(dexSpr(f),0,0);g.globalCompositeOperation='source-atop';g.globalAlpha=1;g.fillStyle='#1a1230';g.fillRect(0,0,58,50)}})}
