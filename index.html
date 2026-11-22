@@ -1304,7 +1304,10 @@ function stats(){const s={atk:12+(S.lv-1)*3,def:S.lv-1,hp:60+(S.lv-1)*12,crit:.0
  for(const k of SLOTS){const id=S.equip[k];if(!id)continue;const g=GEAR[id];s.atk+=g.atk||0;s.def+=g.def||0;s.hp+=g.hp||0;s.crit+=(g.crit||0)/100;s.dodge+=(g.dodge||0)/100;s.heal+=g.heal||0}
  const tp=teamPerks();s.atk+=tp.atk;s.def+=tp.def;s.hp+=tp.hp;s.crit+=tp.crit/100;s.dodge+=tp.dodge/100;
  return s}
-const xpNeed=lv=>20+lv*18;
+// Lv 8 (first Head Coaches) takes ~35 wins, Lv 20 (Commissioner) ~135.
+const xpNeed=lv=>30+lv*26+lv*lv*2;
+// Wild dinos below your level give less XP (-20% per level, min 20%); tougher ones give up to +30%.
+const xpLvMult=(plv,elv)=>plv>elv?Math.max(.2,1-.2*(plv-elv)):Math.min(1.3,1+.1*(elv-plv));
 function regionPoi(x,y){return POIS[region[idx(x,y)]]}
 
 // ---------------- WORLD UPDATE ----------------
@@ -1620,14 +1623,14 @@ function victory(){const e=B.en;B.phase='end';SFX.win();S.st.wins++;S.dex[e.fam]
  const lines=[`<b>${esc(e.name)}</b> ${e.boss?'has been out-coached!':'is dehydrated!'}`];
  if(B.opts.practice){lines.push('Nice practice rep! +5 XP. Coach Dale gives you a high five. ✋');S.xp+=5;}
  else{
-  const tp=teamPerks();let xp=Math.round((10+e.lv*6)*(e.boss?3:1)*(S.buffs.film?1.5:1)*(e.shiny?2:1)*(1+tp.xp/100)),coins=Math.round((6+e.lv*3)*(e.boss?4:1)*(S.buffs.lucky?1.5:1)*(e.shiny?3:1)*(1+tp.coin/100));
-  S.xp+=xp;S.coins+=coins;lines.push(`+${xp} XP   +${coins} coins 🪙`);
+  const tp=teamPerks(),lvm=e.boss?1:xpLvMult(S.lv,e.lv);let xp=Math.max(1,Math.round((10+e.lv*6)*lvm*(e.boss?3:1)*(S.buffs.film?1.5:1)*(e.shiny?2:1)*(1+tp.xp/100))),coins=Math.round((6+e.lv*3)*(e.boss?4:1)*(S.buffs.lucky?1.5:1)*(e.shiny?3:1)*(1+tp.coin/100));
+  S.xp+=xp;S.coins+=coins;lines.push(`+${xp} XP${lvm<1?' <small class="muted">(less XP: you out-level this dino)</small>':lvm>1?' <small class="good">(bonus XP: tough dino!)</small>':''}   +${coins} coins 🪙`);
   const drops=[];if(B.opts.secretBoss){S.bosses.goat=1;S.gear.push('fossilball','dinocrown');lines.push(`✦ THE GOAT HAS BEEN OUT-COACHED! ${NMH()} claims the <span style="color:${RAR[5].c}">🦴 Fossil Football</span> and the <span style="color:${RAR[5].c}">👑 Dino King Crown</span> [Mythic]!`);drops.push(['c','icepack'],['c','icepack'])}
   else if(B.opts.legend){const it=B.opts.legend,g=GEAR[it.legend];S.taken[it.id]=1;S.gear.push(it.legend);lines.push(`🏆 LEGEND OUT-COACHED! ${NMH()} claims the <span style="color:${RAR[4].c}">${g.icon} ${g.name}</span>!`);drops.push(['c','icepack'])}
   else if(e.boss){const p=poiById(B.opts.boss.poi);drops.push(['g',rollGear(e.lv+8,BOSS_ORDER.indexOf(p.id)>=2||p.id==='champ'?3:2)]);drops.push(['c',rollCons()],['c',rollCons()])}
   else{if(R()<.45)drops.push(['c',rollCons()]);if(R()<.14||e.shiny)drops.push(['g',rollGear(e.lv)])}
   drops.forEach(([t,k])=>{if(t==='c'){S.inv[k]=(S.inv[k]||0)+1;lines.push(`Loot: ${CONS[k].icon} ${CONS[k].name}`)}else{S.gear.push(k);const g=GEAR[k];lines.push(`Loot: <span style="color:${RAR[g.r].c}">${g.icon} ${g.name} [${RAR[g.r].n}]</span>`)}});
-  for(const d of teamDinos()){d.xp=(d.xp||0)+1;if(d.lv<50&&d.xp>=3+Math.floor(d.lv/4)){d.xp=0;d.lv++;lines.push(`🦖 ${esc(d.nick)} grew to Lv ${d.lv}!${d.lv%5===0?' Its perk got stronger!':''}`)}}
+  for(const d of teamDinos()){d.xp=(d.xp||0)+1;if(d.lv<Math.min(50,S.lv)&&d.xp>=5+Math.floor(d.lv/2)){d.xp=0;d.lv++;lines.push(`🦖 ${esc(d.nick)} grew to Lv ${d.lv}!${d.lv%5===0?' Its perk got stronger!':''}`)}}
   // buff countdown
   for(const k of Object.keys(S.buffs)){if(k==='horn')continue;S.buffs[k]--;if(S.buffs[k]<=0){delete S.buffs[k];lines.push(`${BUFFS[k].icon} ${BUFFS[k].name} wore off.`)}}
  }
@@ -1821,9 +1824,9 @@ function equip(id){const g=GEAR[id];S.equip[g.slot]=id;SFX.blip();rebuildBrady()
 // ---------------- DINO TEAM ----------------
 const TEAM_MAX=30,TEAM_ACTIVE=3;
 // One perk per family: value = base + step for every 5 levels the dino has.
-const PERKS={rex:{n:'Power Roar',i:'💪',k:'atk',b:3,s:1,u:''},raptor:{n:'Quick Feet',i:'💨',k:'dodge',b:5,s:1,u:'%'},sauro:{n:'Big Heart',i:'❤️',k:'hp',b:12,s:4,u:''},
- trike:{n:'Horn Charge',i:'🎯',k:'crit',b:4,s:1,u:'%'},stego:{n:'Study Buddy',i:'📚',k:'xp',b:10,s:2,u:'%'},ankylo:{n:'Armor Shell',i:'🛡️',k:'def',b:3,s:1,u:''},
- ptero:{n:'Tailwind',i:'🪶',k:'spd',b:25,s:0,u:'%'},spino:{n:'Treasure Nose',i:'🪙',k:'coin',b:15,s:3,u:'%'}};
+const PERKS={rex:{n:'Power Roar',i:'💪',k:'atk',b:1,s:1,u:''},raptor:{n:'Quick Feet',i:'💨',k:'dodge',b:2,s:1,u:'%'},sauro:{n:'Big Heart',i:'❤️',k:'hp',b:5,s:5,u:''},
+ trike:{n:'Horn Charge',i:'🎯',k:'crit',b:2,s:1,u:'%'},stego:{n:'Study Buddy',i:'📚',k:'xp',b:5,s:1,u:'%'},ankylo:{n:'Armor Shell',i:'🛡️',k:'def',b:1,s:1,u:''},
+ ptero:{n:'Tailwind',i:'🪶',k:'spd',b:25,s:0,u:'%'},spino:{n:'Treasure Nose',i:'🪙',k:'coin',b:10,s:2,u:'%'}};
 const PERK_LBL={atk:'ATK',def:'DEF',hp:'max hydration',crit:'CRIT',dodge:'JUKE',xp:'XP from challenges',coin:'coins from challenges',spd:'walking speed'};
 function perkVal(d){const p=PERKS[d.fam];return p.b+Math.floor(d.lv/5)*p.s}
 function perkText(d){const p=PERKS[d.fam];return`${p.i} ${p.n} (+${perkVal(d)}${p.u} ${PERK_LBL[p.k]})`}
@@ -1875,7 +1878,7 @@ function teamTabHtml(){const t=S.team,act=teamDinos(),bench=t.roster.filter(d=>!
  const sum=Object.keys(tp).filter(k=>tp[k]).map(k=>`+${tp[k]}${['atk','def','hp'].includes(k)?'':'%'} ${PERK_LBL[k]}`).join(' · ')||'none yet';
  let h=`<div class="sub">Team perks: <b>${sum}</b> · Roster ${t.roster.length}/${TEAM_MAX}</div>`;
  if(teamUI.swap){const d=t.roster.find(x=>x.id===teamUI.swap);h+=`<div class="tswap">Pick an active dino to swap with <b>${esc(d.nick)}</b>. <button onclick="G.team('cancel')">Cancel</button></div>`}
- h+=`<h4>Active team (${act.length}/${TEAM_ACTIVE})</h4><div class="sub">⭐ Your lead dino follows you on the map. Dinos on the team level up as you win challenges.</div><div class="grid team">`+act.map(d=>teamCard(d,true)).join('')+Array(TEAM_ACTIVE-act.length).fill(`<div class="card tcard empty"><div class="tinfo"><i>Empty slot</i><br><small>Bring a dino along from the bench.</small></div></div>`).join('')+'</div>';
+ h+=`<h4>Active team (${act.length}/${TEAM_ACTIVE})</h4><div class="sub">⭐ Your lead dino follows you on the map. Teammates level up as you win challenges (up to your level).</div><div class="grid team">`+act.map(d=>teamCard(d,true)).join('')+Array(TEAM_ACTIVE-act.length).fill(`<div class="card tcard empty"><div class="tinfo"><i>Empty slot</i><br><small>Bring a dino along from the bench.</small></div></div>`).join('')+'</div>';
  h+=`<h4>Bench (${bench.length})</h4>`+(bench.length?`<div class="grid team">`+bench.map(d=>teamCard(d,false)).join('')+'</div>':'<i>No dinos on the bench. Win more challenges to recruit!</i>');
  return h+`<details class="tperks"><summary>What does each teammate do?</summary>${teamPerkList()}</details>`}
 function teamPerkList(){return'<div class="plist">'+FAMS.map(f=>{const p=PERKS[f];return`<span><b>${FAMN[f]}</b>: ${p.i} ${p.n}, +${p.b}${p.u} ${PERK_LBL[p.k]}${p.s?` (more every 5 Lv)`:''}</span>`}).join('')+'</div>'}
