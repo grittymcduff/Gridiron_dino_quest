@@ -41,3 +41,9 @@ T-rex, Spinosaurus, Triceratops, Stegosaurus and Ankylosaurus use hand-drawn pix
 Each wild dino is recolored from it at runtime (brightness mapped onto its palette, so the texture is kept), with stripes/spots painted on.
 `art/extract_from_sheet.py` shows how the sprites were cut from a reference sheet. Raptor, Pterodactyl and Long-neck still use the procedural `makeDinoProc()`.
 
+### Referee art
+
+The 15 referee signals use hand-drawn pixel art (`art/referee/`, embedded as `SIG_ART`), shown at exactly 2x.
+Touchdown, First down, Offside, Pass interference, False start, Delay of game, Face mask and Unsportsmanlike conduct are cut straight from the artwork.
+The other seven reuse the Touchdown referee with new arm poses drawn in the art's palette (`art/referee/make_missing_poses.py`).
+
