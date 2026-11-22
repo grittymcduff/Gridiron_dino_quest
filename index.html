@@ -647,6 +647,9 @@ function makeNoise(seed){const r=mulberry32(seed);const P=new Float32Array(65536
  const n=(x,y)=>{const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,a=g(xi,yi),b=g(xi+1,yi),c=g(xi,yi+1),d=g(xi+1,yi+1),u=sm(xf),v=sm(yf);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v};
  return(x,y,o=3)=>{let s=0,amp=1,f=1,t=0;for(let i=0;i<o;i++){s+=n(x*f,y*f)*amp;t+=amp;amp*=.5;f*=2}return s/t}}
 
+// ---------------- STATS (GoatCounter) ----------------
+// Counts anonymous game milestones on the GitHub Pages site only (no cookies, no personal data).
+function track(name){try{if(window.goatcounter&&goatcounter.count)goatcounter.count({path:'event/'+name,title:name,event:true})}catch(e){}}
 // ---------------- CONSTANTS ----------------
 const TS=16;let CW=320, CH=208;
 // HD rendering: game logic stays in 16-unit tiles; the canvas has RS device pixels per world unit.
@@ -1436,7 +1439,7 @@ function useMonolith(x,y){
  if(MONO_S&&x===MONO_S.x&&y===MONO_S.y){choice('The monolith hums softly. Return to Kickoff Town?',['Warp home','Stay'],i=>{if(i===0)warp(MONO_K.x,MONO_K.y+1,'Kickoff Town')});return}
  const prog=TIERS.map(([t,n])=>`${tierWins(t)>=SECRET_WINS?'💎':'⬛'} ${n}: ${Math.min(tierWins(t),SECRET_WINS)}/${SECRET_WINS} wins`).join('   ');
  if(!SANCT){dialog(['An ancient monolith. It is silent.']);return}
- if(secretReady()){choice('All four gems blaze with light! The monolith opens a path to somewhere... hidden. Step through?',['Step through','Not yet'],i=>{if(i===0){S.sanctum=1;warp(MONO_S.x,MONO_S.y-1,null)}});return}
+ if(secretReady()){choice('All four gems blaze with light! The monolith opens a path to somewhere... hidden. Step through?',['Step through','Not yet'],i=>{if(i===0){S.sanctum=1;track('sanctum-found');warp(MONO_S.x,MONO_S.y-1,null)}});return}
  dialog(['An ancient monolith with four empty gem sockets, one for each difficulty.',`It awakens for those who win ${SECRET_WINS} challenges on EVERY difficulty. Change difficulty in Menu → Options.`,prog])}
 let warpFx=0;
 function warp(x,y,name){S.x=x;S.y=y;startPlayer();lastRegion=-1;lastTown=-1;warpFx=40;SFX.level();if(name)banner(name);saveGame(true);drawMiniMap(true)}
@@ -1735,8 +1738,8 @@ function victory(){const e=B.en;B.phase='end';SFX.win();S.st.wins++;S.dex[e.fam]
  else{
   const tp=teamPerks(),lvm=e.boss?1:xpLvMult(S.lv,e.lv);let xp=Math.max(1,Math.round((10+e.lv*6)*lvm*(e.boss?3:1)*(S.buffs.film?1.5:1)*(e.shiny?2:1)*(1+tp.xp/100))),coins=Math.round((6+e.lv*3)*(e.boss?4:1)*(S.buffs.lucky?1.5:1)*(e.shiny?3:1)*(1+tp.coin/100));
   S.xp+=xp;S.coins+=coins;lines.push(`+${xp} XP${lvm<1?' <small class="muted">(less XP: you out-level this dino)</small>':lvm>1?' <small class="good">(bonus XP: tough dino!)</small>':''}   +${coins} coins 🪙`);
-  const drops=[];if(B.opts.secretBoss){S.bosses.goat=1;S.gear.push('fossilball','dinocrown');lines.push(`✦ THE GOAT HAS BEEN OUT-COACHED! ${NMH()} claims the <span style="color:${RAR[5].c}">🦴 Fossil Football</span> and the <span style="color:${RAR[5].c}">👑 Dino King Crown</span> [Mythic]!`);drops.push(['c','icepack'],['c','icepack'])}
-  else if(B.opts.legend){const it=B.opts.legend,g=GEAR[it.legend];S.taken[it.id]=1;S.gear.push(it.legend);lines.push(`🏆 LEGEND OUT-COACHED! ${NMH()} claims the <span style="color:${RAR[4].c}">${g.icon} ${g.name}</span>!`);drops.push(['c','icepack'])}
+  const drops=[];if(B.opts.secretBoss){S.bosses.goat=1;track('goat-beaten');S.gear.push('fossilball','dinocrown');lines.push(`✦ THE GOAT HAS BEEN OUT-COACHED! ${NMH()} claims the <span style="color:${RAR[5].c}">🦴 Fossil Football</span> and the <span style="color:${RAR[5].c}">👑 Dino King Crown</span> [Mythic]!`);drops.push(['c','icepack'],['c','icepack'])}
+  else if(B.opts.legend){const it=B.opts.legend,g=GEAR[it.legend];S.taken[it.id]=1;track('legend-'+it.legend);S.gear.push(it.legend);lines.push(`🏆 LEGEND OUT-COACHED! ${NMH()} claims the <span style="color:${RAR[4].c}">${g.icon} ${g.name}</span>!`);drops.push(['c','icepack'])}
   else if(e.boss){const p=poiById(B.opts.boss.poi);drops.push(['g',rollGear(e.lv+8,BOSS_ORDER.indexOf(p.id)>=2||p.id==='champ'?3:2)]);drops.push(['c',rollCons()],['c',rollCons()])}
   else{if(R()<.45)drops.push(['c',rollCons()]);if(R()<.14||e.shiny)drops.push(['g',rollGear(e.lv)])}
   drops.forEach(([t,k])=>{if(t==='c'){S.inv[k]=(S.inv[k]||0)+1;lines.push(`Loot: ${CONS[k].icon} ${CONS[k].name}`)}else{S.gear.push(k);const g=GEAR[k];lines.push(`Loot: <span style="color:${RAR[g.r].c}">${g.icon} ${g.name} [${RAR[g.r].n}]</span>`)}});
@@ -1744,12 +1747,12 @@ function victory(){const e=B.en;B.phase='end';SFX.win();S.st.wins++;S.dex[e.fam]
   // buff countdown
   for(const k of Object.keys(S.buffs)){if(k==='horn')continue;S.buffs[k]--;if(S.buffs[k]<=0){delete S.buffs[k];lines.push(`${BUFFS[k].icon} ${BUFFS[k].name} wore off.`)}}
  }
- while(S.xp>=xpNeed(S.lv)){S.xp-=xpNeed(S.lv);S.lv++;S.hp=stats().hp;lines.push(`<b class="good">⭐ LEVEL UP! ${NMH()} is now Lv ${S.lv}! Hydration fully restored.</b>`);if(S.lv===10)lines.push(`✨ ${NMH()} now sparkles with confidence!`);if(S.lv===20)lines.push(`🌟 A golden aura now surrounds ${NMH()}!`);if(S.lv===30)lines.push(`💫 ${NMH()} glows like a true legend!`);setTimeout(SFX.level,600)}
+ while(S.xp>=xpNeed(S.lv)){S.xp-=xpNeed(S.lv);S.lv++;if(S.lv%5===0)track('level-'+S.lv);S.hp=stats().hp;lines.push(`<b class="good">⭐ LEVEL UP! ${NMH()} is now Lv ${S.lv}! Hydration fully restored.</b>`);if(S.lv===10)lines.push(`✨ ${NMH()} now sparkles with confidence!`);if(S.lv===20)lines.push(`🌟 A golden aura now surrounds ${NMH()}!`);if(S.lv===30)lines.push(`💫 ${NMH()} glows like a true legend!`);setTimeout(SFX.level,600)}
  let after=null;
  if(B.opts.secretBoss){after=()=>dialog(GOAT.outro.map(l=>`${GOAT.name}: ${l}`).concat(['Equip your Mythic gear from Menu → Gear.']))}
  else if(B.opts.legend){const L=LEGENDS[B.opts.legend.legend];after=()=>dialog(L.outro.map(l=>`${L.name}: ${l}`).concat(['Equip your legendary gear from Menu → Gear.']))}
- else if(e.boss&&B.opts.boss){const b=B.opts.boss,d=b.def;S.bosses[b.poi]=1;if(!S.trophies.includes(d.trophy))S.trophies.push(d.trophy);lines.push(`🏆 ${NMH()} earned the <b>${d.trophy}</b>!`);
-  after=()=>{dialog(d.outro.map(l=>`${d.name}: ${l}`),()=>{if(d.final){S.champion=true;saveGame(true);showEnding()}else if(S.trophies.length>=6)dialog(['All 6 Coach Trophies collected! 🏆','Head to the Championship Gate in the volcano at the center of the map!'])})}}
+ else if(e.boss&&B.opts.boss){const b=B.opts.boss,d=b.def;if(!S.bosses[b.poi])track('coach-'+b.poi);S.bosses[b.poi]=1;if(!S.trophies.includes(d.trophy))S.trophies.push(d.trophy);lines.push(`🏆 ${NMH()} earned the <b>${d.trophy}</b>!`);
+  after=()=>{dialog(d.outro.map(l=>`${d.name}: ${l}`),()=>{if(d.final){if(!S.champion)track('champion-'+S.diff);S.champion=true;saveGame(true);showEnding()}else if(S.trophies.length>=6)dialog(['All 6 Coach Trophies collected! 🏆','Head to the Championship Gate in the volcano at the center of the map!'])})}}
  if(!after&&!B.opts.practice&&!e.boss&&!B.opts.legend&&!B.opts.secretBoss&&S.team.roster.length<TEAM_MAX&&R()<(e.shiny?1:S.team.roster.length?.3:.6))after=()=>offerRecruit(e);
  B.after=after;updBattleBoxes();saveGame(true);
  setPanel(`<div class="qIntro vic">${lines.join('<br>')}</div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}
@@ -1963,7 +1966,7 @@ function offerRecruit(e){const d={fam:e.fam,lv:e.lv};
  choice(`${e.shiny?'✨ ':''}${e.name} is impressed by your football smarts and wants to join your team! It would give ${perkText(d)}.`,['Welcome aboard! 🦖','Not this time'],i=>{
   if(i!==0){dialog([`${e.name} waves its tail goodbye and wanders back into the grass.`]);return}
   const t=S.team,nd={id:t.next++,fam:e.fam,name:e.name,nick:cleanNick(e.name)||FAMN[e.fam],lv:e.lv,xp:0,pal:e.pal,pattern:e.pattern,seed:e.seed,shiny:!!e.shiny,met:(regionPoi(player.x,player.y)||{}).region||''};
-  t.roster.push(nd);let msg;if(t.active.length<TEAM_ACTIVE){t.active.push(nd.id);msg=t.active.length===1?`${nd.nick} is your lead dino and will follow you around the isles!`:`${nd.nick} joined your active team!`}else msg=`Your active team is full, so ${nd.nick} is waiting on the bench. Swap dinos in Menu → Team.`;
+  t.roster.push(nd);track(t.roster.length===1?'first-recruit':'recruit');let msg;if(t.active.length<TEAM_ACTIVE){t.active.push(nd.id);msg=t.active.length===1?`${nd.nick} is your lead dino and will follow you around the isles!`:`${nd.nick} joined your active team!`}else msg=`Your active team is full, so ${nd.nick} is waiting on the bench. Swap dinos in Menu → Team.`;
   SFX.level();folSprite(true);folReset(true);updHud();saveGame(true);dialog([`🎉 ${nd.nick} joined the team!`,msg,`Team perk: ${perkText(nd)}.`],()=>setTimeout(checkAch,300))})}
 // ---- follower on the map ----
 const fol={x:0,y:0,tx:0,ty:0,px:0,py:0,flip:false,spr:null,sprId:null};
@@ -2178,7 +2181,7 @@ function dailyAnswer(k){if(!D||D.phase!=='q')return;D.phase='fb';const it=D.qs[D
  $('#dFb').innerHTML=`<div class="box ${ok?'ok':'no'} dfb"><b class="${ok?'good':'bad'}">${k<0?'⏱ TIME! ':''}${ok?`✔ Correct! +${pts}`:'✘ Not quite.'}</b> ${ok?'':`Answer: <b>${esc(q.a)}</b>. `}${esc(q.x)}</div><button class="dgo" onclick="G.dailyNext()">${D.i<9?'Next ▶':'See results ▶'}</button>`}
 function dailyNext(){if(!D||D.phase!=='fb')return;D.i++;if(D.i<10)return dailyQ();
  const dd=loadDaily(),y=new Date();y.setDate(y.getDate()-1);dd.streak=(dd.last===dStr(y))?dd.streak+1:1;dd.last=D.ds;dd.best=Math.max(dd.best||0,D.score);dd.bestStreak=Math.max(dd.bestStreak||0,dd.streak);
- const rec={score:D.score,res:D.res,n:D.n};dd.days[D.ds]=rec;dd.played=(dd.played||0)+1;if(D.res.every(x=>x))dd.perfect=1;saveDaily(dd);
+ const rec={score:D.score,res:D.res,n:D.n};dd.days[D.ds]=rec;dd.played=(dd.played||0)+1;track('daily-complete');if(D.res.every(x=>x))dd.perfect=1;saveDaily(dd);
  if(D.fromGame&&S){const c=Math.round(D.score/10);S.coins+=c;rec.coins=c;saveGame(true)}SFX.win();D.phase='done';renderDailyResult(rec,dd)}
 function dailyShareText(rec,dd){const c=rec.res.filter(x=>x).length;return`🦖🏈 Gridiron Dino Quest: Daily #${rec.n}\n${c}/10 · ${rec.score} pts${dd.streak>1?` · 🔥${dd.streak}-day streak`:''}\n${rec.res.map(x=>x?'🟩':'🟥').join('')}\nPlay: ${PLAY_URL}`}
 function renderDailyResult(rec,dd){const c=rec.res.filter(x=>x).length,txt=dailyShareText(rec,dd);const now=new Date(),mid=new Date(now);mid.setHours(24,0,0,0);const ms=mid-now,h=Math.floor(ms/36e5),m=Math.floor(ms%36e5/6e4);
@@ -2258,7 +2261,7 @@ window.G={daily:()=>openDaily(),dailyStart:()=>dailyStart(),dailyAnswer:k=>daily
  buy:k=>{const c=CONS[k];if(S.coins<c.price)return;S.coins-=c.price;S.st.bought=(S.st.bought||0)+1;S.inv[k]=(S.inv[k]||0)+1;SFX.item();updHud();renderShop()},
  buyGear:k=>{const p=GEAR_PRICE[GEAR[k].r];if(S.coins<p)return;S.coins-=p;S.st.bought=(S.st.bought||0)+1;S.gear.push(k);SFX.item();toast(`Bought ${GEAR[k].name}! Equip it in Menu → Gear.`);updHud();renderShop()},
  sell:i=>{const id=S.gear[i];if(!id)return;S.gear.splice(i,1);S.coins+=Math.round(GEAR_PRICE[GEAR[id].r]/2);SFX.item();updHud();renderShop()},
- newGame:d=>{$('#newGameBox').classList.add('hidden');startGame(newSave(d,CR&&CR.hero),true)},
+ newGame:d=>{$('#newGameBox').classList.add('hidden');startGame(newSave(d,CR&&CR.hero),true);track('new-game-'+d)},
  editLook:()=>openCreator('edit'),team:(act,id)=>teamAct(act,id),crDone:()=>crDone(),crBack:()=>crBack(),crRandom:()=>crRandom(),crReopen:()=>{$('#newGameBox').classList.add('hidden');openCreator('new',true)},
  cont:cont,
  continueGame:()=>{const sv=loadSave();if(sv)startGame(sv,false)},
@@ -2276,4 +2279,6 @@ function boot(){
 }
 loadSigArt().then(boot);
 </script>
+<!-- GoatCounter visitor stats: loaded only on the GitHub Pages site -->
+<script>if(/\.github\.io$/.test(location.hostname)){var gc=document.createElement('script');gc.async=true;gc.dataset.goatcounter='https://grittymcduff.goatcounter.com/count';gc.src='https://gc.zgo.at/count.js';document.body.appendChild(gc)}</script>
 </body></html>
