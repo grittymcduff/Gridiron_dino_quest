@@ -777,7 +777,7 @@ function drawWorld(){
   ctx.fillStyle=`rgba(255,255,255,${.8*a})`;const k=24-bumpFx.t,bx=player.px-camX+8+DX[player.dir]*7,by=player.py-camY+13+DY[player.dir]*5;ctx.fillRect(bx-3-k/3,by-k/4,2,2);ctx.fillRect(bx+2+k/3,by-k/4,2,2)}
  const ents=[];
  for(const it of items){if(Math.abs(it.x*16-ppx)>CW/2+40||Math.abs(it.y*16-ppy)>CH/2+40)continue;if(it.kind==='sparkle'&&S.taken[it.id])continue;ents.push({y:it.y*16,d:()=>drawItem(it)})}
- for(const n of npcs){if(Math.abs(n.px-ppx)>CW/2+40||Math.abs(n.py-ppy)>CH/2+40)continue;ents.push({y:n.py,d:()=>drawChar(n.spr,n.dir,n.moving?1+((n.prog/8)|0)%2:0,n.px,n.py)})}
+ for(const n of npcs){if(Math.abs(n.px-ppx)>CW/2+40||Math.abs(n.py-ppy)>CH/2+40)continue;ents.push({y:n.py,d:()=>drawChar(n.spr||(n.spr=makeCharSprites(n.look)),n.dir,n.moving?1+((n.prog/8)|0)%2:0,n.px,n.py)})}
  for(const b of bosses){if(Math.abs(b.x*16-ppx)>CW/2+80||Math.abs(b.y*16-ppy)>CH/2+80)continue;ents.push({y:b.y*16,d:()=>drawBossMap(b)})}
  if(state!=='title'&&folVisible())ents.push({y:Math.min(fol.py,ppy)-.5,d:drawFollower});
  if(state!=='title')ents.push({y:ppy,d:()=>{const n=bumpFx&&bumpFx.t>16?1:0;const fx=ppx+DX[player.dir]*n,fy=ppy+DY[player.dir]*n;drawAura(fx-camX,fy-camY);if(player.dir==='up')drawMiniWeapon(fx,fy,player.dir);drawChar(bradySpr,player.dir,player.moving?1+((player.anim/8)|0)%2:0,fx,fy);if(player.dir!=='up')drawMiniWeapon(fx,fy,player.dir)}});
@@ -790,10 +790,9 @@ const fxp=[];
 function legendCount(){return SLOTS.filter(k=>S.equip[k]&&GEAR[S.equip[k]].r>=4).length}
 function mythicOn(){return SLOTS.some(k=>S.equip[k]&&GEAR[S.equip[k]].r>=5)}
 function drawAura(sx,sy){if(S.lv>=20){const a=.2+.12*Math.sin(frame/10);ctx.fillStyle=S.lv>=30?`rgba(255,140,220,${a})`:`rgba(255,210,70,${a})`;ell(sx+8,sy+15,10,4);ctx.fillStyle=`rgba(255,240,180,${a*.8})`;ell(sx+8,sy+15,6,2.5)}}
-function drawMiniWeapon(px,py,dir){const w=GEAR[S.equip.weapon];if(!w)return;const k=w.proj;const sx=Math.round(px-camX)+(dir==='left'?0:dir==='up'?12:12),sy=Math.round(py-camY)+(dir==='up'?7:9);
- const col={ball:'#8a4a20',gold:w.r>=5?'#ece4d0':'#f5c542',yflag:'#f5d142',rflag:'#e8443a',bottle:'#4a9af0',whistle:'#c8ccd8',cooler:'#f07a1a'}[k]||'#8a4a20';
- ctx.fillStyle=OUT;ctx.fillRect(sx-1,sy-1,6,5);ctx.fillStyle=col;ctx.fillRect(sx,sy,4,3);ctx.fillStyle='#fff';if(k==='ball'||k==='gold')ctx.fillRect(sx+1,sy+1,2,1);else if(k==='yflag'||k==='rflag')ctx.fillRect(sx,sy,1,1);else if(k==='cooler')ctx.fillRect(sx,sy,4,1);
- if(w.r>=4&&(frame>>3)%3===0){ctx.fillStyle='#fff6c0';ctx.fillRect(sx+3,sy-2,1,1)}}
+function drawMiniWeapon(px,py,dir){const w=GEAR[S.equip.weapon];if(!w)return;const k=w.proj;const sx=Math.round(px-camX)+(dir==='left'?1:14),sy=Math.round(py-camY)+(dir==='up'?6:11);
+ ctx.save();ctx.translate(sx,sy);ctx.scale(.5,.5);drawProj(k,0,0,0,true);ctx.restore();
+ if(w.r>=4&&(frame>>3)%3===0){ctx.fillStyle='#fff6c0';ctx.fillRect(sx+2,sy-3,1,1)}}
 function drawBradyFx(ppx,ppy){const lv=S.lv,lc=legendCount(),my=mythicOn();
  if(lv>=10&&frame%(lv>=20?10:26)===0)fxp.push({x:ppx+2+R()*12,y:ppy-2+R()*14,vy:-.35,t:36,m:36,c:lv>=30?'#ffb0e8':lv>=20?'#ffe08a':'#ffffff'});
  if((lc>=2||my)&&player.moving&&frame%4===0)fxp.push({x:ppx+4+R()*8,y:ppy+13,vy:-.2,t:28,m:28,c:my?'#ff7ac0':'#f5c542'});
@@ -1211,9 +1210,7 @@ function defeat(){B.phase='end';const lost=Math.floor(S.coins*.25);S.coins-=lost
 function endBattle(){B=null;state='world';graceSteps=4;$('#battle').classList.add('hidden');$('#hud').classList.remove('hidden');updHud();setTimeout(checkAch,400)}
 function drawBattle(){
  const sky=BIOME_SKY[B.biome]||BIOME_SKY.plains;const g=ctx.createLinearGradient(0,0,0,140);g.addColorStop(0,sky[0]);g.addColorStop(1,sky[1]);ctx.fillStyle=g;ctx.fillRect(0,0,CW,CH);
- // stylized stripes
- ctx.fillStyle='rgba(255,255,255,.15)';for(let i=0;i<6;i++)ctx.fillRect(0,20+i*18+((frame/2+i*7)%18),CW,2);
- ctx.fillStyle=sky[2];ctx.fillRect(0,100,CW,108);ctx.fillStyle=shade(sky[2],-.12);for(let x=0;x<CW;x+=8)ctx.fillRect(x+((x/8)%2)*4,104+((x*7)%20),3,1);
+ drawBattleScenery(B.biome,sky);
  const plat=(cx,cy,rx,ry)=>{ctx.fillStyle=shade(sky[2],-.25);ell(cx,cy+2,rx,ry);ctx.fillStyle=shade(sky[2],.15);ell(cx,cy,rx,ry);ctx.fillStyle=shade(sky[2],-.08);ell(cx,cy+1,rx-6,ry-3)};
  plat(232,92,54,11);plat(78,124,58,12);
  let sh=B.shake>0?(B.shake--,(R()-.5)*6):0;
@@ -1242,6 +1239,22 @@ function drawBattle(){
 }
 function blit(img,x,y){ctx.drawImage(img,Math.round(x*RS)/RS,Math.round(y*RS)/RS,spW(img),spH(img))}
 function ell(cx,cy,rx,ry){ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);ctx.fill()}
+// Challenge-screen backdrop: clouds, a biome horizon, textured ground (all in world units, crisp at 2x)
+function drawBattleScenery(bio,sky){
+ const cl=bio==='volcano'?'rgba(90,60,60,.55)':'rgba(255,255,255,.85)';
+ for(let i=0;i<4;i++){const w=34+i*9,x=((i*97+frame*(.06+i*.02))%(CW+w*2))-w,y=14+((i*23)%38);ctx.fillStyle=cl;ell(x,y,w*.5,6);ell(x-w*.25,y+2,w*.3,5);ell(x+w*.22,y-3,w*.28,6)}
+ const far=mix(sky[1],sky[2],.45),near=mix(sky[1],sky[2],.7),H0=100;
+ const ridge=(col,base,amp,freq,ph,jag)=>{ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(0,H0+1);for(let x=0;x<=CW;x+=2){const v=jag?Math.abs(((x*freq+ph)%40)-20)/20:Math.sin(x*freq*.05+ph)*.5+.5;ctx.lineTo(x,base-v*amp)}ctx.lineTo(CW,H0+1);ctx.fill()};
+ if(bio==='coast'){ctx.fillStyle='#4a8ee0';ctx.fillRect(0,82,CW,19);ctx.fillStyle='#7ab8ff';for(let i=0;i<14;i++){const x=(i*41+frame*.3)%CW;ctx.fillRect(x,86+(i%3)*5,10,1)}ctx.fillStyle='#e8d690';ctx.fillRect(0,96,CW,5)}
+ else if(bio==='desert'){ridge(mix(sky[1],'#e0c080',.6),92,14,1,0,false);ridge('#d8b46a',99,8,1.6,2,false)}
+ else if(bio==='mountain'){ridge(far,90,34,1.3,7,true);ctx.fillStyle='#f4f8ff';for(let k=0;k<12;k++){const px=(40*k-7)/1.3,top=90-34;ctx.beginPath();ctx.moveTo(px,top);ctx.lineTo(px-6.5,top+8.5);ctx.lineTo(px-2,top+7);ctx.lineTo(px+1,top+9);ctx.lineTo(px+6.5,top+8.5);ctx.fill()}ridge(near,98,12,2.2,11,true)}
+ else if(bio==='volcano'){ridge('#3a1a1a',96,30,1,3,true);ctx.fillStyle='#ff6a2a';for(let x=0;x<CW;x+=40){const px=x-((x+3)%40)+20;ctx.fillRect(px-2,96-30,4,3+((frame>>3)%2))}ctx.fillStyle='rgba(255,120,40,.25)';ctx.fillRect(0,90,CW,10)}
+ else if(bio==='forest'){ctx.fillStyle=mix(sky[2],'#103010',.35);for(let x=-6;x<CW+10;x+=11){const h=18+((x*7)%9);ell(x,98-h*.55,8,h*.6)}}
+ else if(bio==='ruins'){ridge(far,96,10,1.4,1,false);ctx.fillStyle=mix(sky[1],'#8a80a8',.5);for(let x=14;x<CW;x+=52){const h=16+(x%3)*7;ctx.fillRect(x,96-h,6,h);ctx.fillRect(x-2,96-h-3,10,3)}}
+ else if(bio==='springs'){ridge(far,94,16,1.1,4,false);ctx.fillStyle='rgba(255,255,255,.35)';for(let i=0;i<5;i++){const x=30+i*62,y=78-((frame*.2+i*13)%20);ell(x,y,6,4)}}
+ else{ridge(far,93,16,1,1,false);ridge(near,99,9,1.7,5,false)}
+ ctx.fillStyle=sky[2];ctx.fillRect(0,H0,CW,CH-H0);ctx.fillStyle=shade(sky[2],.1);ctx.fillRect(0,H0,CW,1);
+ const dk=shade(sky[2],-.14),lt=shade(sky[2],.12);for(let i=0;i<70;i++){const x=(i*53)%CW,y=H0+4+((i*37)%(CH-H0-8));ctx.fillStyle=dk;ctx.fillRect(x,y,1,2);ctx.fillRect(x+1.5,y-.5,1,2.5);ctx.fillStyle=lt;ctx.fillRect(x+.5,y-1,.5,1)}}
 function drawProj(k,x,y,t,small){x=Math.round(x);y=Math.round(y);const s=small?1:1.4;ctx.save();ctx.translate(x,y);if(!small)ctx.rotate(t*.5);ctx.scale(s,s);
  if(k==='ball'||k==='gold'){ctx.fillStyle=OUT;ell(0,0,7,4.5);ctx.fillStyle=k==='gold'?'#f5c542':'#8a4a20';ell(0,0,6,3.5);ctx.fillStyle='#fff';ctx.fillRect(-3,-1,6,1);ctx.fillRect(-2,-2,1,3);ctx.fillRect(0,-2,1,3);ctx.fillRect(2,-2,1,3)}
  else if(k==='yflag'||k==='rflag'){ctx.fillStyle=OUT;ctx.fillRect(-5,-5,10,10);ctx.fillStyle=k==='yflag'?'#f5d142':'#e8443a';ctx.fillRect(-4,-4,8,8);ctx.fillStyle='#fff';ctx.fillRect(-4,-4,3,3)}
@@ -1707,7 +1720,7 @@ window.G={daily:()=>openDaily(),dailyStart:()=>dailyStart(),dailyAnswer:k=>daily
 // ---------------- BOOT ----------------
 function boot(){
  genWorld();buildTiles();buildMisc();
- npcs.forEach(n=>{n.spr=makeCharSprites(n.look);n.px=n.x*16;n.py=n.y*16});
+ npcs.forEach(n=>{n.spr=null;n.px=n.x*16;n.py=n.y*16}); // sprites are built on first sight
  S=newSave();S.sound=false;bradySpr=makeBradySprites();bradyRed=tint(bradySpr.right[0],'#ff3030');player.px=POIS[0].x*16;player.py=POIS[0].y*16;
  $('#btnMenu').onclick=()=>{if(state==='world')openMenu()};$('#btnMap').onclick=()=>{if(state==='world')openMap()};$('#btnSnd').onclick=()=>{S.sound=!S.sound;updHud()};
  fit();bindTouch();bindZoom();showTitle();requestAnimationFrame(loop);
