@@ -9,7 +9,7 @@ html,body{margin:0;height:100%;background:radial-gradient(ellipse at center,#2a1
 #wrap{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
 #holder{position:relative}
 #game{position:absolute;left:0;top:0;width:640px;height:416px;transform-origin:0 0;background:#000;border-radius:6px;overflow:hidden;font-family:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;color:#1a1230;font-size:12px;box-shadow:0 0 0 4px #3b2f5c,0 0 0 8px #0b0816,0 18px 50px rgba(0,0,0,.6)}
-#cv{position:absolute;left:0;top:0;width:640px;height:416px;image-rendering:pixelated;image-rendering:crisp-edges}
+#cv{position:absolute;left:0;top:0;width:640px;height:416px;touch-action:none;image-rendering:pixelated;image-rendering:crisp-edges}
 .hidden{display:none!important}
 .box{background:#fdf8ec;border:3px solid #1a1230;border-radius:7px;box-shadow:inset 0 0 0 2px #e6dbbd,0 3px 0 rgba(0,0,0,.35)}
 button{font-family:inherit;font-weight:700;cursor:pointer;border:2px solid #1a1230;border-radius:5px;background:#fff6dc;color:#1a1230;font-size:11px;padding:4px 8px;box-shadow:0 2px 0 #1a1230}
@@ -221,7 +221,7 @@ body.touch:not(.portrait) #touch{position:fixed;left:0;right:0;bottom:10px;max-w
    <div id="logo"><div class="l1" id="logoName">★ BRADY'S ★</div><div class="l2">GRIDIRON</div><div class="l3">DINO QUEST</div></div>
    <div id="titleArt"><canvas id="titleBrady" width="72" height="72"></canvas></div>
    <div id="titleBtns"><button id="btnCont" onclick="G.continueGame()">▶ Continue</button><button onclick="G.showNew()">🏈 New Game</button><button onclick="G.daily()">📅 Daily Challenge</button><button class="fsBtn" onclick="G.fs()">⛶ Full screen</button></div>
-   <div id="titleFoot">Answer NFL trivia to challenge dinosaurs! · Arrows/WASD move · Space/Enter interact · I menu · M map · +/− zoom · F full screen</div>
+   <div id="titleFoot">Answer NFL trivia to challenge dinosaurs! · Arrows/WASD or click to move · Space/Enter or click to interact · I menu · M map · +/− zoom · F full screen</div>
    <div id="newGameBox" class="box hidden"><b style="font-size:14px">Choose your difficulty</b>
     <button class="dbtn" onclick="G.newGame('rookie')">🟢 ROOKIE: easier questions, dinos hit softer. Great for learning!</button>
     <button class="dbtn" onclick="G.newGame('pro')">🟡 PRO: the standard experience.</button>
