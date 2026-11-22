@@ -1038,88 +1038,114 @@ const SUF={rex:['osaurus','rex','tyrant'],raptor:['raptor','nychus','ripper'],sa
 function dinoName(f){let p=pick(PREF),s=pick(SUF[f]);if(s[0]==='o'&&/[aeiou]$/i.test(p))s=s.slice(1);return p+s}
 function randPal(){const h=R()*360;return{B:hsl(h,40+R()*30,42+R()*12),L:hsl(h+30,45,78),P:hsl(h+(R()<.5?180:-35),50,28+R()*10),K:R()<.5?'#f0e6cc':'#6b6b78'}}
 function makeDino(fam,pal,pattern,seed){
- const W=56,H=48,px=new Array(W*H).fill(null),rr=mulberry32(seed||1);
- const set=(x,y,c)=>{x=Math.floor(x);y=Math.floor(y);if(x>=0&&y>=0&&x<W&&y<H)px[y*W+x]=c};
- const get=(x,y)=>x>=0&&y>=0&&x<W&&y<H?px[y*W+x]:null;
- const ell=(cx,cy,rx,ry,c,cond)=>{for(let y=Math.floor(cy-ry);y<=Math.ceil(cy+ry);y++)for(let x=Math.floor(cx-rx);x<=Math.ceil(cx+rx);x++){const a=(x+.5-cx)/rx,b=(y+.5-cy)/ry;if(a*a+b*b<=1&&(!cond||cond(x,y)))set(x,y,c)}};
- const poly=(pts,c)=>{let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;pts.forEach(([x,y])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)});for(let y=Math.floor(y0);y<=y1;y++)for(let x=Math.floor(x0);x<=x1;x++){let ins=false;const X=x+.5,Y=y+.5;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const[xi,yi]=pts[i],[xj,yj]=pts[j];if((yi>Y)!==(yj>Y)&&X<(xj-xi)*(Y-yi)/(yj-yi)+xi)ins=!ins}if(ins)set(x,y,c)}};
- const line=(x0,y0,x1,y1,r0,r1,c)=>{const n=Math.ceil(Math.hypot(x1-x0,y1-y0))*2+1;for(let i=0;i<=n;i++){const t=i/n,r=r0+(r1-r0)*t;ell(x0+(x1-x0)*t,y0+(y1-y0)*t,r,r,c)}};
+ // Shapes are written in 56x48 "design units" and rasterized at Z=2 (112x96) for smooth HD curves.
+ const Z=2,W=56*Z,H=48*Z,px=new Array(W*H).fill(null),gb=new Int8Array(W*H),rr=mulberry32(seed||1);let grp=0,keepG=false;
+ const setH=(X,Y,c)=>{if(X>=0&&Y>=0&&X<W&&Y<H){px[Y*W+X]=c;if(!keepG)gb[Y*W+X]=grp}};
+ const set=(x,y,c)=>{x=Math.floor(x)*Z;y=Math.floor(y)*Z;keepG=true;for(let j=0;j<(c===E?1:Z);j++)for(let i=0;i<Z;i++)setH(x+i,y+j,c);keepG=false};
+ const get=(x,y)=>{const X=Math.floor(x*Z),Y=Math.floor(y*Z);return X>=0&&Y>=0&&X<W&&Y<H?px[Y*W+X]:null};
+ const ell=(cx,cy,rx,ry,c,cond)=>{cx*=Z;cy*=Z;rx*=Z;ry*=Z;for(let Y=Math.floor(cy-ry);Y<=Math.ceil(cy+ry);Y++)for(let X=Math.floor(cx-rx);X<=Math.ceil(cx+rx);X++){const a=(X+.5-cx)/rx,b=(Y+.5-cy)/ry;if(a*a+b*b<=1&&(!cond||cond((X+.5)/Z,(Y+.5)/Z))){keepG=!!cond;setH(X,Y,c);keepG=false}}};
+ const poly=(pts,c)=>{pts=pts.map(([x,y])=>[x*Z,y*Z]);let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;pts.forEach(([x,y])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)});for(let Y=Math.floor(y0);Y<=y1;Y++)for(let X=Math.floor(x0);X<=x1;X++){let ins=false;const PX=X+.5,PY=Y+.5;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const[xi,yi]=pts[i],[xj,yj]=pts[j];if((yi>PY)!==(yj>PY)&&PX<(xj-xi)*(PY-yi)/(yj-yi)+xi)ins=!ins}if(ins)setH(X,Y,c)}};
+ const line=(x0,y0,x1,y1,r0,r1,c)=>{const n=Math.ceil(Math.hypot(x1-x0,y1-y0))*3+1;for(let i=0;i<=n;i++){const t=i/n,r=r0+(r1-r0)*t;ell(x0+(x1-x0)*t,y0+(y1-y0)*t,r,r,c)}};
  const B=pal.B,D=shade(pal.B,-.3),L=pal.L,P=pal.P,K=pal.K,E='#111018',Wt='#ffffff';
- const eye=(x,y)=>{set(x,y,Wt);set(x+1,y,E);set(x,y+1,Wt);set(x+1,y+1,E)};
+ const EYES=[];const eye=(x,y)=>EYES.push([x,y]);
  const belly=(cx,cy,rx,ry,minY)=>ell(cx,cy,rx,ry,L,(x,y)=>y>=minY&&get(x,y)===B);
  if(fam==='rex'||fam==='spino'){
   if(fam==='spino'){ell(32,17,11,10,P,(x,y)=>y<25);for(let x=23;x<42;x+=3)line(x,26,x+1,11+Math.abs(32-x)/2,.6,.4,shade(P,-.3))}
   line(35,34,37,44,3.5,2.5,D);ell(36,45,4,1.6,D);
-  poly([[38,23],[55,17],[55,21],[41,34]],B);
+  grp=1;poly([[38,23],[55,17],[55,21],[41,34]],B);
   ell(32,29,11,9,B);
   line(26,25,18,17,6,5,B);
   if(fam==='spino'){ell(12,15,10,4.5,B);ell(8,18,7,2.5,B)}else{ell(14,13,9,6,B);ell(12,18,8,3,B)}
   for(let x=5;x<18;x++)set(x,17,E);for(let x=6;x<17;x+=2)set(x,18,Wt);
   belly(29,34,8,6,30);
-  line(24,30,20,33,1.6,1.1,D);set(19,34,Wt);
+  grp=2;line(24,30,20,33,1.6,1.1,D);set(19,34,Wt);
   ell(33,35,6,6,B);line(32,36,30,44,4,3,B);ell(28,45,5,1.7,B);set(23,46,Wt);set(25,46,Wt);
   eye(11,11);set(6,12,D);
  }else if(fam==='raptor'){
   line(32,32,34,44,2.5,1.5,D);ell(35,45,3.5,1.3,D);
-  line(36,26,55,21,4,1,B);
+  grp=1;line(36,26,55,21,4,1,B);
   ell(30,27,9,6,B);line(23,24,16,16,3.6,3,B);ell(12,14,7,4.2,B);ell(6,15.5,4.5,2.4,B);
   for(let x=3;x<13;x++)set(x,17,E);for(let x=4;x<12;x+=2)set(x,18,Wt);
   line(13,10,22,8,1.6,.6,P);line(16,11,24,11,1.2,.5,P);
   belly(29,30,6,3,28);
-  line(23,28,18,32,1.5,1,D);set(17,33,Wt);
+  grp=2;line(23,28,18,32,1.5,1,D);set(17,33,Wt);
   ell(31,32,4.5,4.5,B);line(31,32,28,39,3.5,2.4,B);line(28,39,30,44,2,1.5,B);ell(28,45,4,1.3,B);set(24,43,Wt);set(25,44,Wt);
   eye(10,12);
  }else if(fam==='sauro'){
   line(26,36,26,45,3,3,D);line(42,36,42,45,3,3,D);
-  line(44,30,55,41,5,1,B);
+  grp=1;line(44,30,55,41,5,1,B);
   ell(34,32,13,9,B);line(24,28,11,9,5,3,B);ell(8,8,5.5,3.5,B);
   for(let x=4;x<9;x++)set(x,10,E);
   belly(34,37,10,4,34);
-  line(28,37,28,45,3.6,3.6,B);line(40,37,40,45,3.6,3.6,B);set(26,46,Wt);set(29,46,Wt);set(38,46,Wt);set(41,46,Wt);
+  grp=2;line(28,37,28,45,3.6,3.6,B);line(40,37,40,45,3.6,3.6,B);set(26,46,Wt);set(29,46,Wt);set(38,46,Wt);set(41,46,Wt);
   eye(6,6);
  }else if(fam==='trike'){
   line(24,36,24,45,3,3,D);line(40,36,40,45,3,3,D);
-  poly([[44,27],[55,33],[44,37]],B);
+  grp=1;poly([[44,27],[55,33],[44,37]],B);
   ell(33,31,13,9,B);
-  ell(21,23,8.5,10.5,P);ell(21,23,6.5,8.5,shade(P,.3));for(let a=0;a<6;a++){const an=-1.9+a*.65;set(21+Math.cos(an)*9.5,23+Math.sin(an)*11.5,K)}
-  ell(13,30,9,6.5,B);poly([[2,31],[8,26],[8,35]],shade(K,-.4));
+  grp=2;ell(21,23,8.5,10.5,P);ell(21,23,6.5,8.5,shade(P,.3));for(let a=0;a<6;a++){const an=-1.9+a*.65;set(21+Math.cos(an)*9.5,23+Math.sin(an)*11.5,K)}
+  grp=3;ell(13,30,9,6.5,B);poly([[2,31],[8,26],[8,35]],shade(K,-.4));
   poly([[11,25],[14,25],[5,13]],K);poly([[16,24],[19,25],[13,12]],K);poly([[5,27],[8,27],[3,22]],K);
   belly(33,36,10,4,33);
-  line(27,37,27,45,4,4,B);line(38,37,38,45,4,4,B);
+  grp=3;line(27,37,27,45,4,4,B);line(38,37,38,45,4,4,B);
   eye(11,27);
  }else if(fam==='stego'){
   for(let i=0;i<6;i++){const x=19+i*5,y=24-Math.sin(i/5*Math.PI)*4;poly([[x-3.5,y+3],[x+3.5,y+3],[x,y-7]],P)}
   line(24,36,24,45,3,3,D);line(39,36,39,45,3,3,D);
-  line(43,32,55,27,4,1.2,B);poly([[51,27],[53,27],[54,20]],K);poly([[48,29],[50,29],[49,22]],K);
+  grp=1;line(43,32,55,27,4,1.2,B);poly([[51,27],[53,27],[54,20]],K);poly([[48,29],[50,29],[49,22]],K);
   ell(31,32,14,8.5,B);line(19,35,10,37,4,3,B);ell(8,37,4.5,3,B);for(let x=4;x<9;x++)set(x,39,E);
   belly(31,37,11,4,35);
-  line(27,37,27,45,3.6,3.6,B);line(37,37,37,45,3.6,3.6,B);
+  grp=2;line(27,37,27,45,3.6,3.6,B);line(37,37,37,45,3.6,3.6,B);
   eye(6,35);
  }else if(fam==='ankylo'){
   line(22,38,22,45,3,3,D);line(39,38,39,45,3,3,D);
-  line(44,36,52,34,3,2,B);ell(52,34,4,3.5,K);ell(52,33,2,1.5,shade(K,.3));
+  grp=1;line(44,36,52,34,3,2,B);ell(52,34,4,3.5,K);ell(52,33,2,1.5,shade(K,.3));
   ell(30,35,16,8,B);
   for(let y=29;y<38;y+=4)for(let x=18+(y%8?2:0);x<44;x+=5)if(get(x,y)===B)ell(x,y,1.6,1.4,K,(a,b)=>get(a,b)===B);
   for(let x=16;x<46;x+=5)poly([[x,39],[x+3,39],[x+1.5,43]],Wt);
   ell(12,37,5.5,4.5,B);set(9,33,K);set(10,33,K);set(10,32,K);for(let x=7;x<12;x++)set(x,40,E);
-  line(26,40,26,45,3.4,3.4,B);line(36,40,36,45,3.4,3.4,B);
+  grp=2;line(26,40,26,45,3.4,3.4,B);line(36,40,36,45,3.4,3.4,B);
   eye(10,35);
  }else if(fam==='ptero'){
   poly([[30,21],[53,8],[42,27]],D);
-  ell(28,25,6,4.5,B);
-  poly([[26,22],[3,7],[11,18],[24,29]],L);line(26,22,3,7,1.2,.5,B);
-  ell(22,17,4.5,3.5,B);poly([[23,14],[35,8],[26,18]],P);poly([[19,16],[6,20],[19,19]],shade(K,-.2));
+  grp=1;ell(28,25,6,4.5,B);
+  grp=2;poly([[26,22],[3,7],[11,18],[24,29]],L);line(26,22,3,7,1.2,.5,B);
+  grp=3;ell(22,17,4.5,3.5,B);poly([[23,14],[35,8],[26,18]],P);poly([[19,16],[6,20],[19,19]],shade(K,-.2));
   belly(28,27,4,2,26);
   line(29,28,31,33,1,1,D);line(26,28,25,33,1,1,D);
   eye(20,16);
  }
- // patterns
- if(pattern==='stripes'){for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(px[y*W+x]===B&&((x+Math.floor(y*.4))%7)<2&&y<38)px[y*W+x]=P}
- else if(pattern==='vstripes'){for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(px[y*W+x]===B&&(x%5)<2)px[y*W+x]=P}
- else if(pattern==='spots'){for(let k=0;k<14;k++){let tries=0;while(tries++<40){const x=(rr()*W)|0,y=(rr()*H)|0;if(px[y*W+x]===B){ell(x,y,1.3+rr()*1.2,1.2+rr(),P,(a,b)=>get(a,b)===B);break}}}}
- // shading + outline
- const c=document.createElement('canvas');c.width=W+2;c.height=H+2;const g=c.getContext('2d');
- for(let y=-1;y<=H;y++)for(let x=-1;x<=W;x++){const v=get(x,y);if(v){let col=v;if(!get(x,y-1))col=shade(v,.22);else if(!get(x,y+1)||!get(x,y+2))col=shade(v,-.18);else if(!get(x+1,y))col=shade(v,-.1);g.fillStyle=col;g.fillRect(x+1,y+1,1,1)}else if(get(x+1,y)||get(x-1,y)||get(x,y+1)||get(x,y-1)){g.fillStyle=OUT;g.fillRect(x+1,y+1,1,1)}}
+ // patterns (HD pixel space)
+ if(pattern==='stripes'){for(let Y=0;Y<H;Y++)for(let X=0;X<W;X++)if(px[Y*W+X]===B&&((X+Math.floor(Y*.45))%15)<4&&Y<76)px[Y*W+X]=P}
+ else if(pattern==='vstripes'){for(let Y=0;Y<H;Y++)for(let X=0;X<W;X++)if(px[Y*W+X]===B&&(X%10)<4)px[Y*W+X]=P}
+ else if(pattern==='spots'){for(let k=0;k<14;k++){let tries=0;while(tries++<40){const x=(rr()*56)|0,y=(rr()*48)|0;if(get(x,y)===B){ell(x,y,1.3+rr()*1.2,1.2+rr(),P,(a,b)=>get(a,b)===B);break}}}}
+ // ---- HD shading: rounded volume from a blurred silhouette, light from the top-left ----
+ const M=new Float32Array(W*H);for(let i=0;i<W*H;i++)M[i]=px[i]?1:0;
+ const blur=(src,r)=>{const t=new Float32Array(W*H),o=new Float32Array(W*H);
+  for(let y=0;y<H;y++){let acc=0;for(let x=-r;x<=r;x++)acc+=src[y*W+Math.min(W-1,Math.max(0,x))];for(let x=0;x<W;x++){t[y*W+x]=acc/(2*r+1);acc+=src[y*W+Math.min(W-1,x+r+1)]-src[y*W+Math.max(0,x-r)]}}
+  for(let x=0;x<W;x++){let acc=0;for(let y=-r;y<=r;y++)acc+=t[Math.min(H-1,Math.max(0,y))*W+x];for(let y=0;y<H;y++){o[y*W+x]=acc/(2*r+1);acc+=t[Math.min(H-1,y+r+1)*W+x]-t[Math.max(0,y-r)*W+x]}}return o};
+ const Bm=blur(blur(M,3),3);const LX=-.55,LY=-.83;
+ const at=(x,y)=>x>=0&&y>=0&&x<W&&y<H?px[y*W+x]:null;
+ const c=hdCanvas(W+2,H+2,Z);const g=c.getContext('2d');const sc={};const S_=(col,f)=>{const k=col+f;return sc[k]||(sc[k]=f?shade(col,f):col)};
+ for(let y=-1;y<=H;y++)for(let x=-1;x<=W;x++){const v=at(x,y);
+  if(v){const i=y*W+x;const gx=(Bm[y*W+Math.min(W-1,x+1)]-Bm[y*W+Math.max(0,x-1)]),gy=(Bm[Math.min(H-1,y+1)*W+x]-Bm[Math.max(0,y-1)*W+x]);
+   const gl=Math.hypot(gx,gy)||1,dep=1-Bm[i];let l=(-(gx/gl)*LX+-(gy/gl)*LY)*Math.min(1,gl*4+dep*1.2);
+   if(v===E||v===Wt){g.fillStyle=v;g.fillRect(x+1,y+1,1,1);continue}
+   let f=l>.5?.3:l>.25?.17:l>.08?.07:l<-.5?-.32:l<-.25?-.2:l<-.08?-.09:0;
+   const gi=gb[i];let behind=false,front=false;
+   for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=W||yy>=H||!px[yy*W+xx])continue;const gj=gb[yy*W+xx];if(gj<gi)behind=true;else if(gj>gi)front=true}
+   if(!behind&&!front){for(const[dx,dy]of[[2,0],[-2,0],[0,2],[0,-2],[0,3]]){const xx=x+dx,yy=y+dy;if(xx>=0&&yy>=0&&xx<W&&yy<H&&px[yy*W+xx]&&gb[yy*W+xx]>gi){f-=.12;break}}}
+   if(front)f-=.16;                                                     // shadow cast by the part in front
+   if(!at(x,y-1)&&at(x,y+1))f=Math.max(f,.3);                         // top rim light
+   if(!at(x,y+1)||!at(x,y+2))f=Math.min(f,-.2);                        // underside
+   const n=((x*73856093)^(y*19349663)^(seed|0))>>>0;
+   if(v===B&&f>-.2&&n%17===0)f-=.1;                                     // skin texture
+   if(v===L&&y%4===0&&at(x,y-1)===L)f-=.07;                             // belly plates
+   if(behind&&v!==L)f=-.42;                                             // contour where this part overlaps the one behind
+   g.fillStyle=S_(v,f);g.fillRect(x+1,y+1,1,1)}
+  else if(at(x+1,y)||at(x-1,y)||at(x,y+1)||at(x,y-1)){g.fillStyle=OUT;g.fillRect(x+1,y+1,1,1)}}
+ // eyes: sclera, iris, pupil, glint, brow
+ for(const[ex,ey]of EYES){const X=ex*Z+1,Y=ey*Z+1;g.fillStyle=OUT;g.fillRect(X-1,Y-1,6,6);g.fillStyle=Wt;g.fillRect(X,Y,4,4);g.fillStyle='#e8b830';g.fillRect(X+1,Y+1,3,3);g.fillStyle=E;g.fillRect(X+2,Y+1,2,3);g.fillStyle=Wt;g.fillRect(X+2,Y+1,1,1);g.fillStyle=S_(D,-.25);g.fillRect(X-1,Y-2,5,1)}
  return c}
 
 function tint(c,col){const t=document.createElement('canvas');t.width=c.width;t.height=c.height;t.hd=c.hd;const g=t.getContext('2d');g.drawImage(c,0,0);g.globalCompositeOperation='source-in';g.fillStyle=col;g.fillRect(0,0,t.width,t.height);return t}
@@ -1797,7 +1823,7 @@ function renderMenu(){
   const counts={};S.gear.forEach(id=>counts[id]=(counts[id]||0)+1);
   h+='<div class="grid">'+Object.keys(counts).sort((a,b)=>GEAR[b].r-GEAR[a].r).map(id=>{const g=GEAR[id],eq=S.equip[g.slot]===id;return`<div class="card" style="border-color:${RAR[g.r].c}"><div class="ic">${g.icon}</div><div><b style="color:${RAR[g.r].c}">${g.name}</b>${counts[id]>1?' x'+counts[id]:''}<br><small>${RAR[g.r].n} ${SLOTN[g.slot]} · ${gearDesc(g)}</small></div>${eq?'<small class="good">equipped</small>':`<button onclick="G.equip('${id}')">Equip</button>`}</div>`}).join('')+'</div>'}
  else if(menuTab==='team')h=teamTabHtml();
- else if(menuTab==='dex'){const seen=Object.keys(S.names).length;h=`<div class="sub">Unique dinos met: <b>${seen}</b> · Types: <b>${Object.keys(S.dex).length}/8</b></div><div class="grid dex">`+FAMS.map(f=>{const d=S.dex[f];return`<div class="card"><canvas class="dexc" data-f="${f}" width="58" height="50"></canvas><div><b>${d?FAMN[f]:'???'}</b><br><small>${d?`Seen ${d.seen} · Beaten ${d.def}`:'Not discovered'}</small></div></div>`}).join('')+'</div>'}
+ else if(menuTab==='dex'){const seen=Object.keys(S.names).length;h=`<div class="sub">Unique dinos met: <b>${seen}</b> · Types: <b>${Object.keys(S.dex).length}/8</b></div><div class="grid dex">`+FAMS.map(f=>{const d=S.dex[f];return`<div class="card"><canvas class="dexc" data-f="${f}" width="114" height="98"></canvas><div><b>${d?FAMN[f]:'???'}</b><br><small>${d?`Seen ${d.seen} · Beaten ${d.def}`:'Not discovered'}</small></div></div>`}).join('')+'</div>'}
  else if(menuTab==='film'){const ids=Object.keys(S.missed).map(Number);const acc=S.st.ans?Math.round(S.st.cor/S.st.ans*100):0;
   h=`<div class="sub">Accuracy: <b>${acc}%</b> (${S.st.cor}/${S.st.ans}) · Best streak: <b>${S.st.best}</b></div><div class="catbars">`+Object.keys(CATS).map(k=>{const c=S.st.cat[k]||[0,0];const p=c[0]?Math.round(c[1]/c[0]*100):0;return`<div class="cb"><span>${CATS[k].name}</span><div class="bar"><i style="width:${p}%;background:${CATS[k].c}"></i></div><small>${c[1]}/${c[0]}</small></div>`}).join('')+'</div>';
   h+=`<h4>Plays to review (${ids.length}) ${ids.length?`<button onclick="G.drill()">🏋️ Practice Drill</button>`:''}</h4>`+(ids.length?ids.map(id=>{const q=QB[id];return`<div class="film">${q.pic?`<canvas class="filmPic" data-pic="${q.pic}"></canvas>`:''}<span class="cat" style="background:${CATS[q.cat].c}">${CATS[q.cat].name}</span> ${esc(q.q)}<br><b class="good">✔ ${esc(q.a)}</b> <small>${esc(q.x)}</small></div>`}).join(''):'<i>No missed questions right now. Questions you miss show up here until you get them right twice.</i>')}
@@ -1858,7 +1884,7 @@ function dinoMini(d){const k='m'+d.id+':'+d.fam+':'+d.seed;if(miniCache[k])retur
  const c=document.createElement('canvas');c.width=W+2;c.height=H+2;const g=c.getContext('2d');const at=(x,y)=>x>=0&&y>=0&&x<W&&y<H?cell[y*W+x]:null;
  for(let y=-1;y<=H;y++)for(let x=-1;x<=W;x++){const v=at(x,y);if(v){g.fillStyle=v;g.fillRect(x+1,y+1,1,1)}else if(at(x+1,y)||at(x-1,y)||at(x,y+1)||at(x,y-1)){g.fillStyle=OUT;g.fillRect(x+1,y+1,1,1)}}
  const f=document.createElement('canvas');f.width=c.width;f.height=c.height;const fg=f.getContext('2d');fg.translate(c.width,0);fg.scale(-1,1);fg.drawImage(c,0,0);
- return miniCache[k]={l:c,r:f}}
+ c.hd=f.hd=2;return miniCache[k]={l:c,r:f}}
 function folSprite(force){const d=teamLead();if(!d){fol.spr=null;fol.sprId=null;return}if(force||fol.sprId!==d.id){fol.spr=dinoMini(d);fol.sprId=d.id}}
 function folVisible(){return!!(S&&S.team&&teamLead()&&!(fol.x===player.x&&fol.y===player.y&&fol.tx===player.x&&fol.ty===player.y))}
 function folReset(){folSprite();const back={up:'down',down:'up',left:'right',right:'left'}[player.dir]||'up';let bx=player.x+DX[back],by=player.y+DY[back];
@@ -1873,12 +1899,12 @@ function drawFollower(){folSprite();if(!fol.spr)return;const s=fol.flip?fol.spr.
 // ---- Team tab ----
 let teamUI={edit:null,swap:null,rel:null};
 function teamCard(d,active){const t=S.team,lead=t.active[0]===d.id,full=t.active.length>=TEAM_ACTIVE;let btns='';
- if(teamUI.edit===d.id)return`<div class="card tcard"><canvas class="tdino" data-id="${d.id}" width="58" height="50"></canvas><div class="tinfo"><input class="tmName" id="tmName" maxlength="14" value="${esc(d.nick)}" spellcheck="false" autocomplete="off"><div class="tbtns"><button onclick="G.team('save',${d.id})">✔ Save name</button><button onclick="G.team('cancel')">Cancel</button></div><small class="muted">Species: ${esc(d.name)}</small></div></div>`;
- if(teamUI.rel===d.id)return`<div class="card tcard"><canvas class="tdino" data-id="${d.id}" width="58" height="50"></canvas><div class="tinfo"><b>Release ${esc(d.nick)} back to the wild?</b><div class="tbtns"><button class="danger" onclick="G.team('dorel',${d.id})">Yes, release</button><button onclick="G.team('cancel')">Keep</button></div></div></div>`;
+ if(teamUI.edit===d.id)return`<div class="card tcard"><canvas class="tdino" data-id="${d.id}" width="114" height="98"></canvas><div class="tinfo"><input class="tmName" id="tmName" maxlength="14" value="${esc(d.nick)}" spellcheck="false" autocomplete="off"><div class="tbtns"><button onclick="G.team('save',${d.id})">✔ Save name</button><button onclick="G.team('cancel')">Cancel</button></div><small class="muted">Species: ${esc(d.name)}</small></div></div>`;
+ if(teamUI.rel===d.id)return`<div class="card tcard"><canvas class="tdino" data-id="${d.id}" width="114" height="98"></canvas><div class="tinfo"><b>Release ${esc(d.nick)} back to the wild?</b><div class="tbtns"><button class="danger" onclick="G.team('dorel',${d.id})">Yes, release</button><button onclick="G.team('cancel')">Keep</button></div></div></div>`;
  if(active){if(teamUI.swap)btns=`<button class="hot" onclick="G.team('into',${d.id})">⇄ Swap here</button>`;else btns=(lead?'':`<button onclick="G.team('lead',${d.id})">⭐ Make lead</button>`)+`<button onclick="G.team('bench',${d.id})">⬇ Bench</button>`}
  else btns=teamUI.swap===d.id?`<button onclick="G.team('cancel')">Cancel swap</button>`:full?`<button onclick="G.team('swap',${d.id})">⇄ Swap in</button>`:`<button onclick="G.team('bring',${d.id})">⬆ Bring along</button>`;
  btns+=`<button title="Rename" onclick="G.team('edit',${d.id})">✏️</button>`+(active?'':`<button title="Release" onclick="G.team('rel',${d.id})">👋</button>`);
- return`<div class="card tcard${lead?' lead':''}${teamUI.swap===d.id?' picking':''}"><canvas class="tdino" data-id="${d.id}" width="58" height="50"></canvas><div class="tinfo"><b>${lead?'⭐ ':''}${d.shiny?'✨ ':''}${esc(d.nick)}</b> <small>Lv ${d.lv}</small><br><small>${FAMN[d.fam]}${d.nick!==d.name?` · ${esc(d.name)}`:''}</small><br><small class="perk">${perkText(d)}</small><div class="tbtns">${btns}</div></div></div>`}
+ return`<div class="card tcard${lead?' lead':''}${teamUI.swap===d.id?' picking':''}"><canvas class="tdino" data-id="${d.id}" width="114" height="98"></canvas><div class="tinfo"><b>${lead?'⭐ ':''}${d.shiny?'✨ ':''}${esc(d.nick)}</b> <small>Lv ${d.lv}</small><br><small>${FAMN[d.fam]}${d.nick!==d.name?` · ${esc(d.name)}`:''}</small><br><small class="perk">${perkText(d)}</small><div class="tbtns">${btns}</div></div></div>`}
 function teamTabHtml(){const t=S.team,act=teamDinos(),bench=t.roster.filter(d=>!t.active.includes(d.id)),tp=teamPerks();
  if(!t.roster.length)return`<div class="help"><b>🥚 No dinos on your team yet!</b><br><br>After you beat a wild dino, it sometimes asks to join your team. Bring up to <b>3</b> dinos along: each teammate gives a perk based on its dino type, and your <b>lead</b> dino follows you around the map.<br><br>${teamPerkList()}</div>`;
  const sum=Object.keys(tp).filter(k=>tp[k]).map(k=>`+${tp[k]}${['atk','def','hp'].includes(k)?'':'%'} ${PERK_LBL[k]}`).join(' · ')||'none yet';
