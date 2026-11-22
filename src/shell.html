@@ -148,6 +148,22 @@ h4{margin:6px 0 4px;font-size:12px;display:flex;align-items:center;gap:8px}
 #titleBtns button{font-size:14px;padding:8px 18px;background:#ffd84a}
 #titleFoot{color:#d8cff0;font-size:10px;margin-top:10px;text-align:center;text-shadow:1px 1px 0 #000}
 #newGameBox{inset:44px 100px;justify-content:center;align-items:center;text-align:center;gap:8px}
+#creator{position:absolute;inset:12px 36px;z-index:26;display:flex;flex-direction:column;padding:8px 12px;gap:6px}
+.crHead{display:flex;justify-content:space-between;align-items:center;font-size:14px;padding-bottom:4px;border-bottom:2px dashed #cbbd98}
+.crBody{flex:1;display:flex;gap:14px;align-items:center;min-height:0}
+.crPrev{display:flex;flex-direction:column;align-items:center;gap:6px;width:176px;flex:none}
+.crStage{position:relative;width:150px;height:128px;background:linear-gradient(#cfe8ff 0,#cfe8ff 64%,#6cc04a 64%,#4fa83a 100%);border:3px solid #1a1230;border-radius:6px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px}
+#crTag{position:absolute;top:5px;left:0;right:0;text-align:center;font-weight:900;font-size:13px;letter-spacing:1px;color:#fff6dc;text-shadow:2px 2px 0 #1a1230,-1px -1px 0 #1a1230,1px -1px 0 #1a1230,-1px 1px 0 #1a1230;text-transform:uppercase}
+.crPrev canvas{image-rendering:pixelated}
+.crTurn{display:flex;gap:4px;align-items:center}.crTurn canvas{background:#efe6cc;border:2px solid #1a1230;border-radius:4px}#crFace{background:#cfe8ff!important}
+.crHelm{font-size:10px;font-weight:700;display:flex;align-items:center;gap:4px;cursor:pointer}
+.crOpts{flex:1;display:flex;flex-direction:column;gap:9px}
+.crRow{display:flex;align-items:center;gap:8px}.crRow>span{width:74px;flex:none;font-weight:800;font-size:11px}
+.crRow .opts{display:flex;flex-wrap:wrap;gap:5px;flex:1}
+.crRow .opts{gap:4px}.sw{width:20px;height:20px;padding:0;border-radius:50%}.sw.on{outline:3px solid #ffb300;outline-offset:2px}
+.st{padding:3px 7px}.st.on{background:#ffd84a}
+#crName{font-family:inherit;font-weight:800;font-size:14px;border:2px solid #1a1230;border-radius:5px;padding:4px 7px;width:180px;background:#fff;color:#1a1230;-webkit-user-select:text;user-select:text}
+.crBtns{display:flex;justify-content:space-between;gap:8px}.crBtns .go{background:#ffd84a;font-size:13px;padding:6px 16px}
 #newGameBox .dbtn{width:330px;text-align:left;font-size:12px;padding:7px 10px}
 #ending{justify-content:center;align-items:center;text-align:center;gap:8px;background:#fff8dc}
 #ending h2{margin:0;font-size:24px}
@@ -166,14 +182,14 @@ body.touch:not(.portrait) #touch{position:fixed;left:0;right:0;bottom:10px;max-w
  <div id="holder"><div id="game">
   <canvas id="cv" width="320" height="208"></canvas>
   <div id="hud" class="hidden">
-   <div id="hudL" class="box"><canvas id="face" width="36" height="26"></canvas><div><div id="hudName"><span>BRADY</span><span id="hudLv">Lv1</span></div><div id="hudHpRow"><div class="bar"><i id="hudHp"></i></div><span id="hudHpT"></span></div><div id="hudCoins"></div></div></div>
+   <div id="hudL" class="box"><canvas id="face" width="36" height="26"></canvas><div><div id="hudName"><span id="hudNm">BRADY</span><span id="hudLv">Lv1</span></div><div id="hudHpRow"><div class="bar"><i id="hudHp"></i></div><span id="hudHpT"></span></div><div id="hudCoins"></div></div></div>
    <div id="hudR" class="box"><canvas id="compass" width="24" height="24"></canvas><div id="objective"></div><div id="trophies"></div></div>
    <div id="buffs"></div>
    <div id="hudBtns"><button id="btnDaily" title="Daily Challenge">📅 Daily</button><button id="btnMus" title="Music">🎵</button><button id="btnFs" title="Full screen (F)">⛶</button><button id="btnZin" title="Zoom in (+)">🔍＋</button><button id="btnZout" title="Zoom out (−)">🔍－</button><button id="btnMenu">☰ Menu (I)</button><button id="btnMap">🗺 Map (M)</button><button id="btnSnd">🔊</button></div>
   </div>
   <div id="battle" class="hidden">
    <div id="enBox" class="box"><div class="nm"><span id="enName"></span><span id="enLv"></span></div><div class="hpRow"><b>HP</b><div class="bar"><i id="enHp"></i></div></div><div id="enTag"></div></div>
-   <div id="plBox" class="box"><div class="nm"><span>BRADY</span><span id="plLv"></span></div><div class="hpRow"><b>HP</b><div class="bar"><i id="plHp"></i></div></div><div id="plHpT"></div><div class="xpbar"><i id="plXp"></i></div><div id="streak"></div></div>
+   <div id="plBox" class="box"><div class="nm"><span id="plName">BRADY</span><span id="plLv"></span></div><div class="hpRow"><b>HP</b><div class="bar"><i id="plHp"></i></div></div><div id="plHpT"></div><div class="xpbar"><i id="plXp"></i></div><div id="streak"></div></div>
    <div id="qPic" class="box hidden"><canvas id="qPicC" width="64" height="72"></canvas></div><div id="qFeedback" class="box hidden"></div>
    <div id="qPanel" class="box"><div id="qMain"></div><div id="qTools"></div></div>
   </div>
@@ -181,9 +197,9 @@ body.touch:not(.portrait) #touch{position:fixed;left:0;right:0;bottom:10px;max-w
   <div id="menu" class="box hidden"><div id="menuTabs"></div><div id="menuBody"></div></div>
   <div id="shop" class="box hidden"></div>
   <div id="mapView" class="box hidden"><div id="menuTabs" style="width:100%"><b style="font-size:13px">🗺 The Gridiron Isles</b><button class="x" onclick="G.closeMenu()">✕</button></div><canvas id="mapCv" width="424" height="312"></canvas><div class="mapLeg">🟥 Head Coach (not beaten) · 🟩 beaten · ⬜ Kickoff Town · 🟨 legendary chest (guarded!) · 🔵 you (blinking)</div></div>
-  <div id="ending" class="box hidden"><div style="font-size:44px">🏆🦖🏈</div><h2>GRIDIRON LEGEND!</h2><div>Brady beat all seven Head Coaches and became Champion of the Gridiron Isles!</div><div id="endStats" class="help"></div><div><small>Keep exploring to find every legendary chest, fill your Dino-Dex, and clear your Film Room.</small></div><button onclick="G.endContinue()" style="font-size:13px;padding:7px 16px;background:#ffd84a">Keep Exploring ▶</button></div>
+  <div id="ending" class="box hidden"><div style="font-size:44px">🏆🦖🏈</div><h2>GRIDIRON LEGEND!</h2><div><span id="endName">Brady</span> beat all seven Head Coaches and became Champion of the Gridiron Isles!</div><div id="endStats" class="help"></div><div><small>Keep exploring to find every legendary chest, fill your Dino-Dex, and clear your Film Room.</small></div><button onclick="G.endContinue()" style="font-size:13px;padding:7px 16px;background:#ffd84a">Keep Exploring ▶</button></div>
   <div id="title">
-   <div id="logo"><div class="l1">★ BRADY'S ★</div><div class="l2">GRIDIRON</div><div class="l3">DINO QUEST</div></div>
+   <div id="logo"><div class="l1" id="logoName">★ BRADY'S ★</div><div class="l2">GRIDIRON</div><div class="l3">DINO QUEST</div></div>
    <div id="titleArt"><canvas id="titleBrady" width="72" height="72"></canvas><canvas id="titleDino" width="116" height="100"></canvas></div>
    <div id="titleBtns"><button id="btnCont" onclick="G.continueGame()">▶ Continue</button><button onclick="G.showNew()">🏈 New Game</button><button onclick="G.daily()">📅 Daily Challenge</button><button class="fsBtn" onclick="G.fs()">⛶ Full screen</button></div>
    <div id="titleFoot">Answer NFL trivia to battle dinosaurs! · Arrows/WASD move · Space/Enter interact · I menu · M map · +/− zoom · F full screen</div>
@@ -192,8 +208,9 @@ body.touch:not(.portrait) #touch{position:fixed;left:0;right:0;bottom:10px;max-w
     <button class="dbtn" onclick="G.newGame('pro')">🟡 PRO: the standard experience.</button>
     <button class="dbtn" onclick="G.newGame('allpro')">🔴 ALL-PRO: harder questions, dinos hit harder.</button>
     <button class="dbtn" onclick="G.newGame('superfan')">🟣 SUPERFAN: deep-cut history, records &amp; classic games. Dinos hit HARD.</button>
-    <small>You can change this later in Menu → Options.</small></div>
+    <small>You can change this later in Menu → Options.</small><button onclick="G.crReopen()">◀ Back to my player</button></div>
   </div>
+  <div id="creator" class="box hidden"></div>
   <div id="daily" class="box hidden"></div><div id="toast"></div><div id="achToast" class="box"></div><div id="banner"></div>
  </div></div>
  <div id="touch"><div id="dpad"><span></span><button data-d="up">▲</button><span></span><button data-d="left">◀</button><span></span><button data-d="right">▶</button><span></span><button data-d="down">▼</button><span></span></div><div id="abtns"><button id="tM">☰</button><button id="tB">B</button><button id="tA">A</button></div></div>

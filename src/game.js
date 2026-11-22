@@ -34,7 +34,7 @@ const POIS=[
  {id:'kickoff',name:'Kickoff Town',region:'Kickoff Plains',x:106,y:122,biome:'plains',lv:[1,3],diff:[1,1]},
  {id:'harbor',name:'Huddle Harbor',region:'Huddle Coast',x:34,y:118,biome:'coast',cat:'teams',lv:[3,6],diff:[1,2],
   boss:{name:'Captain Longneck',fam:'sauro',lv:8,pal:{B:'#3f8fb0',L:'#d8f0f0',P:'#1f4d6b',K:'#e8dcc0'},pattern:'spots',trophy:'Compass Trophy',
-   intro:["Ahoy, Brady! I'm Captain Longneck, Head Coach of TEAMS & CITIES!","I've sailed to every NFL city. Do you know where all 32 teams play? Let's find out!"],
+   intro:["Ahoy, {N}! I'm Captain Longneck, Head Coach of TEAMS & CITIES!","I've sailed to every NFL city. Do you know where all 32 teams play? Let's find out!"],
    outro:["Shiver my shoulder pads! You know your teams!","Take the COMPASS TROPHY. Now, onward!"]}},
  {id:'dunes',name:'Draft Day Dunes',region:'Draft Day Desert',x:169,y:124,biome:'desert',cat:'players',lv:[3,6],diff:[1,2],
   boss:{name:'Scout Raptor',fam:'raptor',lv:8,pal:{B:'#c98a3a',L:'#f4dfb0',P:'#6b3a1a',K:'#f4f4f4'},pattern:'stripes',trophy:'Draft Trophy',
@@ -51,7 +51,7 @@ const POIS=[
  {id:'peak',name:'Playbook Peak',region:'Playbook Mountains',x:65,y:23,biome:'mountain',cat:'strategy',lv:[9,12],diff:[2,3],
   boss:{name:'Coordinator Ankylo',fam:'ankylo',lv:14,pal:{B:'#7a6a8a',L:'#c8bcd8',P:'#3a2a4a',K:'#d8c070'},pattern:'none',trophy:'Playbook Trophy',
    intro:["I'm Coordinator Ankylo, Head Coach of POSITIONS & STRATEGY.","Blitzes, audibles, nickel packages... Can you read my defense?"],
-   outro:["You read that coverage perfectly.","The PLAYBOOK TROPHY is yours, Coach Brady."]}},
+   outro:["You read that coverage perfectly.","The PLAYBOOK TROPHY is yours, Coach {N}."]}},
  {id:'canton',name:'Canton Ruins',region:'Canton Ruins',x:150,y:25,biome:'ruins',cat:'history',lv:[9,12],diff:[2,3],
   boss:{name:'Curator Trike',fam:'trike',lv:14,pal:{B:'#b5654a',L:'#f0d0b0',P:'#f5c542',K:'#fff6d8'},pattern:'spots',trophy:'Legacy Trophy',
    intro:["Welcome to the Ruins. I'm Curator Trike, Head Coach of HISTORY.","The Ice Bowl, The Catch, the Immaculate Reception... History remembers. Do you?"],
@@ -59,7 +59,7 @@ const POIS=[
  {id:'champ',name:'Championship Stadium',region:'Championship Volcano',x:107,y:65,biome:'volcano',cat:null,lv:[12,15],diff:[2,3],
   boss:{name:'Commissioner Spino',fam:'spino',lv:20,pal:{B:'#d4a017',L:'#fff0b0',P:'#8a1c1c',K:'#ffffff'},pattern:'stripes',trophy:"Champion's Ring",final:true,
    intro:["So... the kid with the freckles made it to the Championship.","I am COMMISSIONER SPINO. Every category. Every era. Every rule.","Win this, and you're a true Gridiron Legend. KICKOFF!"],
-   outro:["Incredible... You know this game like a true pro.","Brady, you are the CHAMPION of the Gridiron Isles!"]}},
+   outro:["Incredible... You know this game like a true pro.","{N}, you are the CHAMPION of the Gridiron Isles!"]}},
 ];
 const LEGENDS={
  goldball:{name:'Coach Hoodosaurus',title:'The Hooded Mastermind',fam:'rex',pal:{B:'#8a8d94',L:'#c8cad0',P:'#3c3f48',K:'#f4f4f4'},pattern:'none',
@@ -151,7 +151,7 @@ function rollCons(){const w={water:30,orange:20,sports:12,hint:10,timeout:8,bar:
 // ---------------- SAVE STATE ----------------
 const SAVE_KEY='bradyDinoQuest_v1';
 let S=null; // save
-function newSave(diff){return{v:1,x:POIS[0].x,y:POIS[0].y+3,dir:'down',lv:1,xp:0,hp:72,coins:30,
+function newSave(diff,hero){return{v:1,hero:heroOf({hero}),x:POIS[0].x,y:POIS[0].y+3,dir:'down',lv:1,xp:0,hp:72,coins:30,
  inv:{water:3,orange:2,hint:1,timeout:1},gear:['foamball','jersey','sneakers'],equip:{weapon:'foamball',helmet:null,pads:'jersey',cleats:'sneakers'},
  buffs:{},trophies:[],taken:{},bosses:{},npc:{},totem:{},seen:{},missed:{},dex:{},names:{},
  st:{ans:0,cor:0,cat:{},best:0,streak:0,battles:0,wins:0},respawn:{x:POIS[0].x,y:POIS[0].y+3},steps:0,visited:{kickoff:1},diff:diff||'pro',sound:true,mapv:2,gateOpen:false,champion:false,intro:false}}
@@ -352,11 +352,47 @@ function gearGrid(g,dir,H,P){
  if(H.visor&&dir!=='up'){const lo=dir==='left'?1:3,hi=dir==='left'?6:12;for(const r of[7,8])for(let c=lo;c<=hi;c++)if(g[r][c]==='e'||g[r][c]==='s')g[r][c]=(r===7&&c===lo+1)?'V':'v'}
  if(H.mask&&dir!=='up'){for(let c=0;c<16;c++)if(g[10][c]==='s'||g[10][c]==='m')g[10][c]='g';if(dir==='down'){if(g[9][2]==='C')g[9][2]='g';if(g[9][13]==='C')g[9][13]='g'}}
 }
-function makeBradySprites(){const eq=(S&&S.equip)||{};const H=eq.helmet&&HELM_LOOK[eq.helmet],P=PAD_LOOK[eq.pads]||{t:'#6a8fd0'};
- const pal=charPal(BRADY_LOOK);pal.t=P.t;pal.T=shade(P.t,-.25);pal.b=CLEAT_LOOK[eq.cleats]||'#f0f0f0';pal.z=P.z||'#ffffff';pal.k=P.k||pal.T;
+// ---- player character look (Character Creator) ----
+const HERO_DEF={name:'Brady',hair:'#2a1c14',style:'shaggy',skin:'#f2c9a0',fr:true};
+const HERO_HAIR=[['#2a1c14','Dark brown'],['#141414','Black'],['#5b3a1f','Brown'],['#9c3a20','Auburn'],['#d0622a','Ginger'],['#e8c070','Blonde'],['#e8e4d8','Platinum'],['#3a7bd5','Blue'],['#e0608a','Pink'],['#3aa655','Green']];
+const HERO_SKIN=['#f6d3b3','#f2c9a0','#eab88e','#c98d5e','#9a6337','#6b4226'];
+const HERO_STYLES=[['shaggy','Shaggy'],['buzz','Buzz Cut'],['spiky','Spiky'],['long','Long'],['puffy','Puffy'],['ponytail','Ponytail']];
+function cleanName(n){return String(n||'').replace(/[^\p{L}\p{N} '.\-]/gu,'').replace(/\s+/g,' ').trim().slice(0,12)}
+function heroOf(sv){const h=Object.assign({},HERO_DEF,(sv&&sv.hero)||{});h.name=cleanName(h.name)||HERO_DEF.name;
+ if(!HERO_STYLES.some(x=>x[0]===h.style))h.style=HERO_DEF.style;if(!/^#[0-9a-f]{6}$/i.test(h.hair))h.hair=HERO_DEF.hair;if(!/^#[0-9a-f]{6}$/i.test(h.skin))h.skin=HERO_DEF.skin;h.fr=!!h.fr;return h}
+function NM(){return heroOf(S).name}          // player's name, plain text (dialog uses textContent)
+function NMH(){return esc(NM())}               // player's name, HTML-safe
+function poss(n){return n+(/s$/i.test(n)?"'":"'s")}
+// Hair styles edit the 16-wide character grid. "top" changes (rows 0-9) are skipped under a helmet so
+// helmets keep their exact shape; "j" pixels are extra hair the helmet code never touches (shows below/behind it).
+function applyHair(g,dir,style,helm){
+ const set=(r,cs,ch)=>{for(const c of cs)if(g[r])g[r][c]=ch};
+ const rng=(a,b)=>{const o=[];for(let i=a;i<=b;i++)o.push(i);return o};
+ const sw=(r,cs,from,to)=>{for(const c of cs)if(g[r][c]===from)g[r][c]=to};
+ const side=dir!=='left';
+ if(style==='buzz'&&!helm){set(1,rng(0,15),'.');
+  if(side){set(2,rng(0,15),'.');set(2,rng(4,11),'h');set(2,[7,8],'H');if(dir==='down'){sw(5,rng(3,12),'h','s');for(const r of[7,8,9])sw(r,[2,13],'h','s')}}
+  else{set(2,rng(0,15),'.');set(2,rng(5,11),'h');set(2,[8,9],'H');sw(5,[2,3],'h','s')}}
+ if(style==='spiky'&&!helm){
+  if(side){set(0,[3,6,9,12],'h');set(1,rng(3,12),'h')}else{set(0,[6,9,12],'h');set(1,rng(4,13),'h');set(2,[13],'h')}}
+ if(style==='puffy'&&!helm){
+  if(side){set(0,rng(5,10),'h');set(1,rng(3,12),'h');set(2,[2,3,12,13],'h');for(const r of[3,4,5])set(r,[1,14],'h');for(const r of[6,7,8,9])set(r,[1,14],'h');if(dir==='up')set(8,[2,13],'h')}
+  else{set(0,rng(5,11),'h');set(1,rng(4,12),'h');set(2,[3,13],'h');set(3,[2,14],'h');set(4,[2,15],'h');for(const r of[5,6])set(r,[15],'h');set(7,[14,15],'h');set(8,[14,15],'h');set(9,[14],'h')}}
+ if(style==='long'){
+  if(dir==='down'){if(!helm){for(let r=4;r<=10;r++)set(r,[1,14],'j');set(10,[2,13],'j')}set(11,[1,2,13,14],'j');set(12,[1,14],'j')}
+  else if(dir==='up'){if(!helm){sw(8,[2,13],'s','h');set(9,[2,13],'h')}set(10,rng(3,12),'j');set(11,rng(4,11),'j')}
+  else{if(!helm)for(let r=5;r<=9;r++)set(r,[14],'j');set(10,[12,13,14],'j');set(11,[12,13],'j')}}
+ if(style==='ponytail'){
+  if(dir==='down'){set(4,[14],'q');set(5,[14],'j');set(6,[14],'j');set(7,[14],'j')}
+  else if(dir==='up'){set(10,[7,8],'q');set(11,[7,8],'j');set(12,[7,8],'j')}
+  else{set(3,[14],'q');set(4,[15],'j');set(5,[15],'j');set(6,[15],'j');set(7,[15],'j');set(8,[14],'j')}}
+}
+function makeBradySprites(eqIn,heroIn){const eq=eqIn||(S&&S.equip)||{};const hero=heroIn||heroOf(S);const H=eq.helmet&&HELM_LOOK[eq.helmet],P=PAD_LOOK[eq.pads]||{t:'#6a8fd0'};
+ const pal=charPal(Object.assign({},BRADY_LOOK,{s:hero.skin,h:hero.hair,fr:hero.fr}));pal.j=hero.hair;pal.q='#e8443a';
+ pal.t=P.t;pal.T=shade(P.t,-.25);pal.b=CLEAT_LOOK[eq.cleats]||'#f0f0f0';pal.z=P.z||'#ffffff';pal.k=P.k||pal.T;
  if(H){pal.c=H.c;pal.C=shade(H.c,-.25);pal.x=H.x||shade(H.c,.3);pal.g='#9aa0aa';pal.v='#22304a';pal.V='#8fd0ff'}
  const out={};for(const d of['down','up','left','right']){const src=d==='right'?'left':d;
-  out[d]=LEGS[src].map(l=>{const g=CHR[src].concat(l).map(r=>r.split(''));gearGrid(g,src,H,P);return renderGrid(g.map(r=>r.join('')),pal,d==='right',null)})}
+  out[d]=LEGS[src].map(l=>{const g=CHR[src].concat(l).map(r=>r.split(''));applyHair(g,src,hero.style,!!H);gearGrid(g,src,H,P);return renderGrid(g.map(r=>r.join('')),pal,d==='right',null)})}
  return out}
 function rebuildBrady(){bradySpr=makeBradySprites();bradyRed=tint(bradySpr.right[0],'#ff3030');drawFace()}
 const BRADY_LOOK={s:'#f2c9a0',h:'#2a1c14',t:'#2f6fd6',p:'#3b4a6b',hat:null,fr:true};
@@ -682,13 +718,13 @@ function interact(){if(player.moving)return;
  const it=items.find(it=>it.kind==='chest'&&it.x===fx&&it.y===fy);if(it){openChest(it);return}
  const b=bosses.find(b=>fx>=b.x-1&&fx<=b.x+1&&fy>=b.y-1&&fy<=b.y);if(b){bossTalk(b);return}
  const t=map[idx(fx,fy)];
- if(t===T.FOUNTAIN){S.hp=stats().hp;S.respawn={x:player.x,y:player.y};SFX.heal();updHud();saveGame(true);dialog(['Brady takes a big drink at the Hydration Station.','HP fully restored! Respawn point set and game saved. 💾']);return}
+ if(t===T.FOUNTAIN){S.hp=stats().hp;S.respawn={x:player.x,y:player.y};SFX.heal();updHud();saveGame(true);dialog([`${NM()} takes a big drink at the Hydration Station.','HP fully restored! Respawn point set and game saved. 💾`]);return}
  if(t===T.MONO){useMonolith(fx,fy);return}
  if(t===T.SIGN&&town[idx(fx,fy)]===SANCT_ID){dialog(['THE FOSSIL SANCTUM','Only those who have won battles on every difficulty may stand here.','The GOAT-osaurus waits on the ancient field. The monolith returns you home.']);return}
  if(t===T.SIGN){const p=POIS[(town[idx(fx,fy)]||1)-1];const lines=[p.id==='champ'?'LAST CHANCE CAMP. Championship Stadium lies north, past the lava gate.':`Welcome to ${p.name.toUpperCase()}!`];if(p.boss&&p.id!=='champ')lines.push(`Home of ${p.boss.name}, Head Coach of ${CATS[p.cat].name.toUpperCase()}. The coach waits on the practice field to the north.`);if(p.id==='kickoff')lines.push('Hydration Station (fountain): heal and save. Pro Shop: buy gear. Tall grass: wild dinos!');dialog(lines);return}
  if(t===T.TOTEM){const tt=totems.find(o=>o.x===fx&&o.y===fy);const last=S.totem[tt.id];if(last!=null&&S.steps-last<300){dialog([`The Pep Rally Totem is quiet... Come back after ${300-(S.steps-last)} more steps.`]);return}
   S.totem[tt.id]=S.steps;S.st.totems=(S.st.totems||0)+1;const k=pick(['pep','guard','regen','film','lucky','horn']);const amt=k==='horn'?150:3;S.buffs[k]=(S.buffs[k]||0)+amt;const heal=Math.round(stats().hp*.3);S.hp=Math.min(stats().hp,S.hp+heal);SFX.level();updHud();
-  dialog([`📣 The Pep Rally Totem ROARS with crowd noise!`,`Brady gains ${BUFFS[k].icon} ${BUFFS[k].name} ${k==='horn'?'(150 steps)':'(3 battles)'} and recovers ${heal} HP!`]);return}
+  dialog([`📣 The Pep Rally Totem ROARS with crowd noise!`,`${NM()} gains ${BUFFS[k].icon} ${BUFFS[k].name} ${k==='horn'?'(150 steps)':'(3 battles)'} and recovers ${heal} HP!`]);return}
  if(t===T.GATE){if(S.trophies.length>=6){openGate();return}dialog([`A heavy gate guards Championship Stadium.`,`Only a player with all 6 Coach Trophies may enter. (You have ${S.trophies.length}/6)`]);return}
  if(t===T.DOOR){dialog(['The door is locked. Everyone is outside watching football!']);return}
 }
@@ -704,7 +740,7 @@ function useMonolith(x,y){
  dialog(['An ancient monolith with four empty gem sockets, one for each difficulty.',`It awakens for those who win ${SECRET_WINS} battles on EVERY difficulty. Change difficulty in Menu → Options.`,prog])}
 let warpFx=0;
 function warp(x,y,name){S.x=x;S.y=y;startPlayer();lastRegion=-1;lastTown=-1;warpFx=40;SFX.level();if(name)banner(name);saveGame(true);drawMiniMap(true)}
-function openGate(){for(let i=0;i<map.length;i++)if(map[i]===T.GATE)map[i]=T.BRIDGE;S.gateOpen=true;SFX.win();dialog(['The six trophies glow... The Championship Gate swings open!','Commissioner Spino awaits in the stadium. Good luck, Brady!']);drawMiniMap(true)}
+function openGate(){for(let i=0;i<map.length;i++)if(map[i]===T.GATE)map[i]=T.BRIDGE;S.gateOpen=true;SFX.win();dialog(['The six trophies glow... The Championship Gate swings open!',`Commissioner Spino awaits in the stadium. Good luck, ${NM()}!`]);drawMiniMap(true)}
 function openChest(it){
  if(S.taken[it.id]){dialog(['The chest is empty.']);return}
  if(it.legend){const L=LEGENDS[it.legend],g=GEAR[it.legend];
@@ -713,30 +749,30 @@ function openChest(it){
     if(i===0){const e=makeEnemy(L.fam,22,{name:L.name,pal:L.pal,pattern:L.pattern,boss:true,legend:true});startBattle(e,{legend:it,cat:null,diff:[4,4],shotclock:12})}
     else dialog([`${L.name}: Come back when you're ready. IF you're ever ready.`])}));return}
  S.taken[it.id]=1;SFX.item();S.st.chests=(S.st.chests||0)+1;const lines=[];
- if(it.legend){const g=GEAR[it.legend];S.gear.push(it.legend);lines.push(`✨ A LEGENDARY CHEST! ✨`,`Brady found the ${g.icon} ${g.name}! (${gearDesc(g)})`,'Equip it from the Menu → Gear.')}
+ if(it.legend){const g=GEAR[it.legend];S.gear.push(it.legend);lines.push(`✨ A LEGENDARY CHEST! ✨`,`${NM()} found the ${g.icon} ${g.name}! (${gearDesc(g)})`,'Equip it from the Menu → Gear.')}
  else{const lv=4+it.tier*4;const r=R();
-  if(r<.35){const id=rollGear(lv);const g=GEAR[id];S.gear.push(id);lines.push(`Brady found ${g.icon} ${g.name}! [${RAR[g.r].n}]`,`${gearDesc(g)}. Equip it from the Menu → Gear.`)}
-  else if(r<.92){const k=rollCons(),n=rint(1,2);S.inv[k]=(S.inv[k]||0)+n;lines.push(`Brady found ${CONS[k].icon} ${CONS[k].name} x${n}!`,CONS[k].desc+'.')}
-  else{const c=rint(50,150);S.coins+=c;lines.push(`Brady found a bag of ${c} coins! 🪙`)}}
+  if(r<.35){const id=rollGear(lv);const g=GEAR[id];S.gear.push(id);lines.push(`${NM()} found ${g.icon} ${g.name}! [${RAR[g.r].n}]`,`${gearDesc(g)}. Equip it from the Menu → Gear.`)}
+  else if(r<.92){const k=rollCons(),n=rint(1,2);S.inv[k]=(S.inv[k]||0)+n;lines.push(`${NM()} found ${CONS[k].icon} ${CONS[k].name} x${n}!`,CONS[k].desc+'.')}
+  else{const c=rint(50,150);S.coins+=c;lines.push(`${NM()} found a bag of ${c} coins! 🪙`)}}
  updHud();dialog(lines)}
 function talk(n){
  const dd={up:'down',down:'up',left:'right',right:'left'};n.dir=dd[player.dir];
  const key=n.id;
  if(n.kind==='shop'){dialog([`${n.name}: Welcome! Need gear for the Gridiron?`],()=>openShop(n));return}
- if(n.kind==='mom'){if(!S.npc.mom){S.npc.mom=1;S.inv.water=(S.inv.water||0)+3;SFX.item();dialog(["Mom: Brady! Be careful out there with all those dinosaurs.","Here, take 3 more Water Bottles. Stay hydrated!","And remember: the Hydration Station fountain heals you and saves your game."]);updHud()}else dialog([pick(["Mom: Don't forget your sunscreen, sweetie!","Mom: I'm so proud of you! Keep studying that playbook.","Mom: Dinner's at six. Finish your battles by then!"])]);return}
- if(n.kind==='coach'){choice("Coach Dale: Hey Brady! Want a practice rep against a training dino? Questions are easy and it's a good warm-up.",['Let\'s go!','Not now'],i=>{if(i===0){startBattle(makeEnemy('raptor',1,{name:'Tackle Dummy-raptor',pal:{B:'#c8a060',L:'#f0e0c0',P:'#8a2a2a',K:'#f4f4f4'},pattern:'stripes'}),{practice:true,cat:null,diff:[1,1]})}else dialog(["Coach Dale: Remember: right answers hit hard, and answering in a row builds your streak!"])});return}
+ if(n.kind==='mom'){if(!S.npc.mom){S.npc.mom=1;S.inv.water=(S.inv.water||0)+3;SFX.item();dialog([`Mom: ${NM()}! Be careful out there with all those dinosaurs.`,"Here, take 3 more Water Bottles. Stay hydrated!","And remember: the Hydration Station fountain heals you and saves your game."]);updHud()}else dialog([pick(["Mom: Don't forget your sunscreen, sweetie!","Mom: I'm so proud of you! Keep studying that playbook.","Mom: Dinner's at six. Finish your battles by then!"])]);return}
+ if(n.kind==='coach'){choice(`Coach Dale: Hey ${NM()}! Want a practice rep against a training dino? Questions are easy and it's a good warm-up.`,['Let\'s go!','Not now'],i=>{if(i===0){startBattle(makeEnemy('raptor',1,{name:'Tackle Dummy-raptor',pal:{B:'#c8a060',L:'#f0e0c0',P:'#8a2a2a',K:'#f4f4f4'},pattern:'stripes'}),{practice:true,cat:null,diff:[1,1]})}else dialog(["Coach Dale: Remember: right answers hit hard, and answering in a row builds your streak!"])});return}
  if(n.kind==='tip'){dialog([`${n.name}: ${TIPS[(n.tip+S.steps)%TIPS.length]}`]);return}
- if(n.kind==='giver'){if(!S.npc[key]){S.npc[key]=1;const k=rollCons();S.inv[k]=(S.inv[k]||0)+1;SFX.item();updHud();dialog([`${n.name}: You look like you could use this!`,`Brady received ${CONS[k].icon} ${CONS[k].name}! (${CONS[k].desc})`])}else dialog([`${n.name}: ${TIPS[(n.tip+3)%TIPS.length]}`]);return}
+ if(n.kind==='giver'){if(!S.npc[key]){S.npc[key]=1;const k=rollCons();S.inv[k]=(S.inv[k]||0)+1;SFX.item();updHud();dialog([`${n.name}: You look like you could use this!`,`${NM()} received ${CONS[k].icon} ${CONS[k].name}! (${CONS[k].desc})`])}else dialog([`${n.name}: ${TIPS[(n.tip+3)%TIPS.length]}`]);return}
  if(n.kind==='quiz'){const reg=regionPoi(n.x,n.y);let q;for(let t=0;t<12;t++){q=pickQuestion(reg.cat&&R()<.6?reg.cat:null,1,reg.diff[1]);if(!q.pic)break}const opts=shuffle([q.a,...q.w]);const first=!S.npc[key];
   choice(`${n.name}: POP QUIZ! ${first?'(Get it right for 25 coins!) ':''}${q.q}`,opts,i=>{const ok=opts[i]===q.a;recordAnswer(q,ok);
-   if(ok){SFX.correct();let l=[`✔ Correct! ${q.x}`];if(first){S.npc[key]=1;S.coins+=25;l.push('Brady earned 25 coins! 🪙')}updHud();dialog(l)}
+   if(ok){SFX.correct();let l=[`✔ Correct! ${q.x}`];if(first){S.npc[key]=1;S.coins+=25;l.push(`${NM()} earned 25 coins! 🪙`)}updHud();dialog(l)}
    else{SFX.wrong();dialog([`✘ Not quite. The answer is: ${q.a}.`,q.x,'(Added to your Film Room for review.)'])}});return}
 }
 function bossTalk(b){const d=b.def;
  if(b.secret){if(S.bosses.goat){dialog([`${d.name}: You've already proven it. Now go teach someone else the game.`]);return}
   dialog(d.intro.map(l=>`${d.name}: ${l}`),()=>choice(`⚠️ SECRET BOSS: mixed All-Pro and Superfan questions, 10-second shot clock. Recommended: Lv 25+. Ready?`,['Kickoff!','Not yet'],i=>{if(i===0){const e=makeEnemy(d.fam,d.lv,{name:d.name,pal:d.pal,pattern:d.pattern,boss:true,legend:true});startBattle(e,{secretBoss:b,cat:null,diff:[3,4],shotclock:10})}}));return}
  const p=poiById(b.poi);
- if(S.bosses[b.poi]){dialog([`${d.name}: Great game, Brady! Keep studying ${p.cat?CATS[p.cat].name:'everything'}!`]);return}
+ if(S.bosses[b.poi]){dialog([`${d.name}: Great game, ${NM()}! Keep studying ${p.cat?CATS[p.cat].name:'everything'}!`]);return}
  if(d.final&&S.trophies.length<6){dialog([`${d.name}: Come back with all six trophies.`]);return}
  dialog(d.intro.map(l=>`${d.name}: ${l}`),()=>{const e=makeEnemy(d.fam,d.lv,{name:d.name,pal:d.pal,pattern:d.pattern,boss:true});startBattle(e,{boss:b,cat:p.cat,diff:p.cat?[1,3]:[2,3]})})}
 
@@ -837,7 +873,7 @@ function beginWild(){const reg=regionPoi(player.x,player.y);const fams=BIOME_FAM
 // ---------------- BATTLE ----------------
 let B=null;
 const BIOME_SKY={plains:['#8fd0ff','#d8f0ff','#7cc860'],forest:['#6fb89a','#c8ecd8','#3f8f3a'],coast:['#7ac8ff','#e0f6ff','#e8d690'],desert:['#ffb46a','#ffe6b0','#e0c080'],mountain:['#9ab0d0','#e0e8f4','#a8957a'],ruins:['#b8a8e0','#f0e8ff','#7cc860'],springs:['#80d8e8','#e0fcff','#6cc04a'],volcano:['#5a1a1a','#d8603a','#4a3838']};
-function startBattle(en,opts){
+function startBattle(en,opts){$('#plName').textContent=NM().toUpperCase();
  state='battle';B={en,opts,phase:'intro',q:null,streak:0,t:0,anim:null,pops:[],shake:0,trans:0,removed:new Set(),biome:opts.biome||(opts.secretBoss?'ruins':opts.boss?poiById(opts.boss.poi).biome:regionPoi(player.x,player.y).biome),qStart:0,sel:0,bag:false};
  S.st.battles++;const fr=S.dex[en.fam]||(S.dex[en.fam]={seen:0,def:0});fr.seen++;S.names[en.name]=1;
  $('#battle').classList.remove('hidden');$('#hud').classList.add('hidden');
@@ -879,7 +915,7 @@ function answer(i){
  else{B.streak=0;B.wrong=(B.wrong||0)+1;const dodge=R()<s.dodge;let dmg=0;
   if(!dodge){dmg=B.en.atk*(.9+R()*.2)*30/(30+s.def)*(S.buffs.guard?.65:1)*({rookie:.7,pro:1,allpro:1.25,superfan:1.5}[S.diff]||1);if(B.opts.practice)dmg*=.3;dmg=Math.max(1,Math.round(dmg));S.hp=Math.max(0,S.hp-dmg)}
   B.anim={type:'hit',t:0,dmg,dodge};SFX.wrong();
-  msg=`<b class="bad">${i===-1?'⏱ SHOT CLOCK EXPIRED! ':''}✘ ${dodge?'Wrong... but Brady JUKED the attack!':'WRONG!'}</b> ${dodge?'':`<b>Brady takes ${dmg} damage.</b>`}<br>Answer: <b>${esc(q.a)}</b>. ${esc(q.x)}`}
+  msg=`<b class="bad">${i===-1?'⏱ SHOT CLOCK EXPIRED! ':''}✘ ${dodge?`Wrong... but ${NMH()} JUKED the attack!`:'WRONG!'}</b> ${dodge?'':`<b>${NMH()} takes ${dmg} damage.</b>`}<br>Answer: <b>${esc(q.a)}</b>. ${esc(q.x)}`}
  $('#qTools').innerHTML='';B.fbReady=false;
  setTimeout(()=>{if(!B||B.phase!=='feedback')return;const fb=$('#qFeedback');fb.innerHTML=msg;fb.className=(ok?'box ok':'box no')+(q.pic?' picfb':'');$('#qTools').innerHTML=`<button class="tool go" onclick="G.cont()">Continue ▶</button>`;B.fbReady=true},700);
  setTimeout(()=>B&&updBattleBoxes(),400);
@@ -888,14 +924,14 @@ function cont(){if(!B)return;if(B.phase==='feedback'){if(B.fbReady===false)retur
  if(B.phase==='end'){const cb=B.after;endBattle();cb&&cb()}}
 function useHint(){if(!B||B.phase!=='question'||!S.inv.hint||B.removed.size)return;S.inv.hint--;const wrong=B.ans.map((a,i)=>i).filter(i=>B.ans[i]!==B.q.a);shuffle(wrong);B.removed.add(wrong[0]);B.removed.add(wrong[1]);if(B.removed.has(B.sel))B.sel=B.ans.indexOf(B.q.a);SFX.blip();renderQ()}
 function useTimeout(){if(!B||B.phase!=='question'||!S.inv.timeout)return;S.inv.timeout--;SFX.blip();
- setPanel(`<div class="qIntro">⏱️ TIMEOUT! Brady catches his breath. The answer was <b>${esc(B.q.a)}</b>.<br><small>${esc(B.q.x)}</small></div>`,`<button class="tool go" onclick="G.nextQ()">Next question ▶</button>`);B.phase='timeout'}
+ setPanel(`<div class="qIntro">⏱️ TIMEOUT! ${NMH()} takes a breather. The answer was <b>${esc(B.q.a)}</b>.<br><small>${esc(B.q.x)}</small></div>`,`<button class="tool go" onclick="G.nextQ()">Next question ▶</button>`);B.phase='timeout'}
 function bag(){if(!B||B.phase!=='question')return;B.bag=true;B.pausedAt=performance.now();const list=Object.keys(CONS).filter(k=>S.inv[k]&&CONS[k].heal);
  setPanel(`<div class="qIntro">🎒 <b>Bag</b> (HP ${Math.ceil(S.hp)}/${stats().hp})<div class="bagList">${list.length?list.map(k=>`<button class="tool" onclick="G.useItem('${k}',true)">${CONS[k].icon} ${CONS[k].name} x${S.inv[k]}<br><small>${CONS[k].desc}</small></button>`).join(''):'<i>No healing items!</i>'}</div></div>`,`<button class="tool" onclick="G.back()">◀ Back to question</button>`)}
 function run(){if(!B||B.phase!=='question')return;
  if(B.en.boss){toast("You can't run from a Head Coach!");return}
- if(R()<.7+stats().dodge){B.phase='end';B.after=null;setPanel(`<div class="qIntro">🏃 Brady got away safely!</div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}
+ if(R()<.7+stats().dodge){B.phase='end';B.after=null;setPanel(`<div class="qIntro">🏃 ${NMH()} got away safely!</div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}
  else{const dmg=Math.max(1,Math.round(B.en.atk*.6));S.hp=Math.max(0,S.hp-dmg);B.anim={type:'hit',t:0,dmg};SFX.wrong();updBattleBoxes();B.phase='feedback';B.fbReady=true;
-  setPanel(`<div class="qIntro">🏃 Brady tried to run... but ${esc(B.en.name)} cut him off! <b>-${dmg} HP</b></div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}}
+  setPanel(`<div class="qIntro">🏃 ${NMH()} tried to run... but ${esc(B.en.name)} blocked the way! <b>-${dmg} HP</b></div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}}
 function victory(){const e=B.en;B.phase='end';SFX.win();S.st.wins++;S.dex[e.fam].def++;
  if(!B.opts.practice){S.st.winsBy[S.diff]=(S.st.winsBy[S.diff]||0)+1;if(e.shiny)S.st.golden=(S.st.golden||0)+1;if(S.hp<=stats().hp*.1)S.flags.comeback=1;if(e.boss&&!B.wrong)S.flags.flawless=1;
   if(B.opts.boss){S.st.bossBy[S.diff]=(S.st.bossBy[S.diff]||0)+1;if(B.opts.boss.def.final)S.st.champBy[S.diff]=(S.st.champBy[S.diff]||0)+1}}
@@ -904,25 +940,25 @@ function victory(){const e=B.en;B.phase='end';SFX.win();S.st.wins++;S.dex[e.fam]
  else{
   let xp=Math.round((10+e.lv*6)*(e.boss?3:1)*(S.buffs.film?1.5:1)*(e.shiny?2:1)),coins=Math.round((6+e.lv*3)*(e.boss?4:1)*(S.buffs.lucky?1.5:1)*(e.shiny?3:1));
   S.xp+=xp;S.coins+=coins;lines.push(`+${xp} XP   +${coins} coins 🪙`);
-  const drops=[];if(B.opts.secretBoss){S.bosses.goat=1;S.gear.push('fossilball','dinocrown');lines.push(`✦ THE GOAT HAS FALLEN! Brady claims the <span style="color:${RAR[5].c}">🦴 Fossil Football</span> and the <span style="color:${RAR[5].c}">👑 Dino King Crown</span> [Mythic]!`);drops.push(['c','icepack'],['c','icepack'])}
-  else if(B.opts.legend){const it=B.opts.legend,g=GEAR[it.legend];S.taken[it.id]=1;S.gear.push(it.legend);lines.push(`🏆 LEGEND DEFEATED! Brady claims the <span style="color:${RAR[4].c}">${g.icon} ${g.name}</span>!`);drops.push(['c','icepack'])}
+  const drops=[];if(B.opts.secretBoss){S.bosses.goat=1;S.gear.push('fossilball','dinocrown');lines.push(`✦ THE GOAT HAS FALLEN! ${NMH()} claims the <span style="color:${RAR[5].c}">🦴 Fossil Football</span> and the <span style="color:${RAR[5].c}">👑 Dino King Crown</span> [Mythic]!`);drops.push(['c','icepack'],['c','icepack'])}
+  else if(B.opts.legend){const it=B.opts.legend,g=GEAR[it.legend];S.taken[it.id]=1;S.gear.push(it.legend);lines.push(`🏆 LEGEND DEFEATED! ${NMH()} claims the <span style="color:${RAR[4].c}">${g.icon} ${g.name}</span>!`);drops.push(['c','icepack'])}
   else if(e.boss){const p=poiById(B.opts.boss.poi);drops.push(['g',rollGear(e.lv+8,BOSS_ORDER.indexOf(p.id)>=2||p.id==='champ'?3:2)]);drops.push(['c',rollCons()],['c',rollCons()])}
   else{if(R()<.45)drops.push(['c',rollCons()]);if(R()<.14||e.shiny)drops.push(['g',rollGear(e.lv)])}
   drops.forEach(([t,k])=>{if(t==='c'){S.inv[k]=(S.inv[k]||0)+1;lines.push(`Loot: ${CONS[k].icon} ${CONS[k].name}`)}else{S.gear.push(k);const g=GEAR[k];lines.push(`Loot: <span style="color:${RAR[g.r].c}">${g.icon} ${g.name} [${RAR[g.r].n}]</span>`)}});
   // buff countdown
   for(const k of Object.keys(S.buffs)){if(k==='horn')continue;S.buffs[k]--;if(S.buffs[k]<=0){delete S.buffs[k];lines.push(`${BUFFS[k].icon} ${BUFFS[k].name} wore off.`)}}
  }
- while(S.xp>=xpNeed(S.lv)){S.xp-=xpNeed(S.lv);S.lv++;S.hp=stats().hp;lines.push(`<b class="good">⭐ LEVEL UP! Brady is now Lv ${S.lv}! HP fully restored.</b>`);if(S.lv===10)lines.push('✨ Brady now sparkles with confidence!');if(S.lv===20)lines.push('🌟 A golden aura now surrounds Brady!');if(S.lv===30)lines.push('💫 Brady glows like a true legend!');setTimeout(SFX.level,600)}
+ while(S.xp>=xpNeed(S.lv)){S.xp-=xpNeed(S.lv);S.lv++;S.hp=stats().hp;lines.push(`<b class="good">⭐ LEVEL UP! ${NMH()} is now Lv ${S.lv}! HP fully restored.</b>`);if(S.lv===10)lines.push(`✨ ${NMH()} now sparkles with confidence!`);if(S.lv===20)lines.push(`🌟 A golden aura now surrounds ${NMH()}!`);if(S.lv===30)lines.push(`💫 ${NMH()} glows like a true legend!`);setTimeout(SFX.level,600)}
  let after=null;
  if(B.opts.secretBoss){after=()=>dialog(GOAT.outro.map(l=>`${GOAT.name}: ${l}`).concat(['Equip your Mythic gear from Menu → Gear.']))}
  else if(B.opts.legend){const L=LEGENDS[B.opts.legend.legend];after=()=>dialog(L.outro.map(l=>`${L.name}: ${l}`).concat(['Equip your legendary gear from Menu → Gear.']))}
- else if(e.boss&&B.opts.boss){const b=B.opts.boss,d=b.def;S.bosses[b.poi]=1;if(!S.trophies.includes(d.trophy))S.trophies.push(d.trophy);lines.push(`🏆 Brady earned the <b>${d.trophy}</b>!`);
+ else if(e.boss&&B.opts.boss){const b=B.opts.boss,d=b.def;S.bosses[b.poi]=1;if(!S.trophies.includes(d.trophy))S.trophies.push(d.trophy);lines.push(`🏆 ${NMH()} earned the <b>${d.trophy}</b>!`);
   after=()=>{dialog(d.outro.map(l=>`${d.name}: ${l}`),()=>{if(d.final){S.champion=true;saveGame(true);showEnding()}else if(S.trophies.length>=6)dialog(['All 6 Coach Trophies collected! 🏆','Head to the Championship Gate in the volcano at the center of the map!'])})}}
  B.after=after;updBattleBoxes();saveGame(true);
  setPanel(`<div class="qIntro vic">${lines.join('<br>')}</div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}
 function defeat(){B.phase='end';const lost=Math.floor(S.coins*.25);S.coins-=lost;
- B.after=()=>{S.hp=stats().hp;S.x=S.respawn.x;S.y=S.respawn.y;startPlayer();lastRegion=-1;updHud();dialog([`Brady is out of breath and heads back to the locker room...`,`He dropped ${lost} coins. Wrong answers were added to the Film Room. Study up and try again!`])};
- setPanel(`<div class="qIntro">😵 Brady can't keep going!</div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}
+ B.after=()=>{S.hp=stats().hp;S.x=S.respawn.x;S.y=S.respawn.y;startPlayer();lastRegion=-1;updHud();dialog([`${NM()} is out of breath and heads back to the locker room...`,`Dropped ${lost} coins on the way. Wrong answers were added to the Film Room. Study up and try again!`])};
+ setPanel(`<div class="qIntro">😵 ${NMH()} can't keep going!</div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}
 function endBattle(){B=null;state='world';graceSteps=4;$('#battle').classList.add('hidden');$('#hud').classList.remove('hidden');updHud();setTimeout(checkAch,400)}
 function drawBattle(){
  const sky=BIOME_SKY[B.biome]||BIOME_SKY.plains;const g=ctx.createLinearGradient(0,0,0,140);g.addColorStop(0,sky[0]);g.addColorStop(1,sky[1]);ctx.fillStyle=g;ctx.fillRect(0,0,CW,CH);
@@ -1020,7 +1056,7 @@ function showAch(){if(achShowing||!achQ.length)return;achShowing=true;const[a,r]
 function achPoints(){return ACH.filter(a=>S.ach[a.id]).reduce((n,a)=>n+ATIER[a.t].pts,0)}
 // ---------------- DIALOG ----------------
 let dq=null;
-function dialog(lines,cb){state='dialog';dq={lines:lines.slice(),cb,i:0,shown:0,full:'',choice:null};showLine()}
+function dialog(lines,cb){state='dialog';dq={lines:lines.map(l=>String(l).replace(/\{N\}/g,NM())),cb,i:0,shown:0,full:'',choice:null};showLine()}
 function showLine(){$('#dialog').classList.remove('hidden');dq.full=dq.lines[dq.i];dq.shown=0;$('#dlgChoices').innerHTML='';$('#dlgNext').style.display='none'}
 function choice(text,opts,cb){state='dialog';dq={lines:[text],cb:null,i:0,shown:0,full:text,choice:{opts,cb,sel:0}};$('#dialog').classList.remove('hidden');$('#dlgChoices').innerHTML='';$('#dlgNext').style.display='none'}
 function renderChoices(){const c=dq.choice;$('#dlgChoices').innerHTML=c.opts.map((o,i)=>`<button class="ch${i===c.sel?' sel':''}" onclick="G.pickChoice(${i})">${c.opts.length>2?(i+1)+'. ':''}${esc(o)}</button>`).join('')}
@@ -1033,7 +1069,7 @@ function pickChoice(i){if(!dq||!dq.choice)return;if(dq.shown<dq.full.length)retu
 
 // ---------------- HUD ----------------
 function updHud(){if(!S)return;const s=stats();S.hp=Math.min(S.hp,s.hp);
- $('#hudLv').textContent='Lv'+S.lv;setBar('#hudHp',S.hp/s.hp);$('#hudHpT').textContent=`${Math.ceil(S.hp)}/${s.hp}`;$('#hudCoins').textContent='🪙 '+S.coins;
+ $('#hudNm').textContent=$('#plName').textContent=NM().toUpperCase();$('#hudLv').textContent='Lv'+S.lv;setBar('#hudHp',S.hp/s.hp);$('#hudHpT').textContent=`${Math.ceil(S.hp)}/${s.hp}`;$('#hudCoins').textContent='🪙 '+S.coins;
  $('#trophies').textContent=`🏆 ${S.trophies.length}/6`;
  $('#buffs').innerHTML=Object.keys(S.buffs).map(k=>`<span class="buff" title="${BUFFS[k].name}">${BUFFS[k].icon}<small>${S.buffs[k]}${BUFFS[k].steps?'':''}</small></span>`).join('');
  $('#btnSnd').textContent=S.sound?'🔊':'🔇';$('#btnSnd').title='Sound effects';updObjective()}
@@ -1060,7 +1096,7 @@ function renderMenu(){
  $('#menuTabs').innerHTML=tabs.map(([k,n])=>`<button class="${k===menuTab?'on':''}" onclick="G.tab('${k}')">${n}</button>`).join('')+`<button class="x" onclick="G.closeMenu()">✕</button>`;
  const s=stats();let h='';
  if(menuTab==='bag'){const ks=Object.keys(CONS).filter(k=>S.inv[k]);h=`<div class="sub">HP ${Math.ceil(S.hp)}/${s.hp} · 🪙 ${S.coins} coins</div><div class="grid">`+(ks.length?ks.map(k=>{const c=CONS[k];const usable=!c.battle;return`<div class="card"><div class="ic">${c.icon}</div><div><b>${c.name}</b> x${S.inv[k]}<br><small>${c.desc}</small></div>${usable?`<button onclick="G.useItem('${k}')">Use</button>`:'<small class="muted">battle only</small>'}</div>`}).join(''):'<i>Your bag is empty. Check chests ✨ and win battles for loot!</i>')+'</div>'}
- else if(menuTab==='gear'){h=`<div class="gearPrev"><canvas id="gp1" width="54" height="54"></canvas><canvas id="gp2" width="54" height="54"></canvas><canvas id="gp3" width="54" height="54"></canvas><div><b>Brady's look</b><br><small>Helmets, armor and cleats change how Brady looks. His weapon shows in his hand. Higher levels and legendary gear add sparkles and auras!</small></div></div><div class="stats">ATK <b>${s.atk}</b> · DEF <b>${s.def}</b> · Max HP <b>${s.hp}</b> · CRIT <b>${Math.round(s.crit*100)}%</b> · JUKE <b>${Math.round(s.dodge*100)}%</b>${s.heal?` · Heal <b>${s.heal}</b>/correct`:''}</div>`;
+ else if(menuTab==='gear'){h=`<div class="gearPrev"><canvas id="gp1" width="54" height="54"></canvas><canvas id="gp2" width="54" height="54"></canvas><canvas id="gp3" width="54" height="54"></canvas><div><b>${esc(poss(NM()))} look</b><br><small>Helmets, armor and cleats change how you look, and your weapon shows in your hand. Higher levels and legendary gear add sparkles and auras!</small><br><button onclick="G.editLook()" style="margin-top:3px">✂️ Change look</button></div></div><div class="stats">ATK <b>${s.atk}</b> · DEF <b>${s.def}</b> · Max HP <b>${s.hp}</b> · CRIT <b>${Math.round(s.crit*100)}%</b> · JUKE <b>${Math.round(s.dodge*100)}%</b>${s.heal?` · Heal <b>${s.heal}</b>/correct`:''}</div>`;
   h+='<div class="slots">'+SLOTS.map(sl=>{const id=S.equip[sl],g=id&&GEAR[id];return`<div class="slot"><small>${SLOTN[sl]}</small><br>${g?`<span style="color:${RAR[g.r].c}">${g.icon} <b>${g.name}</b></span><br><small>${gearDesc(g)}</small>`:'<i>empty</i>'}</div>`}).join('')+'</div>';
   const counts={};S.gear.forEach(id=>counts[id]=(counts[id]||0)+1);
   h+='<div class="grid">'+Object.keys(counts).sort((a,b)=>GEAR[b].r-GEAR[a].r).map(id=>{const g=GEAR[id],eq=S.equip[g.slot]===id;return`<div class="card" style="border-color:${RAR[g.r].c}"><div class="ic">${g.icon}</div><div><b style="color:${RAR[g.r].c}">${g.name}</b>${counts[id]>1?' x'+counts[id]:''}<br><small>${RAR[g.r].n} ${SLOTN[g.slot]} · ${gearDesc(g)}</small></div>${eq?'<small class="good">equipped</small>':`<button onclick="G.equip('${id}')">Equip</button>`}</div>`}).join('')+'</div>'}
@@ -1093,6 +1129,44 @@ function useItem(k,inBattle){const c=CONS[k];if(!S.inv[k])return;const s=stats()
  if(inBattle&&B){updBattleBoxes();renderQ()}else renderMenu()}
 function equip(id){const g=GEAR[id];S.equip[g.slot]=id;SFX.blip();rebuildBrady();updHud();renderMenu()}
 
+// ---------------- CHARACTER CREATOR ----------------
+let CR=null,crTimer=0;
+function openCreator(mode,keep){if(!(keep&&CR&&CR.mode===mode))CR={mode,hero:mode==='edit'?heroOf(S):heroOf(null),helm:false};CR.ret=state;state='create';
+ const h=CR.hero,box=$('#creator');
+ box.innerHTML=`<div class="crHead"><b>🎨 ${mode==='edit'?'Change your look':'Create your player'}</b><button class="x" onclick="G.crBack()">✕</button></div>
+ <div class="crBody"><div class="crPrev"><div class="crStage"><div id="crTag"></div><canvas id="crP0" width="90" height="90"></canvas></div>
+  <div class="crTurn"><canvas id="crP1" width="42" height="42"></canvas><canvas id="crP2" width="42" height="42"></canvas><canvas id="crP3" width="42" height="42"></canvas><canvas id="crFace" width="42" height="30" title="HUD face"></canvas></div>
+  <label class="crHelm"><input type="checkbox" id="crHelm"${CR.helm?' checked':''}> Try on a helmet</label></div>
+ <div class="crOpts">
+  <div class="crRow"><span>Name</span><input id="crName" maxlength="12" autocomplete="off" spellcheck="false" placeholder="Brady"></div>
+  <div class="crRow"><span>Hair color</span><div class="opts">${HERO_HAIR.map(([c,n])=>`<button class="sw" data-k="hair" data-v="${c}" title="${n}" style="background:${c}"></button>`).join('')}</div></div>
+  <div class="crRow"><span>Hair style</span><div class="opts">${HERO_STYLES.map(([k,n])=>`<button class="st" data-k="style" data-v="${k}">${n}</button>`).join('')}</div></div>
+  <div class="crRow"><span>Skin tone</span><div class="opts">${HERO_SKIN.map(c=>`<button class="sw" data-k="skin" data-v="${c}" style="background:${c}"></button>`).join('')}</div></div>
+  <div class="crRow"><span>Freckles</span><div class="opts"><button class="st" data-k="fr" data-v="1">On</button><button class="st" data-k="fr" data-v="0">Off</button></div></div>
+ </div></div>
+ <div class="crBtns"><button onclick="G.crBack()">◀ Back</button><button onclick="G.crRandom()">🎲 Surprise me</button><button class="go" onclick="G.crDone()">${mode==='edit'?'✔ Save look':'Next: Difficulty ▶'}</button></div>`;
+ const inp=$('#crName');inp.value=h.name;
+ inp.oninput=()=>{const v=inp.value.replace(/[^\p{L}\p{N} '.\-]/gu,'');if(v!==inp.value)inp.value=v;CR.hero.name=v;crRefresh()};
+ inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();crDone()}else if(e.key==='Escape'){e.preventDefault();crBack()}};
+ $('#crHelm').onchange=e=>{CR.helm=e.target.checked;crRefresh()};
+ box.onclick=e=>{const b=e.target.closest('[data-k]');if(!b)return;const k=b.dataset.k,v=b.dataset.v;CR.hero[k]=k==='fr'?v==='1':v;SFX.blip();crRefresh()};
+ box.classList.remove('hidden');crRefresh();clearInterval(crTimer);crTimer=setInterval(crAnim,220)}
+function crLook(){const h=heroOf({hero:CR.hero});const eq=Object.assign({},CR.mode==='edit'?S.equip:newSave().equip);if(CR.helm&&!eq.helmet)eq.helmet='prohelm';return{h,spr:makeBradySprites(eq,h)}}
+function crRefresh(){if(!CR)return;const{h,spr}=crLook();CR.spr=spr;
+ document.querySelectorAll('#creator [data-k]').forEach(b=>{const k=b.dataset.k,v=b.dataset.v;b.classList.toggle('on',k==='fr'?(v==='1')===h.fr:h[k]===v)});
+ $('#crTag').textContent=h.name;
+ [['crP1','down'],['crP2','right'],['crP3','up']].forEach(([id,d])=>{const g=$('#'+id).getContext('2d');g.imageSmoothingEnabled=false;g.clearRect(0,0,42,42);g.drawImage(spr[d][0],0,0,42,42)});
+ const f=$('#crFace').getContext('2d');f.imageSmoothingEnabled=false;f.clearRect(0,0,42,30);f.drawImage(spr.down[0],0,0,18,13,0,0,42,30);crAnim(true)}
+let crF=0;
+function crAnim(still){if(!CR||!CR.spr)return;if(!still)crF++;const dirs=['down','right','up','left'],d=dirs[(crF>>4)%4],fr=[1,0,2,0][crF%4];
+ const g=$('#crP0').getContext('2d');g.imageSmoothingEnabled=false;g.clearRect(0,0,90,90);g.drawImage(CR.spr[d][fr],0,0,90,90)}
+function crClose(){clearInterval(crTimer);$('#creator').classList.add('hidden')}
+function crDone(){if(!CR)return;CR.hero=heroOf({hero:Object.assign({},CR.hero,{name:$('#crName').value})});SFX.blip();crClose();
+ if(CR.mode==='edit'){S.hero=CR.hero;rebuildBrady();updHud();saveGame(true);state='menu';renderMenu();toast(`✂️ Looking good, ${NM()}!`)}
+ else{state='title';$('#newGameBox').classList.remove('hidden')}}
+function crBack(){if(!CR)return;crClose();if(CR.mode==='edit'){state='menu';renderMenu()}else state='title'}
+function crRandom(){const p=a=>a[(Math.random()*a.length)|0];Object.assign(CR.hero,{hair:p(HERO_HAIR)[0],style:p(HERO_STYLES)[0],skin:p(HERO_SKIN),fr:Math.random()<.4});SFX.blip();crRefresh()}
+
 // ---------------- SHOP ----------------
 let shopN=null,shopTab='buy';
 function openShop(n){shopN=n;state='menu';$('#shop').classList.remove('hidden');
@@ -1117,19 +1191,20 @@ function renderMap(){const c=$('#mapCv'),g=c.getContext('2d');g.imageSmoothingEn
 
 // ---------------- TITLE / ENDING ----------------
 function showTitle(){state='title';$('#title').classList.remove('hidden');const sv=loadSave();$('#btnCont').style.display=sv?'':'none';if(sv)$('#btnCont').textContent=`▶ Continue (Lv ${sv.lv} · 🏆 ${(sv.trophies||[]).length}/6)`;
- const c=$('#titleBrady'),g=c.getContext('2d');g.imageSmoothingEnabled=false;g.clearRect(0,0,c.width,c.height);g.drawImage(bradySpr.right[0],0,0,72,72);
+ const th=heroOf(sv),tspr=makeBradySprites(sv?sv.equip:newSave().equip,th);$('#logoName').textContent=`★ ${poss(th.name).toUpperCase()} ★`;
+ const c=$('#titleBrady'),g=c.getContext('2d');g.imageSmoothingEnabled=false;g.clearRect(0,0,c.width,c.height);g.drawImage(tspr.right[0],0,0,72,72);
  const d=$('#titleDino'),gd=d.getContext('2d');gd.imageSmoothingEnabled=false;gd.save();gd.translate(116,0);gd.scale(-1,1);gd.drawImage(makeDino('rex',{B:'#4fae5a',L:'#d8f0b0',P:'#1f5a2a',K:'#f4f4f4'},'stripes',3),0,0,116,100);gd.restore()}
-function startGame(sv,isNew){S=sv;
+function startGame(sv,isNew){S=sv;S.hero=heroOf(S);
  for(const k of['buffs','taken','bosses','npc','totem','seen','missed','dex','names','visited','ach','flags'])S[k]=S[k]||{};
  for(const k of['winsBy','bossBy','champBy'])S.st[k]=S.st[k]||{};
  $('#title').classList.add('hidden');$('#hud').classList.remove('hidden');
- if(S.mapv!==2){S.mapv=2;S.x=S.respawn.x=POIS[0].x;S.y=S.respawn.y=POIS[0].y+3;S.taken={};S.npc={};S.totem={};if(!isNew)setTimeout(()=>toast('🗺 The isles doubled in size! Brady is back in Kickoff Town.'),600)}
+ if(S.mapv!==2){S.mapv=2;S.x=S.respawn.x=POIS[0].x;S.y=S.respawn.y=POIS[0].y+3;S.taken={};S.npc={};S.totem={};if(!isNew)setTimeout(()=>toast(`🗺 The isles doubled in size! ${NM()} is back in Kickoff Town.`),600)}
  if(S.gateOpen)for(let i=0;i<map.length;i++)if(map[i]===T.GATE)map[i]=T.BRIDGE;
  zoomI=S.zoom??1;updZoomBtns();
  startPlayer();state='world';lastRegion=region[idx(S.x,S.y)];lastTown=town[idx(S.x,S.y)];rebuildBrady();updHud();ac();setTimeout(checkAch,2500);
- if(isNew){dialog(["🦖 THE GRIDIRON ISLES are overrun by DINOSAURS!","These dinos only respect one thing: FOOTBALL KNOWLEDGE.","In battle, a question pops up. Answer RIGHT and Brady attacks. Answer WRONG and the dino attacks Brady!","Beat the 6 Head Coach dinos to earn their trophies, then face COMMISSIONER SPINO in the volcano at the center of the isles.","Follow the red compass (top-right) to your next goal. Talk to people with Space/Enter. Press M for the map and I for your menu.","Ready, Brady? Let's go! 🏈"],()=>{S.intro=true;saveGame(true)})}
- else{banner(POIS[lastRegion].region);toast('Welcome back, Brady!')}}
-function showEnding(){state='menu';const acc=S.st.ans?Math.round(S.st.cor/S.st.ans*100):0;$('#ending').classList.remove('hidden');
+ if(isNew){dialog(["🦖 THE GRIDIRON ISLES are overrun by DINOSAURS!","These dinos only respect one thing: FOOTBALL KNOWLEDGE.",`In battle, a question pops up. Answer RIGHT and ${NM()} attacks. Answer WRONG and the dino attacks ${NM()}!`,"Beat the 6 Head Coach dinos to earn their trophies, then face COMMISSIONER SPINO in the volcano at the center of the isles.","Follow the red compass (top-right) to your next goal. Talk to people with Space/Enter. Press M for the map and I for your menu.",`Ready, ${NM()}? Let's go! 🏈`],()=>{S.intro=true;saveGame(true)})}
+ else{banner(POIS[lastRegion].region);toast(`Welcome back, ${NM()}!`)}}
+function showEnding(){state='menu';$('#endName').textContent=NM();const acc=S.st.ans?Math.round(S.st.cor/S.st.ans*100):0;$('#ending').classList.remove('hidden');
  $('#endStats').innerHTML=`Level <b>${S.lv}</b> · Questions answered <b>${S.st.ans}</b> · Accuracy <b>${acc}%</b><br>Best streak <b>${S.st.best}</b> · Dinos battled <b>${S.st.battles}</b> · Steps <b>${S.steps}</b>`;SFX.win()}
 
 // ---------------- MUSIC ----------------
@@ -1225,7 +1300,8 @@ function closeDaily(){if(!D)return;$('#daily').classList.add('hidden');state=D.r
 // ---------------- PRESS ROUTER ----------------
 function press(k,v){
  if(state==='daily'){if(!D)return;if(k==='ANS'&&D.phase==='q')dailyAnswer(v);else if(k==='A'){if(D.phase==='fb')dailyNext();else if(D.phase==='intro')dailyStart()}else if(k==='B'&&(D.phase==='intro'||D.phase==='done'))closeDaily();return}
- if(state==='title'){if(k==='A'){const sv=loadSave();if(sv)startGame(sv,false);else $('#newGameBox').classList.remove('hidden')}return}
+ if(state==='create'){if(k==='A')crDone();else if(k==='B')crBack();return}
+ if(state==='title'){if(!$('#newGameBox').classList.contains('hidden'))return;if(k==='A'){const sv=loadSave();if(sv)startGame(sv,false);else openCreator('new')}return}
  if(state==='world'){if(excl>0)return;if(k==='A')interact();else if(k==='MENU')openMenu();else if(k==='MAP')openMap();return}
  if(state==='dialog'){if(k==='A')advDialog();else if(k==='DIR'&&dq&&dq.choice&&dq.shown>=dq.full.length){const n=dq.choice.opts.length;dq.choice.sel=(dq.choice.sel+(v==='up'||v==='left'?n-1:1))%n;renderChoices();SFX.blip()}else if(k==='ANS'&&dq&&dq.choice&&v<dq.choice.opts.length&&dq.shown>=dq.full.length)pickChoice(v);return}
  if(state==='battle'){if(!B)return;
@@ -1289,10 +1365,11 @@ window.G={daily:()=>openDaily(),dailyStart:()=>dailyStart(),dailyAnswer:k=>daily
  buy:k=>{const c=CONS[k];if(S.coins<c.price)return;S.coins-=c.price;S.st.bought=(S.st.bought||0)+1;S.inv[k]=(S.inv[k]||0)+1;SFX.item();updHud();renderShop()},
  buyGear:k=>{const p=GEAR_PRICE[GEAR[k].r];if(S.coins<p)return;S.coins-=p;S.st.bought=(S.st.bought||0)+1;S.gear.push(k);SFX.item();toast(`Bought ${GEAR[k].name}! Equip it in Menu → Gear.`);updHud();renderShop()},
  sell:i=>{const id=S.gear[i];if(!id)return;S.gear.splice(i,1);S.coins+=Math.round(GEAR_PRICE[GEAR[id].r]/2);SFX.item();updHud();renderShop()},
- newGame:d=>{$('#newGameBox').classList.add('hidden');startGame(newSave(d),true)},
+ newGame:d=>{$('#newGameBox').classList.add('hidden');startGame(newSave(d,CR&&CR.hero),true)},
+ editLook:()=>openCreator('edit'),crDone:()=>crDone(),crBack:()=>crBack(),crRandom:()=>crRandom(),crReopen:()=>{$('#newGameBox').classList.add('hidden');openCreator('new',true)},
  cont:cont,
  continueGame:()=>{const sv=loadSave();if(sv)startGame(sv,false)},
- showNew:()=>$('#newGameBox').classList.remove('hidden'),
+ showNew:()=>openCreator('new'),
  endContinue:()=>{$('#ending').classList.add('hidden');state='world';updHud()},
 };
 
