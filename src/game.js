@@ -1032,7 +1032,7 @@ function showPic(q){const card=$('#qPic');if(!q||!q.pic){card.classList.add('hid
 const BIOME_FAMS={plains:FAMS.slice(0,7),forest:['raptor','rex','stego','raptor'],coast:['sauro','ptero','trike','sauro'],desert:['raptor','ankylo','rex','spino'],mountain:['ptero','ankylo','trike','ptero'],ruins:['trike','sauro','stego','spino'],springs:['sauro','stego','ptero','trike'],volcano:['rex','spino','ankylo','ptero']};
 function makeEnemy(fam,lv,o={}){const shiny=!o.boss&&!o.name&&R()<.04;const pal=o.pal||(shiny?{B:'#e8b820',L:'#fff2b0',P:'#a86a00',K:'#ffffff'}:randPal());
  const name=o.name||((shiny?'Golden ':'')+dinoName(fam));
- const hp=Math.round((o.boss?90+lv*16:24+lv*9)*(o.legend?1.15:1)*(S&&S.diff==='superfan'?1.2:1));
+ const hp=Math.round((o.boss?90+lv*16:28+lv*12)*(o.legend?1.15:1)*(S&&S.diff==='superfan'?1.2:1));
  const pattern=o.pattern||pick(['none','stripes','spots','none']),seed=(R()*1e9)|0;const spr=makeDino(fam,pal,pattern,seed);return{pal,pattern,seed,fam,lv,name,maxHp:hp,hp,atk:(5+lv*2.6)*(o.boss?1.3:1)*(o.legend?1.15:1),boss:!!o.boss,legend:!!o.legend,shiny,spr,white:tint(spr,'#ffffff')}}
 function beginWild(){const reg=regionPoi(player.x,player.y);const fams=BIOME_FAMS[reg.biome];const lv=rint(reg.lv[0],reg.lv[1]);const e=makeEnemy(pick(fams),lv);
  const cat=reg.cat&&R()<.55?reg.cat:null;startBattle(e,{cat,diff:reg.diff,biome:reg.biome})}
@@ -1076,6 +1076,7 @@ function answer(i){
  let msg='';
  if(ok){B.streak++;const crit=R()<s.crit+(B.streak>=3?.05:0),quick=secs<7;if(quick)S.st.quick=(S.st.quick||0)+1;if(B.opts.shotclock&&B.opts.shotclock-secs<=2)S.flags.buzzer=1;
   let dmg=s.atk*(.9+R()*.2)*(1+Math.min(B.streak-1,5)*.1)*(S.buffs.pep?1.3:1)*(quick?1.15:1)*(crit?1.6:1);dmg=Math.max(1,Math.round(dmg));
+  if(!B.en.boss)dmg=Math.min(dmg,Math.ceil(B.en.maxHp*.4));   // every wild challenge takes at least 3 correct answers
   B.en.hp=Math.max(0,B.en.hp-dmg);let heal=s.heal+(S.buffs.regen?6:0);if(heal){S.hp=Math.min(s.hp,S.hp+heal)}
   B.anim={type:'atk',t:0,dmg,crit,proj:GEAR[S.equip.weapon]?.proj||'ball'};SFX.correct();setTimeout(()=>SFX.hit(),380);
   msg=`<b class="good">✔ CORRECT!</b> ${crit?'<b class="crit">BIG PLAY!</b> ':''}${quick?'<b class="quick">Quick Snap!</b> ':''}${B.streak>=3?`<b class="fire">🔥x${B.streak}</b> `:''}<b>${esc(B.en.name)} loses ${dmg} hydration! 💧</b>${heal?` <span class="good">+${heal} 💧</span>`:''}<br>${esc(q.x)}`}
