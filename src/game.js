@@ -21,6 +21,11 @@ function makeNoise(seed){const r=mulberry32(seed);const P=new Float32Array(65536
 
 // ---------------- CONSTANTS ----------------
 const TS=16;let CW=320, CH=208;
+// HD rendering: game logic stays in 16-unit tiles; the canvas has RS device pixels per world unit.
+// Art canvases carry .hd = pixels per world unit (2 for the HD art), so spW()/spH() give their size in world units.
+const RS=2;
+const spW=img=>img.width/(img.hd||1),spH=img=>img.height/(img.hd||1);
+function hdCanvas(w,h,hd){const c=document.createElement('canvas');c.width=w;c.height=h;c.hd=hd||2;return c}
 const ZOOMS=[0.75,1,1.5,2],ZOOMN=['Close-up','Normal','Wide','Extra wide'];let zoomI=1;
 const MW=212, MH=156, WORLD_SEED=1120;
 const T={GRASS:0,TALL:1,PATH:2,WATER:3,SAND:4,TREE:5,ROCK:6,FLOWER:7,FLOOR:8,WALL:9,ROOF:10,DOOR:11,FENCE:12,BRIDGE:13,LAVA:14,JUNGLE:15,FOUNTAIN:16,BRUSH:17,SIGN:18,GATE:19,FIELD:20,TOTEM:21,CACTUS:22,MFLOOR:23,VFLOOR:24,ROOFB:25,COLUMN:26,GOAL:27,PINE:28,FIELDLINE:29,WINDOW:30,MONO:31};
@@ -371,8 +376,8 @@ function applyHair(g,dir,style,helm){
  const sw=(r,cs,from,to)=>{for(const c of cs)if(g[r][c]===from)g[r][c]=to};
  const side=dir!=='left';
  if(style==='buzz'&&!helm){set(1,rng(0,15),'.');
-  if(side){set(2,rng(0,15),'.');set(2,rng(4,11),'h');set(2,[7,8],'H');if(dir==='down'){sw(5,rng(3,12),'h','s');for(const r of[7,8,9])sw(r,[2,13],'h','s')}}
-  else{set(2,rng(0,15),'.');set(2,rng(5,11),'h');set(2,[8,9],'H');sw(5,[2,3],'h','s')}}
+  if(side){set(2,rng(0,15),'.');set(2,rng(4,11),'h');set(2,[7,8],'H');if(dir==='down'){spW(5,rng(3,12),'h','s');for(const r of[7,8,9])spW(r,[2,13],'h','s')}}
+  else{set(2,rng(0,15),'.');set(2,rng(5,11),'h');set(2,[8,9],'H');spW(5,[2,3],'h','s')}}
  if(style==='spiky'&&!helm){
   if(side){set(0,[3,6,9,12],'h');set(1,rng(3,12),'h')}else{set(0,[6,9,12],'h');set(1,rng(4,13),'h');set(2,[13],'h')}}
  if(style==='puffy'&&!helm){
@@ -380,7 +385,7 @@ function applyHair(g,dir,style,helm){
   else{set(0,rng(5,11),'h');set(1,rng(4,12),'h');set(2,[3,13],'h');set(3,[2,14],'h');set(4,[2,15],'h');for(const r of[5,6])set(r,[15],'h');set(7,[14,15],'h');set(8,[14,15],'h');set(9,[14],'h')}}
  if(style==='long'){
   if(dir==='down'){if(!helm){for(let r=4;r<=10;r++)set(r,[1,14],'j');set(10,[2,13],'j')}set(11,[1,2,13,14],'j');set(12,[1,14],'j')}
-  else if(dir==='up'){if(!helm){sw(8,[2,13],'s','h');set(9,[2,13],'h')}set(10,rng(3,12),'j');set(11,rng(4,11),'j')}
+  else if(dir==='up'){if(!helm){spW(8,[2,13],'s','h');set(9,[2,13],'h')}set(10,rng(3,12),'j');set(11,rng(4,11),'j')}
   else{if(!helm)for(let r=5;r<=9;r++)set(r,[14],'j');set(10,[12,13,14],'j');set(11,[12,13],'j')}}
  if(style==='ponytail'){
   if(dir==='down'){set(4,[14],'q');set(5,[14],'j');set(6,[14],'j');set(7,[14],'j')}
@@ -490,7 +495,7 @@ function makeDino(fam,pal,pattern,seed){
  for(let y=-1;y<=H;y++)for(let x=-1;x<=W;x++){const v=get(x,y);if(v){let col=v;if(!get(x,y-1))col=shade(v,.22);else if(!get(x,y+1)||!get(x,y+2))col=shade(v,-.18);else if(!get(x+1,y))col=shade(v,-.1);g.fillStyle=col;g.fillRect(x+1,y+1,1,1)}else if(get(x+1,y)||get(x-1,y)||get(x,y+1)||get(x,y-1)){g.fillStyle=OUT;g.fillRect(x+1,y+1,1,1)}}
  return c}
 
-function tint(c,col){const t=document.createElement('canvas');t.width=c.width;t.height=c.height;const g=t.getContext('2d');g.drawImage(c,0,0);g.globalCompositeOperation='source-in';g.fillStyle=col;g.fillRect(0,0,t.width,t.height);return t}
+function tint(c,col){const t=document.createElement('canvas');t.width=c.width;t.height=c.height;t.hd=c.hd;const g=t.getContext('2d');g.drawImage(c,0,0);g.globalCompositeOperation='source-in';g.fillStyle=col;g.fillRect(0,0,t.width,t.height);return t}
 // ---------------- TILES ----------------
 const tileCache={};
 let tseed=77;
@@ -562,7 +567,7 @@ function tileImg(t,x,y){const arr=tileCache[t]||tileCache[T.GRASS];const ab=(fra
  if(t===T.WATER||t===T.LAVA||t===T.FOUNTAIN)return arr[ab%arr.length];if(t===T.FIELD)return arr[x&1];return arr[hash(x,y)%arr.length]}
 function drawTile(t,x,y,sx,sy){ // ground layer
  if(LAYERED.has(t)){let b=base[idx(x,y)];if(LAYERED.has(b))b=T.GRASS;if(t===T.FOUNTAIN&&b!==T.PATH)b=T.FLOOR;drawTile(b,x,y,sx,sy);return}
- ctx.drawImage(tileImg(t,x,y),sx,sy);
+ blit(tileImg(t,x,y),sx,sy);
  if(t===T.WATER){if(y>0&&map[idx(x,y-1)]!==T.WATER&&map[idx(x,y-1)]!==T.BRIDGE){ctx.fillStyle='#b8dcff';ctx.fillRect(sx,sy,16,1)}if(x>0&&map[idx(x-1,y)]!==T.WATER&&map[idx(x-1,y)]!==T.BRIDGE){ctx.fillStyle='#9cc9ff';ctx.fillRect(sx,sy,1,16)}}
 }
 function drawShadow(t,x,y,sx,sy){
@@ -574,7 +579,7 @@ function drawShadow(t,x,y,sx,sy){
   if(!BLDG.has(below)){ctx.fillStyle='rgba(16,8,36,.32)';ctx.fillRect(sx+2,sy+16,14,3);ctx.fillStyle='rgba(16,8,36,.16)';ctx.fillRect(sx+3,sy+19,14,2)}
   if(!BLDG.has(right)){ctx.fillStyle='rgba(16,8,36,.28)';ctx.fillRect(sx+16,sy+4,3,BLDG.has(below)?12:15)}}
 }
-function drawOverlay(t,x,y,sx,sy){if(!LAYERED.has(t))return;ctx.drawImage(tileImg(t,x,y),sx,sy);
+function drawOverlay(t,x,y,sx,sy){if(!LAYERED.has(t))return;blit(tileImg(t,x,y),sx,sy);
  if(t===T.MONO&&S){const all=secretReady()||(MONO_S&&x===MONO_S.x&&y===MONO_S.y);TIERS.forEach(([k,,c],i)=>{const lit=all||tierWins(k)>=SECRET_WINS;ctx.fillStyle=lit?c:'#3a3448';ctx.fillRect(sx+7,sy+3+i*2.5|0,2,2)});
   if(all){ctx.fillStyle=`rgba(200,160,255,${.25+.2*Math.sin(frame/8)})`;ctx.fillRect(sx+4,sy,8,14)}}}
 let bumpFx=null;
@@ -613,16 +618,16 @@ function drawBradyFx(ppx,ppy){const lv=S.lv,lc=legendCount(),my=mythicOn();
  if(S.champion){const a=frame/18,x=Math.round(ppx-camX+8+Math.cos(a)*9),y=Math.round(ppy-camY-5+Math.sin(a)*3);ctx.fillStyle=OUT;ctx.fillRect(x-2,y-1,5,3);ctx.fillRect(x-1,y-2,3,5);ctx.fillStyle='#ffe08a';ctx.fillRect(x-1,y,3,1);ctx.fillRect(x,y-1,1,3)}}
 function drawChar(spr,dir,f,px,py){const sx=Math.round(px-camX),sy=Math.round(py-camY);
  ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(sx+3,sy+14,10,2);ctx.fillRect(sx+4,sy+15,8,2);
- ctx.drawImage(spr[dir][f],sx-1,sy-3-(f?1:0))}
+ const im=spr[dir][f];blit(im,sx+8-spW(im)/2,sy+15-spH(im)-(f?1:0))}
 function drawItem(it){const sx=it.x*16-camX,sy=it.y*16-camY;
- if(it.kind==='chest'){ctx.drawImage(S.taken[it.id]?chestOpen:(it.legend?chestGoldSpr:chestSpr),sx,sy);if(it.legend&&!S.taken[it.id]&&(frame>>3)%4===0){ctx.fillStyle='#fff';ctx.fillRect(sx+12,sy+3,1,3);ctx.fillRect(sx+11,sy+4,3,1)}}
+ if(it.kind==='chest'){blit(S.taken[it.id]?chestOpen:(it.legend?chestGoldSpr:chestSpr),sx,sy);if(it.legend&&!S.taken[it.id]&&(frame>>3)%4===0){ctx.fillStyle='#fff';ctx.fillRect(sx+12,sy+3,1,3);ctx.fillRect(sx+11,sy+4,3,1)}}
  else{const p=(frame>>3)%4,c=['#ffffff','#fff6a0','#f5c542','#fff6a0'][p];const s=p===2?3:2;ctx.fillStyle=c;ctx.fillRect(sx+8,sy+8-s,1,s*2+1);ctx.fillRect(sx+8-s,sy+8,s*2+1,1);ctx.fillStyle='rgba(255,255,255,.6)';ctx.fillRect(sx+7,sy+7,3,3)}}
-function drawBossMap(b){if(!b.spr)b.spr=makeDino(b.def.fam,b.def.pal,b.def.pattern,7);const s=b.spr;const sx=b.x*16+8-s.width/2-camX,sy=b.y*16+16-s.height-camY+Math.round(Math.sin(frame/20)*1);
- ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(sx+8,sy+s.height-3,s.width-16,4);ctx.drawImage(s,sx,sy);
- if(!S.bosses[b.poi]&&(frame>>4)%2===0){ctx.fillStyle=OUT;ctx.fillRect(sx+s.width/2-3,sy-12,7,11);ctx.fillStyle='#f5c542';ctx.fillRect(sx+s.width/2-2,sy-11,5,9);ctx.fillStyle=OUT;ctx.fillRect(sx+s.width/2,sy-10,1,4);ctx.fillRect(sx+s.width/2,sy-5,1,1)}}
+function drawBossMap(b){if(!b.spr)b.spr=makeDino(b.def.fam,b.def.pal,b.def.pattern,7);const s=b.spr,W=spW(s),H=spH(s);const sx=b.x*16+8-W/2-camX,sy=b.y*16+16-H-camY+Math.round(Math.sin(frame/20)*1);
+ ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(sx+8,sy+H-3,W-16,4);blit(s,sx,sy);
+ if(!S.bosses[b.poi]&&(frame>>4)%2===0){ctx.fillStyle=OUT;ctx.fillRect(sx+W/2-3,sy-12,7,11);ctx.fillStyle='#f5c542';ctx.fillRect(sx+W/2-2,sy-11,5,9);ctx.fillStyle=OUT;ctx.fillRect(sx+W/2,sy-10,1,4);ctx.fillRect(sx+W/2,sy-5,1,1)}}
 
 // ---------------- ZOOM ----------------
-function applyCanvasSize(battle){const z=battle?1:ZOOMS[zoomI];const w=Math.round(320*z),h=Math.round(208*z);if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}CW=w;CH=h}
+function applyCanvasSize(battle){const z=battle?1:ZOOMS[zoomI];const w=Math.round(320*z),h=Math.round(208*z);if(cv.width!==w*RS||cv.height!==h*RS){cv.width=w*RS;cv.height=h*RS}CW=w;CH=h;ctx.setTransform(RS,0,0,RS,0,0)}
 let zoomT=0;
 function setZoom(d){if(state!=='world'&&state!=='title')return;const n=clamp(zoomI+d,0,ZOOMS.length-1);if(n===zoomI)return;zoomI=n;if(S&&state==='world'){S.zoom=n;saveGame(true)}toast(`🔍 Zoom: ${ZOOMN[n]}`);updZoomBtns()}
 function updZoomBtns(){const a=$('#btnZin'),b=$('#btnZout');if(a)a.disabled=zoomI===0;if(b)b.disabled=zoomI===ZOOMS.length-1}
@@ -1034,14 +1039,14 @@ function drawBattle(){
   if(a.t>50)B.anim=null}
  // enemy
  const es=B.en.spr,dead=B.en.hp<=0&&B.phase==='end';const bob=B.en.fam==='ptero'?Math.sin(frame/12)*3-8:Math.sin(frame/25)*1;
- if(!dead||((frame>>2)%2)){ctx.save();if(dead)ctx.globalAlpha=.4;const ex=Math.round(232-es.width+eox+sh),ey=Math.round(96-es.height*2+bob);ctx.drawImage(es,ex,ey,es.width*2,es.height*2);if(flashE){ctx.globalAlpha=.75;ctx.drawImage(B.en.white,ex,ey,es.width*2,es.height*2)}ctx.restore()}
+ if(!dead||((frame>>2)%2)){ctx.save();if(dead)ctx.globalAlpha=.4;const EW=spW(es)*2,EH=spH(es)*2,ex=Math.round(232-EW/2+eox+sh),ey=Math.round(96-EH+bob);ctx.drawImage(es,ex,ey,EW,EH);if(flashE){ctx.globalAlpha=.75;ctx.drawImage(B.en.white,ex,ey,EW,EH)}ctx.restore()}
  // projectile
  if(a&&a.type==='atk'&&a.t>=8&&a.t<24){const t=(a.t-8)/16;const x=110+(222-110)*t,y=86-(Math.sin(t*Math.PI)*40)+(50-86)*t;drawProj(a.proj,x,y,a.t)}
  // brady
  const bs=bradySpr.right[B.anim&&B.anim.type==='atk'&&B.anim.t<20?1:0];
  if(S.lv>=20){const a=.22+.12*Math.sin(frame/10);ctx.fillStyle=S.lv>=30?`rgba(255,140,220,${a})`:`rgba(255,210,70,${a})`;ell(83+pox,122,30,8)}
- ctx.save();ctx.translate(Math.round(56+pox+sh),70);ctx.drawImage(bs,0,0,bs.width*3,bs.height*3);ctx.restore();
- if(flashP){ctx.globalAlpha=.6;ctx.drawImage(bradyRed,Math.round(56+pox+sh),70,54,54);ctx.globalAlpha=1}
+ ctx.save();ctx.translate(Math.round(56+pox+sh),70);ctx.drawImage(bs,0,0,spW(bs)*3,spH(bs)*3);ctx.restore();
+ if(flashP){ctx.globalAlpha=.6;ctx.drawImage(bradyRed,Math.round(56+pox+sh),70,spW(bs)*3,spH(bs)*3);ctx.globalAlpha=1}
  // weapon icon in hand
  drawProj(GEAR[S.equip.weapon]?.proj||'ball',56+pox+44,70+38,0,true);
  if(S.lv>=10)for(let i=0;i<(S.lv>=20?5:3);i++){if((frame+i*11)%24>=12)continue;const x=58+((frame*3+i*37)%52),y=72+((i*53+((frame/4)|0)*7)%50);ctx.fillStyle=S.lv>=30?'#ffb0e8':S.lv>=20?'#ffe08a':'#ffffff';ctx.fillRect(x-1,y,3,1);ctx.fillRect(x,y-1,1,3)}
@@ -1051,6 +1056,7 @@ function drawBattle(){
  // intro transition
  if(B.trans<24){B.trans++;ctx.fillStyle=OUT;const h=(24-B.trans)/24*CH/2;ctx.fillRect(0,0,CW,h);ctx.fillRect(0,CH-h,CW,h)}
 }
+function blit(img,x,y){ctx.drawImage(img,Math.round(x*RS)/RS,Math.round(y*RS)/RS,spW(img),spH(img))}
 function ell(cx,cy,rx,ry){ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);ctx.fill()}
 function drawProj(k,x,y,t,small){x=Math.round(x);y=Math.round(y);const s=small?1:1.4;ctx.save();ctx.translate(x,y);if(!small)ctx.rotate(t*.5);ctx.scale(s,s);
  if(k==='ball'||k==='gold'){ctx.fillStyle=OUT;ell(0,0,7,4.5);ctx.fillStyle=k==='gold'?'#f5c542':'#8a4a20';ell(0,0,6,3.5);ctx.fillStyle='#fff';ctx.fillRect(-3,-1,6,1);ctx.fillRect(-2,-2,1,3);ctx.fillRect(0,-2,1,3);ctx.fillRect(2,-2,1,3)}
@@ -1233,9 +1239,9 @@ function folReset(){folSprite();const back={up:'down',down:'up',left:'right',rig
  fol.x=fol.tx=bx;fol.y=fol.ty=by;fol.flip=bx<player.x;folPos()}
 function folStep(px0,py0){fol.x=fol.tx;fol.y=fol.ty;if(fol.x===px0&&fol.y===py0)return;fol.tx=px0;fol.ty=py0;if(fol.tx!==fol.x)fol.flip=fol.tx>fol.x}
 function folPos(){const t=player.moving?player.prog/16:1;if(!player.moving){fol.x=fol.tx;fol.y=fol.ty}fol.px=(fol.x+(fol.tx-fol.x)*t)*16;fol.py=(fol.y+(fol.ty-fol.y)*t)*16}
-function drawFollower(){folSprite();if(!fol.spr)return;const s=fol.flip?fol.spr.r:fol.spr.l,w=s.width,h=s.height;const mv=player.moving&&(fol.x!==fol.tx||fol.y!==fol.ty);
+function drawFollower(){folSprite();if(!fol.spr)return;const s=fol.flip?fol.spr.r:fol.spr.l,w=spW(s),h=spH(s);const mv=player.moving&&(fol.x!==fol.tx||fol.y!==fol.ty);
  const hop=mv?-Math.round(Math.abs(Math.sin(player.prog/16*Math.PI))*3):Math.round(Math.sin(frame/18)*1);const sx=Math.round(fol.px+8-w/2-camX),sy=Math.round(fol.py+15-h-camY);
- ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(sx+5,sy+h-3,w-10,3);ctx.drawImage(s,sx,sy+hop);
+ ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(sx+5,sy+h-3,w-10,3);blit(s,sx,sy+hop);
  const d=teamLead();if(d&&d.shiny&&(frame>>3)%4===0){ctx.fillStyle='#fff6c0';ctx.fillRect(sx+3+((frame>>5)%3)*6,sy+hop+2,2,2)}}
 // ---- Team tab ----
 let teamUI={edit:null,swap:null,rel:null};
