@@ -177,8 +177,11 @@ h4{margin:6px 0 4px;font-size:12px;display:flex;align-items:center;gap:8px}
 #touch{display:none;width:100%;max-width:640px;justify-content:space-between;align-items:center;padding:0 14px;pointer-events:none}
 body.touch #touch{display:flex}
 body.touch:not(.portrait) #touch{position:fixed;left:0;right:0;bottom:10px;max-width:none;opacity:.55}
-#dpad{display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(3,54px);pointer-events:auto}
-#dpad button,#abtns button{font-size:20px;border-radius:10px;background:#3b2f5c;color:#fff;border:3px solid #0b0816;box-shadow:0 3px 0 #0b0816;touch-action:none}
+#stick{position:relative;width:132px;height:132px;border-radius:50%;pointer-events:auto;touch-action:none;background:radial-gradient(circle,rgba(59,47,92,.35) 0,rgba(59,47,92,.6) 70%);border:3px solid #0b0816;box-shadow:inset 0 0 0 6px rgba(255,255,255,.08),0 3px 0 #0b0816}
+#stick::before{content:'';position:absolute;inset:14px;border-radius:50%;border:2px dashed rgba(255,255,255,.18)}
+#knob{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#6a5a9a,#3b2f5c 60%);border:3px solid #0b0816;box-shadow:0 3px 0 #0b0816;pointer-events:none;transition:transform .08s}
+#stick.active #knob{transition:none}#stick.run #knob{background:radial-gradient(circle at 35% 30%,#ffd84a,#e8a020 60%)}
+#abtns button{font-size:20px;border-radius:10px;background:#3b2f5c;color:#fff;border:3px solid #0b0816;box-shadow:0 3px 0 #0b0816;touch-action:none}
 #abtns{display:flex;gap:10px;align-items:center;pointer-events:auto}
 #abtns button{width:64px;height:64px;border-radius:50%;font-size:18px}
 #abtns #tA{background:#e8443a}#abtns #tB{background:#2f6fd6;width:54px;height:54px}#abtns #tM{width:44px;height:44px;font-size:14px;background:#555}
@@ -219,7 +222,7 @@ body.touch:not(.portrait) #touch{position:fixed;left:0;right:0;bottom:10px;max-w
   <div id="creator" class="box hidden"></div>
   <div id="daily" class="box hidden"></div><div id="toast"></div><div id="achToast" class="box"></div><div id="banner"></div>
  </div></div>
- <div id="touch"><div id="dpad"><span></span><button data-d="up">▲</button><span></span><button data-d="left">◀</button><span></span><button data-d="right">▶</button><span></span><button data-d="down">▼</button><span></span></div><div id="abtns"><button id="tM">☰</button><button id="tB">B</button><button id="tA">A</button></div></div>
+ <div id="touch"><div id="stick"><div id="knob"></div></div><div id="abtns"><button id="tM">☰</button><button id="tB">B</button><button id="tA">A</button></div></div>
 </div>
 <script>/*QUESTIONS*/</script>
 <script>/*GAME*/</script>

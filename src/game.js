@@ -1611,7 +1611,18 @@ function bindZoom(){
  $('#game').addEventListener('touchmove',e=>{if(e.touches.length!==2||!pd)return;const d=dist(e.touches);if(d/pd>1.3){setZoom(-1);pd=d}else if(d/pd<.77){setZoom(1);pd=d}},{passive:true});
  $('#game').addEventListener('touchend',e=>{if(e.touches.length<2)pd=0},{passive:true});
  $('#btnZin').onclick=()=>setZoom(-1);$('#btnMus').onclick=()=>setMusic(!SETS.music);$('#btnDaily').onclick=()=>openDaily();updMusicBtn();$('#btnFs').onclick=()=>toggleFS();$('#btnZout').onclick=()=>setZoom(1);updZoomBtns()}
-function bindTouch(){document.querySelectorAll('[data-d]').forEach(b=>{const d=b.dataset.d;const on=e=>{e.preventDefault();setDir(d,1);if(state!=='world')press('DIR',d)},off=e=>{e.preventDefault();setDir(d,0)};b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointerleave',off);b.addEventListener('pointercancel',off)});
+// Virtual joystick: drag the knob; it snaps to the 4 walking directions. Push to the edge to run, let go to stop.
+function bindTouch(){const st=$('#stick'),kn=$('#knob');let pid=null,cur=null,stickRun=false;
+ const setCur=d=>{if(d===cur)return;if(cur)setDir(cur,0);cur=d;if(d){setDir(d,1);if(state!=='world')press('DIR',d)}};
+ const move=e=>{const r=st.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,R=r.width*.36;
+  let dx=e.clientX-cx,dy=e.clientY-cy;const m=Math.hypot(dx,dy);if(m>R){dx*=R/m;dy*=R/m}
+  kn.style.transform=`translate(${dx}px,${dy}px)`;
+  if(m<r.width*.12){setCur(null)}else setCur(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'));
+  const run=m>=R*.98;if(run!==stickRun){stickRun=run;held.run=run?1:0;st.classList.toggle('run',run)}};
+ const end=e=>{if(e.pointerId!==pid)return;pid=null;setCur(null);if(stickRun){stickRun=false;held.run=0}st.classList.remove('active','run');kn.style.transform=''};
+ st.addEventListener('pointerdown',e=>{e.preventDefault();pid=e.pointerId;try{st.setPointerCapture(pid)}catch(_){};st.classList.add('active');move(e)});
+ st.addEventListener('pointermove',e=>{if(e.pointerId===pid){e.preventDefault();move(e)}});
+ ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>st.addEventListener(ev,end));
  const tb=(id,fn)=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();fn()});
  tb('#tA',()=>press('A'));tb('#tB',()=>{held.run=1;press('B')});$('#tB').addEventListener('pointerup',()=>held.run=0);tb('#tM',()=>press('MENU'))}
 
