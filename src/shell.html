@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Dino Quest"><meta name="theme-color" content="#100b1e">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Brady's Gridiron Dino Quest</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:radial-gradient(ellipse at center,#2a1f48 0%,#100b1e 75%);overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#wrap{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+#holder{position:relative}
+#game{position:absolute;left:0;top:0;width:640px;height:416px;transform-origin:0 0;background:#000;border-radius:6px;overflow:hidden;font-family:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;color:#1a1230;font-size:12px;box-shadow:0 0 0 4px #3b2f5c,0 0 0 8px #0b0816,0 18px 50px rgba(0,0,0,.6)}
+#cv{position:absolute;left:0;top:0;width:640px;height:416px;image-rendering:pixelated;image-rendering:crisp-edges}
+.hidden{display:none!important}
+.box{background:#fdf8ec;border:3px solid #1a1230;border-radius:7px;box-shadow:inset 0 0 0 2px #e6dbbd,0 3px 0 rgba(0,0,0,.35)}
+button{font-family:inherit;font-weight:700;cursor:pointer;border:2px solid #1a1230;border-radius:5px;background:#fff6dc;color:#1a1230;font-size:11px;padding:4px 8px;box-shadow:0 2px 0 #1a1230}
+button:hover:not(:disabled){background:#ffe9a8}
+button:active:not(:disabled){transform:translateY(2px);box-shadow:none}
+button:disabled{opacity:.4;cursor:default}
+.bar{height:7px;background:#3a3050;border:2px solid #1a1230;border-radius:4px;overflow:hidden;flex:1}
+.bar i{display:block;height:100%;width:100%;background:#3ccf5a;transition:width .5s ease,background .3s}
+small{font-size:10px}
+.good{color:#1f8a3a}.bad{color:#c62828}.crit{color:#d48a00}.quick{color:#1f6fd6}.fire{color:#e8501c}.muted{color:#888}
+/* HUD */
+#hud{position:absolute;inset:0;pointer-events:none}
+#hudL{position:absolute;left:6px;top:6px;padding:4px 8px 4px 4px;display:flex;gap:6px;align-items:center;width:200px}
+#face{width:36px;height:26px;image-rendering:pixelated;background:#cfe8ff;border:2px solid #1a1230;border-radius:4px}
+#hudL>div{flex:1}
+#hudName{font-weight:800;font-size:11px;display:flex;justify-content:space-between}
+#hudHpRow{display:flex;align-items:center;gap:4px;margin-top:2px}
+#hudHpT{font-size:10px;font-weight:700;min-width:46px;text-align:right}
+#hudCoins{font-size:10px;font-weight:700;margin-top:1px}
+#hudR{position:absolute;right:6px;top:6px;padding:4px 8px 4px 4px;display:flex;gap:6px;align-items:center;max-width:300px}
+#compass{width:24px;height:24px}
+#objective{font-weight:700;font-size:10px;line-height:1.25}
+#trophies{font-weight:800;font-size:11px;white-space:nowrap}
+#buffs{position:absolute;left:8px;top:58px;display:flex;gap:3px}
+.buff{background:#fdf8ec;border:2px solid #1a1230;border-radius:5px;padding:0 3px;font-size:12px}
+.buff small{font-size:9px;font-weight:800;margin-left:1px}
+#hudBtns{position:absolute;right:6px;bottom:6px;display:flex;gap:4px;pointer-events:auto}
+#hudBtns button{font-size:10px;padding:3px 6px;opacity:.9}
+#toast{position:absolute;left:50%;top:44px;transform:translate(-50%,-20px);background:#1a1230;color:#fff6dc;padding:6px 12px;border-radius:6px;font-weight:700;opacity:0;transition:.25s;pointer-events:none;white-space:nowrap;z-index:30}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#achToast{position:absolute;left:50%;top:-90px;transform:translateX(-50%);display:flex;gap:9px;align-items:center;padding:7px 12px 7px 7px;min-width:300px;z-index:40;transition:top .35s cubic-bezier(.3,1.4,.6,1);pointer-events:none;border-width:3px}
+#achToast.show{top:52px}
+#daily{position:absolute;inset:8px;z-index:30;display:flex;flex-direction:column;padding:8px 12px}
+.dhead{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;padding-bottom:5px;border-bottom:2px dashed #cbbd98}
+.dots{display:flex;gap:4px}.dots i{width:12px;height:12px;border-radius:3px;border:2px solid #1a1230;background:#fff}.dots i.g{background:#3ccf5a}.dots i.r{background:#e84030}.dots i.c{background:#ffd84a}
+.dbar{height:8px;background:#3a3050;border:2px solid #1a1230;border-radius:4px;margin:6px 0;overflow:hidden}.dbar i{display:block;height:100%;width:100%}
+.dq{flex:1;display:flex;flex-direction:column;gap:6px}.dmeta{display:flex;gap:8px;align-items:center;font-size:10px;font-weight:800}
+.dtext{font-size:16px;font-weight:800;line-height:1.3;margin:4px 0}
+.dans{display:grid;grid-template-columns:1fr 1fr;gap:6px}.dans .ans{font-size:12.5px;min-height:38px}
+.dfb{padding:6px 9px;font-size:11.5px;line-height:1.4;margin-bottom:5px}.dfb.ok{background:#effbe9}.dfb.no{background:#fff0ee}
+.dgo{background:#ffd84a;font-size:13px;padding:6px 16px}
+.dintro{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;font-size:12px;line-height:1.5;padding:0 30px}
+.dintro h3{margin:2px 0;font-size:17px}.dintro p{margin:2px 0}
+.dscore{font-size:44px;font-weight:900;line-height:1}.dscore small{font-size:16px}.dgrid{font-size:22px;letter-spacing:2px}
+#dShare{width:80%;font-size:11px;font-family:inherit;border:2px solid #1a1230;border-radius:5px;padding:5px;resize:none}
+#achToast .ai{width:40px;height:40px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid #1a1230}
+#achToast b{font-size:13px}
+.card.ach.got{background:#fffbe6}
+.tierprog{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:4px}.tierprog span{border:2px solid;border-radius:5px;padding:2px 6px;font-size:10.5px;font-weight:700;background:#fff}
+.gearPrev{display:flex;gap:6px;align-items:center;background:#e8f4ff;border:2px solid #1a1230;border-radius:6px;padding:4px 8px;margin-bottom:6px;font-size:11px}
+.gearPrev canvas{width:54px;height:54px;image-rendering:pixelated}
+#banner{position:absolute;left:50%;top:150px;transform:translateX(-50%);background:rgba(26,18,48,.85);color:#ffe08a;padding:8px 22px;border:2px solid #ffe08a;border-radius:4px;font-weight:800;font-size:15px;letter-spacing:2px;opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap;text-transform:uppercase;z-index:5}
+#banner.show{opacity:1}
+/* dialog */
+#dialog{position:absolute;left:8px;right:8px;bottom:8px;min-height:92px;padding:10px 14px;font-size:13px;line-height:1.45;font-weight:600;z-index:10}
+#dlgText{min-height:38px;white-space:pre-wrap}
+#dlgNext{position:absolute;right:12px;bottom:6px;animation:bob .6s infinite alternate;font-size:12px}
+@keyframes bob{to{transform:translateY(3px)}}
+#dlgChoices{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px}
+#dlgChoices .ch{text-align:left;font-size:11px;padding:5px 8px}
+.sel{background:#ffe08a!important;outline:2px solid #e8900c}
+/* battle */
+#battle{position:absolute;inset:0}
+#enBox{position:absolute;left:10px;top:10px;width:250px;padding:6px 10px}
+#plBox{position:absolute;right:10px;top:194px;width:236px;padding:6px 10px}
+.nm{display:flex;justify-content:space-between;font-weight:800;font-size:13px}
+.hpRow{display:flex;gap:5px;align-items:center;margin-top:3px}.hpRow b{font-size:9px;background:#e8900c;color:#fff;padding:0 3px;border-radius:2px}
+#enTag{font-size:9px;font-weight:700;color:#6a5a8a;margin-top:2px}
+#plHpT{text-align:right;font-weight:800;font-size:11px}
+.xpbar{height:4px;background:#2a2440;border-radius:2px;overflow:hidden;margin-top:2px}.xpbar i{display:block;height:100%;background:#3aa0ff;transition:width .5s}
+#streak{font-size:10px;font-weight:800;color:#e8501c;min-height:12px}
+#qPanel{position:absolute;left:6px;right:6px;bottom:6px;padding:7px 10px 6px;min-height:146px;display:flex;flex-direction:column}
+#qMain{flex:1}
+#qHead{display:flex;gap:8px;align-items:center;font-size:10px;font-weight:800;margin-bottom:3px}
+.cat{color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:800;white-space:nowrap}
+.diff{color:#e8900c}
+#qTimer{margin-left:auto;color:#1f6fd6}
+#qText{font-size:13.5px;font-weight:800;line-height:1.3;margin-bottom:5px}
+#qAns{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.ans{text-align:left;font-size:11.5px;padding:5px 7px;line-height:1.2;min-height:28px}
+.ans b{display:inline-block;background:#1a1230;color:#fff;border-radius:3px;width:15px;text-align:center;margin-right:3px;font-size:10px}
+.ans.right{background:#7be08f!important;opacity:1!important}.ans.wrong{background:#ff8a80!important;opacity:1!important}.ans.gone{visibility:hidden}
+#qTools{display:flex;gap:5px;justify-content:flex-end;margin-top:5px}
+#qTools .tool{font-size:10px;padding:3px 7px}
+#qTools .go{font-size:12px;padding:5px 14px;background:#ffd84a}
+.qIntro{font-size:13.5px;font-weight:700;line-height:1.45;padding:4px 2px}
+.qIntro.vic{font-size:12px;line-height:1.5}
+.bagList{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}.bagList .tool{text-align:left;font-size:10px}
+#qFeedback{position:absolute;left:8px;top:8px;width:384px;padding:8px 11px;font-size:11.5px;line-height:1.4;font-weight:600;animation:pop .2s}
+#qFeedback.ok{background:#effbe9;border-color:#1f8a3a}#qFeedback.no{background:#fff0ee;border-color:#c62828}
+#qPic{position:absolute;left:8px;top:8px;padding:5px;z-index:2;background:#1a1230}#qPic canvas{display:block;image-rendering:pixelated;border-radius:3px}
+#qFeedback.picfb{left:auto;right:8px;width:360px}
+.filmPic{float:left;width:48px;height:auto;image-rendering:pixelated;margin:0 7px 3px 0;border:2px solid #1a1230;border-radius:3px}.film{overflow:hidden}
+.ggrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.ggrid.wide{grid-template-columns:repeat(3,1fr)}
+.gcard{border:2px solid #cbbd98;border-radius:6px;background:#fffdf6;padding:5px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;font-size:11px}
+.gcard canvas{width:96px;height:108px;image-rendering:pixelated;border:2px solid #1a1230;border-radius:4px}.ggrid.wide .gcard canvas{width:150px;height:105px}
+.gcard small{font-size:9.5px;line-height:1.3}
+@keyframes pop{from{transform:scale(.9);opacity:0}}
+/* menu */
+#menu,#shop,#mapView,#ending,#newGameBox{position:absolute;inset:8px;z-index:20;display:flex;flex-direction:column;padding:8px}
+#menuTabs{display:flex;gap:4px;flex-wrap:wrap;align-items:center;padding-bottom:6px;border-bottom:2px dashed #cbbd98}
+#menuTabs button{font-size:10.5px;padding:4px 7px}
+#menuTabs button.on{background:#1a1230;color:#ffe08a}
+#menuTabs .x{margin-left:auto}
+#menuTabs .coins{margin-left:auto;font-weight:800;font-size:13px}
+#menuBody,#menuBody2{overflow:auto;flex:1;padding-top:6px}
+.sub{font-size:11px;margin:2px 0 6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.card{display:flex;gap:7px;align-items:center;border:2px solid #cbbd98;border-radius:6px;padding:5px;background:#fffdf6;font-size:11px}
+.card>div:nth-child(2){flex:1}
+.card .ic{font-size:20px;width:28px;text-align:center}
+.card.won{background:#fff4c8;border-color:#e8900c}
+.dex .card canvas{width:58px;height:50px;image-rendering:pixelated;background:#e8f4ff;border-radius:4px}
+.stats{font-size:11.5px;background:#1a1230;color:#ffe08a;padding:5px 8px;border-radius:5px;margin-bottom:6px}
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:7px}
+.slot{border:2px solid #1a1230;border-radius:6px;padding:5px;font-size:10.5px;background:#fff;min-height:60px}
+.catbars{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin-bottom:6px}
+.cb{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700}.cb span{width:120px}.cb .bar{height:8px}
+h4{margin:6px 0 4px;font-size:12px;display:flex;align-items:center;gap:8px}
+.film{border-left:4px solid #cbbd98;padding:3px 7px;margin-bottom:5px;font-size:11px;line-height:1.35;background:#fffdf6}
+.opt{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.help{font-size:11px;line-height:1.5;background:#fffdf6;border:2px solid #cbbd98;border-radius:6px;padding:7px 9px}
+.danger{background:#ffd0cc}
+#mapView{align-items:center}
+#mapCv{width:424px;height:312px;image-rendering:pixelated;border:3px solid #1a1230;border-radius:4px;margin-top:4px}
+.mapLeg{font-size:10px;margin-top:4px}
+/* title */
+#title{position:absolute;inset:0;z-index:25;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(rgba(16,11,30,.35),rgba(16,11,30,.7))}
+#logo{text-align:center;color:#fff6dc;text-shadow:3px 3px 0 #1a1230,-1px -1px 0 #1a1230,1px -1px 0 #1a1230,-1px 1px 0 #1a1230}
+#logo .l1{font-size:15px;font-weight:800;letter-spacing:4px;color:#ffd84a}
+#logo .l2{font-size:38px;font-weight:900;letter-spacing:1px;line-height:1}
+#logo .l3{font-size:28px;font-weight:900;color:#7be08f;letter-spacing:3px}
+#titleArt{display:flex;align-items:flex-end;gap:30px;margin:8px 0 6px}
+#titleArt canvas{image-rendering:pixelated}
+#titleBtns{display:flex;gap:10px}
+#titleBtns button{font-size:14px;padding:8px 18px;background:#ffd84a}
+#titleFoot{color:#d8cff0;font-size:10px;margin-top:10px;text-align:center;text-shadow:1px 1px 0 #000}
+#newGameBox{inset:44px 100px;justify-content:center;align-items:center;text-align:center;gap:8px}
+#newGameBox .dbtn{width:330px;text-align:left;font-size:12px;padding:7px 10px}
+#ending{justify-content:center;align-items:center;text-align:center;gap:8px;background:#fff8dc}
+#ending h2{margin:0;font-size:24px}
+/* touch */
+#touch{display:none;width:100%;max-width:640px;justify-content:space-between;align-items:center;padding:0 14px;pointer-events:none}
+body.touch #touch{display:flex}
+body.touch:not(.portrait) #touch{position:fixed;left:0;right:0;bottom:10px;max-width:none;opacity:.55}
+#dpad{display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(3,54px);pointer-events:auto}
+#dpad button,#abtns button{font-size:20px;border-radius:10px;background:#3b2f5c;color:#fff;border:3px solid #0b0816;box-shadow:0 3px 0 #0b0816;touch-action:none}
+#abtns{display:flex;gap:10px;align-items:center;pointer-events:auto}
+#abtns button{width:64px;height:64px;border-radius:50%;font-size:18px}
+#abtns #tA{background:#e8443a}#abtns #tB{background:#2f6fd6;width:54px;height:54px}#abtns #tM{width:44px;height:44px;font-size:14px;background:#555}
+</style></head>
+<body>
+<div id="wrap">
+ <div id="holder"><div id="game">
+  <canvas id="cv" width="320" height="208"></canvas>
+  <div id="hud" class="hidden">
+   <div id="hudL" class="box"><canvas id="face" width="36" height="26"></canvas><div><div id="hudName"><span>BRADY</span><span id="hudLv">Lv1</span></div><div id="hudHpRow"><div class="bar"><i id="hudHp"></i></div><span id="hudHpT"></span></div><div id="hudCoins"></div></div></div>
+   <div id="hudR" class="box"><canvas id="compass" width="24" height="24"></canvas><div id="objective"></div><div id="trophies"></div></div>
+   <div id="buffs"></div>
+   <div id="hudBtns"><button id="btnDaily" title="Daily Challenge">📅 Daily</button><button id="btnMus" title="Music">🎵</button><button id="btnFs" title="Full screen (F)">⛶</button><button id="btnZin" title="Zoom in (+)">🔍＋</button><button id="btnZout" title="Zoom out (−)">🔍－</button><button id="btnMenu">☰ Menu (I)</button><button id="btnMap">🗺 Map (M)</button><button id="btnSnd">🔊</button></div>
+  </div>
+  <div id="battle" class="hidden">
+   <div id="enBox" class="box"><div class="nm"><span id="enName"></span><span id="enLv"></span></div><div class="hpRow"><b>HP</b><div class="bar"><i id="enHp"></i></div></div><div id="enTag"></div></div>
+   <div id="plBox" class="box"><div class="nm"><span>BRADY</span><span id="plLv"></span></div><div class="hpRow"><b>HP</b><div class="bar"><i id="plHp"></i></div></div><div id="plHpT"></div><div class="xpbar"><i id="plXp"></i></div><div id="streak"></div></div>
+   <div id="qPic" class="box hidden"><canvas id="qPicC" width="64" height="72"></canvas></div><div id="qFeedback" class="box hidden"></div>
+   <div id="qPanel" class="box"><div id="qMain"></div><div id="qTools"></div></div>
+  </div>
+  <div id="dialog" class="box hidden"><div id="dlgText"></div><div id="dlgChoices"></div><div id="dlgNext">▼</div></div>
+  <div id="menu" class="box hidden"><div id="menuTabs"></div><div id="menuBody"></div></div>
+  <div id="shop" class="box hidden"></div>
+  <div id="mapView" class="box hidden"><div id="menuTabs" style="width:100%"><b style="font-size:13px">🗺 The Gridiron Isles</b><button class="x" onclick="G.closeMenu()">✕</button></div><canvas id="mapCv" width="424" height="312"></canvas><div class="mapLeg">🟥 Head Coach (not beaten) · 🟩 beaten · ⬜ Kickoff Town · 🟨 legendary chest (guarded!) · 🔵 you (blinking)</div></div>
+  <div id="ending" class="box hidden"><div style="font-size:44px">🏆🦖🏈</div><h2>GRIDIRON LEGEND!</h2><div>Brady beat all seven Head Coaches and became Champion of the Gridiron Isles!</div><div id="endStats" class="help"></div><div><small>Keep exploring to find every legendary chest, fill your Dino-Dex, and clear your Film Room.</small></div><button onclick="G.endContinue()" style="font-size:13px;padding:7px 16px;background:#ffd84a">Keep Exploring ▶</button></div>
+  <div id="title">
+   <div id="logo"><div class="l1">★ BRADY'S ★</div><div class="l2">GRIDIRON</div><div class="l3">DINO QUEST</div></div>
+   <div id="titleArt"><canvas id="titleBrady" width="72" height="72"></canvas><canvas id="titleDino" width="116" height="100"></canvas></div>
+   <div id="titleBtns"><button id="btnCont" onclick="G.continueGame()">▶ Continue</button><button onclick="G.showNew()">🏈 New Game</button><button onclick="G.daily()">📅 Daily Challenge</button><button class="fsBtn" onclick="G.fs()">⛶ Full screen</button></div>
+   <div id="titleFoot">Answer NFL trivia to battle dinosaurs! · Arrows/WASD move · Space/Enter interact · I menu · M map · +/− zoom · F full screen</div>
+   <div id="newGameBox" class="box hidden"><b style="font-size:14px">Choose your difficulty</b>
+    <button class="dbtn" onclick="G.newGame('rookie')">🟢 ROOKIE: easier questions, dinos hit softer. Great for learning!</button>
+    <button class="dbtn" onclick="G.newGame('pro')">🟡 PRO: the standard experience.</button>
+    <button class="dbtn" onclick="G.newGame('allpro')">🔴 ALL-PRO: harder questions, dinos hit harder.</button>
+    <button class="dbtn" onclick="G.newGame('superfan')">🟣 SUPERFAN: deep-cut history, records &amp; classic games. Dinos hit HARD.</button>
+    <small>You can change this later in Menu → Options.</small></div>
+  </div>
+  <div id="daily" class="box hidden"></div><div id="toast"></div><div id="achToast" class="box"></div><div id="banner"></div>
+ </div></div>
+ <div id="touch"><div id="dpad"><span></span><button data-d="up">▲</button><span></span><button data-d="left">◀</button><span></span><button data-d="right">▶</button><span></span><button data-d="down">▼</button><span></span></div><div id="abtns"><button id="tM">☰</button><button id="tB">B</button><button id="tA">A</button></div></div>
+</div>
+<script>/*QUESTIONS*/</script>
+<script>/*GAME*/</script>
+</body></html>
