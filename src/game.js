@@ -1598,10 +1598,12 @@ function loop(t){requestAnimationFrame(loop);const dt=Math.min(100,t-lastT||16);
 
 // ---------------- LAYOUT / TOUCH ----------------
 const isTouch=('ontouchstart' in window)||matchMedia('(pointer:coarse)').matches;
+// Title-screen Features panel: on small screens it starts collapsed and opens as a large, readable overlay
+let featInit=false;function featFit(){const fb=$('#featBox');if(!fb)return;const k=$('#game').getBoundingClientRect().width/640,small=k<.8;fb.classList.toggle('small',small);if(!featInit){featInit=true;if(small)fb.classList.add('shut')}}
 function fit(){const holder=$('#holder'),g=$('#game');const portrait=innerHeight>innerWidth;const tc=isTouch?(portrait?200:0):0;
  const s=Math.min((innerWidth-8)/640,(innerHeight-tc-8)/416);g.style.transform=`scale(${s})`;holder.style.width=640*s+'px';holder.style.height=416*s+'px';
  document.body.classList.toggle('touch',isTouch);document.body.classList.toggle('portrait',portrait)}
-window.addEventListener('resize',fit);
+window.addEventListener('resize',()=>{fit();featFit()});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)saveGame(true)});
 window.addEventListener('pagehide',()=>saveGame(true));
 function bindZoom(){
@@ -1657,6 +1659,6 @@ function boot(){
  npcs.forEach(n=>{n.spr=null;n.px=n.x*16;n.py=n.y*16}); // sprites are built on first sight
  S=newSave();S.sound=false;bradySpr=makeBradySprites();bradyRed=tint(bradySpr.right[0],'#ff3030');player.px=POIS[0].x*16;player.py=POIS[0].y*16;
  $('#btnMenu').onclick=()=>{if(state==='world')openMenu()};$('#btnMap').onclick=()=>{if(state==='world')openMap()};$('#btnSnd').onclick=()=>{S.sound=!S.sound;updHud()};
- fit();bindTouch();bindZoom();showTitle();requestAnimationFrame(loop);
+ fit();featFit();bindTouch();bindZoom();showTitle();requestAnimationFrame(loop);
 }
 loadSigArt().then(boot);
