@@ -3039,7 +3039,22 @@ function czHeroSet(style,K){const sfx=K>1?'_hi':'',ks='heroart_'+style+sfx;const
  let oc=[0,0,0],ol=1e9;for(let i=0;i<S_.length/4;i++){if(S_[i*4+3]<128)continue;const l=S_[i*4]+S_[i*4+1]+S_[i*4+2];if(l<ol){ol=l;oc=[S_[i*4],S_[i*4+1],S_[i*4+2]]}}
  return CZH.sets[k]={key:k,styled:k!=='heroart'+sfx,src,mask,outc:oc,mean:sum.map((v,i)=>n[i]?v/n[i]:1)}}
 function czHeroReady(){return!!czHeroSet('shaggy')}
-function czCrisp(img,w,h,flip){w=Math.max(1,Math.round(w));h=Math.max(1,Math.round(h));const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');
+// a dark edge on every border pixel, like the hand-drawn body outline (the shrink step softens it away)
+function czOutline(c){const g=c.getContext('2d'),W=c.width,H=c.height,d=g.getImageData(0,0,W,H),a=d.data,o=new Uint8ClampedArray(a);
+ const op=(x,y)=>x>=0&&y>=0&&x<W&&y<H&&a[(y*W+x)*4+3]>0;
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=(y*W+x)*4;if(!a[i+3])continue;if(!op(x-1,y)||!op(x+1,y)||!op(x,y-1)||!op(x,y+1)){o[i]=a[i]*.25+8;o[i+1]=a[i+1]*.2+6;o[i+2]=a[i+2]*.25+14;o[i+3]=255}}
+ d.data.set(o);g.putImageData(d,0,0);return c}
+// snap a canvas to grid x grid blocks by sampling real colors (no blending), then outline it
+function czSnap(src,grid){const W=src.width,H=src.height,sw=Math.ceil(W/grid),sh=Math.ceil(H/grid),sm=document.createElement('canvas');sm.width=sw;sm.height=sh;
+ const a=src.getContext('2d').getImageData(0,0,W,H).data,g=sm.getContext('2d'),d=g.createImageData(sw,sh),o=d.data,off=Math.floor(grid/2);
+ for(let y=0;y<sh;y++)for(let x=0;x<sw;x++){const sx=Math.min(W-1,x*grid+off),sy=Math.min(H-1,y*grid+off),i=(sy*W+sx)*4,j=(y*sw+x)*4;
+  // keep a block if any of its pixels is solid, so thin lines (facemask bars) survive
+  let k=i;if(!a[i+3]){for(let yy=y*grid;yy<Math.min(H,y*grid+grid)&&k===i;yy++)for(let xx=x*grid;xx<Math.min(W,x*grid+grid);xx++){const q=(yy*W+xx)*4;if(a[q+3]){k=q;break}}}
+  o[j]=a[k];o[j+1]=a[k+1];o[j+2]=a[k+2];o[j+3]=a[k+3]}
+ g.putImageData(d,0,0);czOutline(sm);const c=document.createElement('canvas');c.width=W;c.height=H;const cg=c.getContext('2d');cg.imageSmoothingEnabled=false;cg.drawImage(sm,0,0,sw*grid,sh*grid);return c}
+// grid>1: snap the image to grid x grid blocks so it matches the body's pixel size
+function czCrisp(img,w,h,flip,grid){if(grid>1){const full=czCrisp(img,w,h,flip);return czSnap(full,grid)}
+ w=Math.max(1,Math.round(w));h=Math.max(1,Math.round(h));const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');
  g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';if(flip){g.translate(w,0);g.scale(-1,1)}g.drawImage(img,0,0,w,h);
  const d=g.getImageData(0,0,w,h);for(let i=3;i<d.data.length;i+=4)d.data[i]=d.data[i]>110?255:0;g.putImageData(d,0,0);return c}
 const CZH_FW=40,CZH_FH=48,CZH_DIRS=['down','up','left','right'];
@@ -3141,7 +3156,7 @@ function czHeroBuild(eq,hero,K){K=K||1;const SET=czHeroSet(hero.style,K);if(!SET
   cg.putImageData(out,-x0+PX,-y0+PY,x0,y0,CZH_FW,CZH_FH);
   if(H&&hx1>0){const img=COZY_IMG['helm_'+H+'_'+(d==='right'?'left':d)];if(img){
    const crown=H==='dinocrown',side=d==='left'||d==='right',headW=hx1-hx0+1;
-   const hw=crown?headW*.85:headW*(side?1.22:1.12),hc=czCrisp(img,hw,img.height*hw/img.width,d==='right');
+   const hw=crown?headW*.85:headW*(side?1.22:1.12),hc=czCrisp(img,hw,img.height*hw/img.width,d==='right',K>1?2:1);
    const hxp=Math.round((hx0+hx1+1)/2-hc.width/2+(d==='left'?-K:d==='right'?K:0))+PX;
    const top=(crown?hairTop-Math.round(hc.height*.55)+(hairTop<hy0?Math.round(hc.height*.25):0):hy0-K)+PY;
    const HANGS=hero.style==='long'||hero.style==='ponytail';
@@ -3198,9 +3213,9 @@ function czCarry(fr,dir,proj){const u=fr.hd||2,h=fr._head,cx=(h[0]+h[2])/2,ny=h[
   return{mode:'pocket',front:false,x:dir==='right'?a-1*u:b+1*u,y:hy,sz:.75,rot:true,flip:dir==='right'}}
  const o=czOffhand(fr,dir);return{mode:'off',front:false,x:o[0],y:o[1],sz:1,flip:dir==='left'}}
 // draw the carried item. X,Y = where the frame's top-left lands, sc = screen px per canvas px, S = full item size
-function czCarryDraw(im,fr,dir,proj,X,Y,sc,S,front,sparkle){const c=czCarry(fr,dir,proj);if(!!c.front!==!!front)return;
+function czCarryDraw(im,fr,dir,proj,X,Y,sc,S,front,sparkle,ap){const c=czCarry(fr,dir,proj);if(!!c.front!==!!front)return;
  if(c.lan){ctx.strokeStyle='#26222e';ctx.lineWidth=Math.max(1,Math.round(sc*(fr.hd||2)*.6));ctx.beginPath();c.lan.forEach(([x,y],k)=>{const a=X+x*sc,b=Y+y*sc;k?ctx.lineTo(a,b):ctx.moveTo(a,b)});ctx.stroke()}
- if(c.noItem)return;const s=Math.max(4,Math.round(S*c.sz)),x=Math.round(X+c.x*sc),y=Math.round(Y+c.y*sc);
+ if(c.noItem)return;const s=Math.max(4,Math.round(S*c.sz));if(ap>1){const k='_px'+s;im=im[k]||(im[k]=czSnap(czCrisp(im,s*2,s*2),Math.round(ap*2)))}const x=Math.round(X+c.x*sc),y=Math.round(Y+c.y*sc);
  ctx.save();ctx.translate(x,c.rot?y+s/2-s*.15:y);if(c.rot)ctx.rotate(Math.PI);if(c.flip)ctx.scale(-1,1);ctx.drawImage(im,-s/2,-s/2,s,s);ctx.restore();
  if(sparkle){ctx.fillStyle='#fff6c0';ctx.fillRect(x+s/2-1,y-s/2,1,1)}}
 // map: called once behind the body (front=false) and once in front (front=true)
@@ -3210,7 +3225,7 @@ drawMiniWeapon=(orig=>function(px,py,dir,front){if(!COZY_IMG.heroart||COZY_SHEET
  czCarryDraw(im,fr,dir,w.proj,ox,oy,1/fr.hd,8,!!front,w.r>=4&&(frame>>3)%3===0)})(drawMiniWeapon);
 // battle: the same, until it's thrown
 function czBattleHeld(bs,X,Y,front){if(!bs||!bs._hand||!bs._head||!S)return;if(B&&B.anim&&B.anim.type==='atk')return;const w=GEAR[S.equip.weapon];const im=w&&COZY_IMG['held_'+w.proj];if(!im)return;
- czCarryDraw(im,bs,'right',w.proj,X,Y,spW(bs)*3/bs.width,16,!!front,false)}
+ const sc=spW(bs)*3/bs.width;czCarryDraw(im,bs,'right',w.proj,X,Y,sc,16,!!front,false,1.01)}
 
 // battle: a 3x-detail version of the same player, drawn 1:1 in the battle scene (same size on screen)
 let bradyBattle=null;
