@@ -18,7 +18,7 @@ The game ships as one self-contained `index.html` (served by GitHub Pages). Edit
 | `src/cozy_dinos.js` | Dinos and bosses from the drawn sprites, color variants, Dome-type family. |
 | `src/cozy_items.js` | Item icons, map chests and the thrown items in battle. |
 | `src/cozy_hero.js` | Player and townspeople from the drawn base + hairstyle sheets: recoloring, gear, helmets, carried items, Sail-type Dex card. |
-| `src/cozy_season.js` | The saved day/night clock (Day N) and the Season Goals awards: Two-Minute Drill, One-Week Season, Perfect Season. |
+| `src/cozy_season.js` | The saved day/night clock (Day N), the Season Goals awards (Two-Minute Drill, One-Week Season, Perfect Season) and the difficulty coach that suggests moving up or down. |
 | `art/cozy/sprites/` | Every drawn sprite (embedded into `index.html` by the build). See `art/cozy/README.md`. |
 | `build.py` | Combines all of the above into `index.html`. |
 

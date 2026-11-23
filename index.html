@@ -3267,6 +3267,32 @@ Object.defineProperty(ACH.find(a=>a.id==='perfect'),'d',{get(){let t='Earn every
 // show the day in the Progress tab
 renderMenu=ccPatch(renderMenu,[["Steps ${S.steps}</div>","Steps ${S.steps} · ☀️ Day ${czDay()}</div>"]]);
 
+// ============================================================================
+//  DIFFICULTY COACH: watches recent challenges on the current difficulty and
+//  suggests moving up (or down) after a challenge ends. Practice reps and the
+//  Daily Challenge don't count. "Not now" starts the count over;
+//  "Stop asking" turns it off for this save.
+// ============================================================================
+const CZ_DIFF_ORDER=['rookie','pro','allpro','superfan'],CZ_DIFF_NAME={rookie:'Rookie',pro:'Pro',allpro:'All-Pro',superfan:'Superfan'};
+const CZ_UP={answers:25,acc:.85,winsInRow:3},CZ_DOWN={answers:15,acc:.45,lossesOf4:3};
+function czDW(){let w=S.cz_dw;if(!w||w.d!==S.diff)w=S.cz_dw={d:S.diff,a:[],g:[]};return w}
+recordAnswer=(orig=>function(q,ok){orig(q,ok);if(!S||!B||(B.opts&&B.opts.practice))return;const w=czDW();w.a.push(ok?1:0);if(w.a.length>30)w.a.shift()})(recordAnswer);
+victory=(orig=>function(){const pr=B&&B.opts&&B.opts.practice;orig.apply(this,arguments);if(S&&!pr){const w=czDW();w.g.push(1);if(w.g.length>4)w.g.shift()}})(victory);
+defeat=(orig=>function(){const pr=B&&B.opts&&B.opts.practice;orig.apply(this,arguments);if(S&&!pr){const w=czDW();w.g.push(0);if(w.g.length>4)w.g.shift()}})(defeat);
+endBattle=(orig=>function(){orig.apply(this,arguments);setTimeout(czDiffCheck,900)})(endBattle);
+function czDiffCheck(){if(!S||S.cz_noDiffTips||state!=='world')return;const w=czDW(),n=w.a.length;
+ const acc=n?w.a.reduce((x,y)=>x+y,0)/n:0,i=CZ_DIFF_ORDER.indexOf(S.diff),last=w.g.slice(-CZ_UP.winsInRow);
+ const up=i<3&&n>=CZ_UP.answers&&acc>=CZ_UP.acc&&last.length===CZ_UP.winsInRow&&last.every(x=>x);
+ const down=i>0&&((n>=CZ_DOWN.answers&&acc<=CZ_DOWN.acc)||(w.g.length>=4&&w.g.filter(x=>!x).length>=CZ_DOWN.lossesOf4));
+ if(!up&&!down)return;const cur=CZ_DIFF_NAME[S.diff],nx=CZ_DIFF_ORDER[i+(up?1:-1)],nn=CZ_DIFF_NAME[nx],right=w.a.reduce((x,y)=>x+y,0);
+ const msg=up?`📈 Coach's note: you've got ${right} of your last ${n} ${cur} questions right and won ${CZ_UP.winsInRow} in a row. Ready to move up to ${nn}? Tougher questions, and wins there count toward the harder-difficulty awards.`
+  :`📉 Coach's note: ${cur} is giving you a tough time lately (${right} of your last ${n} right). Want to drop to ${nn} for a while? Easier questions help you learn, and you can move back up any time.`;
+ choice(msg,[up?`Move up to ${nn}`:`Switch to ${nn}`,'Not now','Stop asking'],k=>{
+  if(k===0){S.diff=nx;S.cz_dw={d:nx,a:[],g:[]};toast(`${up?'📈':'📉'} Difficulty: ${nn}`);saveGame(true)}
+  else if(k===1){w.a=[];w.g=[]} // start the count over: another 25 answers (or 15 if struggling) before asking again
+  else{S.cz_noDiffTips=1;toast('Got it. Change difficulty any time in Menu → Options.')}
+  if(k!==0)saveGame(true)})}
+
 loadSigArt().then(boot);
 </script>
 <!-- GoatCounter visitor stats: loaded only on the GitHub Pages site -->
