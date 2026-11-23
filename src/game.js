@@ -770,7 +770,7 @@ function routeStep(){const r=route;r.tiles=routeTiles(r);const p=player;
  if(!r.adj&&p.x===r.gx&&p.y===r.gy){route=null;return}
  let nx,ny;const nxt=r.path&&r.path[0];if(nxt&&Math.abs(nxt[0]-p.x)+Math.abs(nxt[1]-p.y)===1&&walkable(nxt[0],nxt[1])&&!r.npc){[nx,ny]=nxt;r.path.shift()}
  else{const path=findPath(r.gx,r.gy,r.adj);if(!path||!path.length){if(++r.fail>40||!path){route=null;if(!path){SFX.bump()}}return}r.fail=0;r.path=path;[nx,ny]=r.path.shift()}
- const d=nx>p.x?'right':nx<p.x?'left':ny>p.y?'down':'up';p.dir=d;p.tx=nx;p.ty=ny;p.moving=true;p.spd=(held.run?4:2)*(1+teamPerks().spd/100);folStep(p.x,p.y,nx,ny)}
+ const d=nx>p.x?'right':nx<p.x?'left':ny>p.y?'down':'up';p.dir=d;p.tx=nx;p.ty=ny;p.moving=true;p.spd=(held.run?3:1.5)*(1+teamPerks().spd/100);folStep(p.x,p.y,nx,ny)}
 function clickTile(tx,ty){if(state!=='world'||excl>0||!inb(tx,ty))return;
  const r={gx:tx,gy:ty,adj:false,act:false,path:null,fail:0};
  const n=npcs.find(n=>(n.x===tx&&n.y===ty)||(n.moving&&n.tx===tx&&n.ty===ty));
@@ -795,7 +795,7 @@ function updateWorld(){
  const p=player;
  if(p.moving){p.prog+=p.spd;p.anim+=p.spd/1.6;if(p.prog>=16){p.prog=0;p.moving=false;p.x=p.tx;p.y=p.ty;onStep()}}
  if(!p.moving&&state==='world'){if(curDir())route=null;else if(route)routeStep();}
- if(!p.moving&&state==='world'){const d=curDir();if(d){p.dir=d;const nx=p.x+DX[d],ny=p.y+DY[d];if(walkable(nx,ny)){p.tx=nx;p.ty=ny;p.moving=true;p.spd=(held.run?4:2)*(1+teamPerks().spd/100);folStep(p.x,p.y,nx,ny)}else if(p.bump--<=0){p.bump=18;SFX.bump();bumpFx={x:nx,y:ny,t:24}}}else p.anim=0}
+ if(!p.moving&&state==='world'){const d=curDir();if(d){p.dir=d;const nx=p.x+DX[d],ny=p.y+DY[d];if(walkable(nx,ny)){p.tx=nx;p.ty=ny;p.moving=true;p.spd=(held.run?3:1.5)*(1+teamPerks().spd/100);folStep(p.x,p.y,nx,ny)}else if(p.bump--<=0){p.bump=18;SFX.bump();bumpFx={x:nx,y:ny,t:24}}}else p.anim=0}
  p.px=(p.x+(p.tx-p.x)*p.prog/16)*16;p.py=(p.y+(p.ty-p.y)*p.prog/16)*16;folPos();
  for(const n of npcs){
   if(n.moving){n.prog+=1;if(n.prog>=16){n.prog=0;n.moving=false;n.x=n.tx;n.y=n.ty}}
