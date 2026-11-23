@@ -2626,7 +2626,8 @@ function czParticles(x0,y0,vw,vh){const P=COZY.parts,L=lightLevel();
  if(L.dark>.4&&frame%14===0&&P.length<260){const tx=x0+((Math.random()*vw)|0),ty=y0+((Math.random()*vh)|0);if(inb(tx,ty)){const t=map[idx(tx,ty)];if(t===T.TALL||t===T.GRASS||t===T.FLOWER||t===T.JUNGLE)P.push({k:'fly',x:tx*16+Math.random()*16,y:ty*16+Math.random()*16,vx:0,vy:0,t:0,m:260,ph:Math.random()*6})}}
  ctx.save();
  for(let i=P.length-1;i>=0;i--){const p=P[i];p.t++;if(p.t>p.m){P.splice(i,1);continue}const sx=p.x-camX,sy=p.y-camY;
-  if(p.k==='smoke'){p.x+=p.vx;p.y+=p.vy;p.s+=.035;const a=.38*(1-p.t/p.m);ctx.fillStyle=`rgba(${190-L.dark*90},${190-L.dark*80},${196-L.dark*60},${a})`;ell(sx,sy,p.s,p.s*.85)}
+  if(p.k==='dust'){p.x+=p.vx;p.y+=p.vy;p.vx*=.9;p.vy*=.9;p.s+=.06;const a=.75*(1-p.t/p.m);ctx.fillStyle=`rgba(${p.c},${a})`;ell(sx,sy,p.s,p.s*.7)}
+  else if(p.k==='smoke'){p.x+=p.vx;p.y+=p.vy;p.s+=.035;const a=.38*(1-p.t/p.m);ctx.fillStyle=`rgba(${190-L.dark*90},${190-L.dark*80},${196-L.dark*60},${a})`;ell(sx,sy,p.s,p.s*.85)}
   else if(p.k==='leaf'){p.x+=p.vx+Math.sin(p.t/18+p.ph)*.35;p.y+=p.vy;ctx.globalAlpha=Math.min(1,(p.m-p.t)/30);ctx.fillStyle=p.c;const f=(p.t>>3)%2;ctx.fillRect(Math.round(sx*2)/2,Math.round(sy*2)/2,f?1.5:1,f?1:1.5);ctx.globalAlpha=1}
  }
  ctx.restore()}
@@ -2733,6 +2734,13 @@ function czDensify(){
 genWorld=(orig=>function(){orig();try{czDensify()}catch(e){console.warn('densify',e)}})(genWorld);
 // old saves: if the new scenery now sits on the saved spot, step to the nearest open tile
 startPlayer=(orig=>function(){if(S&&inb(S.x,S.y)&&SOLID.has(map[idx(S.x,S.y)])){let best=null,bd=1e9;for(let b=-4;b<=4;b++)for(let a=-4;a<=4;a++){const x=S.x+a,y=S.y+b;if(inb(x,y)&&!SOLID.has(map[idx(x,y)])&&a*a+b*b<bd){bd=a*a+b*b;best=[x,y]}}if(best){S.x=best[0];S.y=best[1]}}return orig()})(startPlayer);
+
+// little dust puffs at Brady's feet as he walks (bigger when running); color follows the ground
+const CZ_DUST={[T.PATH]:'232,212,175',[T.SAND]:'232,210,160',[T.MFLOOR]:'180,170,150',[T.GRASS]:'205,215,170',[T.TALL]:'190,205,150',[T.FLOWER]:'205,215,170',[T.BRIDGE]:'170,135,95'};
+onStep=(orig=>function(){orig.apply(this,arguments);if(state!=='world'||!COZY.parts||COZY.parts.length>250)return;const t=map[idx(player.x,player.y)],c=CZ_DUST[t]||CZ_DUST[base[idx(player.x,player.y)]];if(!c)return;
+ const run=held.run,n=run?3:2,vert=!DX[player.dir],by=player.y*16+16+(player.dir==='up'?2:0);
+ for(let i=0;i<n;i++){const side=i%2?1:-1,bx=player.x*16+8+(vert?side*(6+Math.random()*2):-DX[player.dir]*8+(Math.random()-.5)*4);
+  COZY.parts.push({k:'dust',x:bx,y:by+(Math.random()-.5)*2,vx:(vert?side*.3:-DX[player.dir]*.35)*(run?1.4:1),vy:-.04-Math.random()*.05,s:1.7+Math.random()*.8,t:0,m:run?26:20,c})}})(onStep);
 
 // =====================================================================
 //  COZY CHARACTER MODEL  (16 x 23 world units, drawn at 2x = 32 x 46 px)
