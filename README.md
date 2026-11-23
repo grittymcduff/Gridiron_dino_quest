@@ -13,7 +13,13 @@ The game ships as one self-contained `index.html` (served by GitHub Pages). Edit
 | `src/shell.html` | Page layout, HTML overlays (HUD, battle panel, menus) and all CSS. Contains `/*QUESTIONS*/` and `/*GAME*/` placeholders. |
 | `src/questions.js` | The trivia bank (`RAW_Q`, `SUPER_Q`), NPC tips (`TIPS`), and the combined `QB` list. |
 | `src/game.js` | The game engine: world generation, sprites, tiles, battles, menus, achievements, music, Daily Challenge, picture questions, saving. |
-| `build.py` | Combines the three files into `index.html`. |
+| `src/cozy.js` | The cozy art layer: tiles, palette, tall trees, buildings, lamps, day/night lighting, particles, denser scenery, UI skin. |
+| `src/cozy_chars.js` | Character drawing helpers and function patching (`ccPatch`). |
+| `src/cozy_dinos.js` | Dinos and bosses from the drawn sprites, color variants, Dome-type family. |
+| `src/cozy_items.js` | Item icons, map chests and the thrown items in battle. |
+| `src/cozy_hero.js` | Player and townspeople from the drawn base + hairstyle sheets: recoloring, gear, helmets, carried items, Sail-type Dex card. |
+| `art/cozy/sprites/` | Every drawn sprite (embedded into `index.html` by the build). See `art/cozy/README.md`. |
+| `build.py` | Combines all of the above into `index.html`. |
 
 ```
 python3 build.py
