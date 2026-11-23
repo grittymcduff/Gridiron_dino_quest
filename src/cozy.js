@@ -6,8 +6,8 @@
 const COZY={
  outline:'#24160f',
  lightMode:(()=>{try{return localStorage.getItem('dinoCozyLight')||'auto'}catch(e){return'auto'}})(),
- cycle:60*60*8,          // full day/night cycle = 8 minutes
- cycleStart:.47,         // start at sunset so night shows up quickly
+ cycle:60*60*10,         // full day/night cycle = 10 minutes (about 5 1/2 of daylight)
+ cycleStart:.03,         // a new save starts in the early morning
  lights:null,lamps:[],chimneys:[],lanterns:[],parts:[],
  treeSpr:null,pineSpr:null,lampSpr:null,chimSpr:null,wallLantern:null,glowW:null,glowB:null,glowO:null,
  lm:null,
@@ -244,10 +244,10 @@ function czDrawTree(tx,ty){const sx=tx*16-camX,sy=ty*16-camY,sway=Math.round(Mat
 
 function lightLevel(){ // returns {dark:0..1, warm:0..1}
  const m=COZY.lightMode;if(m==='day')return{dark:0,warm:0};if(m==='dusk')return{dark:.32,warm:.8};if(m==='night')return{dark:.74,warm:0};
- const p=((COZY.cycleStart+frame/COZY.cycle)%1);
- if(p<.42)return{dark:0,warm:0};if(p<.5){const t=(p-.42)/.08;return{dark:t*.32,warm:t}}
- if(p<.56){const t=(p-.5)/.06;return{dark:.32+t*.42,warm:1-t}}if(p<.9)return{dark:.74,warm:0};
- const t=(p-.9)/.1;return{dark:.74*(1-t),warm:Math.sin(t*Math.PI)*.6}}
+ const p=czDayPhase();
+ if(p<.55)return{dark:0,warm:0};if(p<.62){const t=(p-.55)/.07;return{dark:t*.32,warm:t}}
+ if(p<.67){const t=(p-.62)/.05;return{dark:.32+t*.42,warm:1-t}}if(p<.92)return{dark:.74,warm:0};
+ const t=(p-.92)/.08;return{dark:.74*(1-t),warm:Math.sin(t*Math.PI)*.6}}
 
 drawWorld=function(){
  const ppx=player.px,ppy=player.py;

@@ -2346,8 +2346,8 @@ const COZY_ART={"boss_captain_longneck": "data:image/png;base64,iVBORw0KGgoAAAAN
 const COZY={
  outline:'#24160f',
  lightMode:(()=>{try{return localStorage.getItem('dinoCozyLight')||'auto'}catch(e){return'auto'}})(),
- cycle:60*60*8,          // full day/night cycle = 8 minutes
- cycleStart:.47,         // start at sunset so night shows up quickly
+ cycle:60*60*10,         // full day/night cycle = 10 minutes (about 5 1/2 of daylight)
+ cycleStart:.03,         // a new save starts in the early morning
  lights:null,lamps:[],chimneys:[],lanterns:[],parts:[],
  treeSpr:null,pineSpr:null,lampSpr:null,chimSpr:null,wallLantern:null,glowW:null,glowB:null,glowO:null,
  lm:null,
@@ -2584,10 +2584,10 @@ function czDrawTree(tx,ty){const sx=tx*16-camX,sy=ty*16-camY,sway=Math.round(Mat
 
 function lightLevel(){ // returns {dark:0..1, warm:0..1}
  const m=COZY.lightMode;if(m==='day')return{dark:0,warm:0};if(m==='dusk')return{dark:.32,warm:.8};if(m==='night')return{dark:.74,warm:0};
- const p=((COZY.cycleStart+frame/COZY.cycle)%1);
- if(p<.42)return{dark:0,warm:0};if(p<.5){const t=(p-.42)/.08;return{dark:t*.32,warm:t}}
- if(p<.56){const t=(p-.5)/.06;return{dark:.32+t*.42,warm:1-t}}if(p<.9)return{dark:.74,warm:0};
- const t=(p-.9)/.1;return{dark:.74*(1-t),warm:Math.sin(t*Math.PI)*.6}}
+ const p=czDayPhase();
+ if(p<.55)return{dark:0,warm:0};if(p<.62){const t=(p-.55)/.07;return{dark:t*.32,warm:t}}
+ if(p<.67){const t=(p-.62)/.05;return{dark:.32+t*.42,warm:1-t}}if(p<.92)return{dark:.74,warm:0};
+ const t=(p-.92)/.08;return{dark:.74*(1-t),warm:Math.sin(t*Math.PI)*.6}}
 
 drawWorld=function(){
  const ppx=player.px,ppy=player.py;
@@ -3229,6 +3229,43 @@ renderMenu=ccPatch(renderMenu,[["Types: <b>${Object.keys(S.dex).length}/8</b>","
 dexSpr=(orig=>function(f){if(f!=='sail')return orig(f);if(dexCache.sail)return dexCache.sail;const im=COZY_BOSS.commissioner_spino,ref=orig('rex');
  const c=document.createElement('canvas');c.width=ref.width;c.height=ref.height;if(ref.hd)c.hd=ref.hd;if(im){const g=c.getContext('2d'),s=Math.min(c.width/im.width,c.height/im.height);g.imageSmoothingEnabled=false;g.drawImage(im,(c.width-im.width*s)/2,c.height-im.height*s,im.width*s,im.height*s)}
  return dexCache.sail=c})(dexSpr);
+
+// ============================================================================
+//  SEASON CLOCK + SEASON ACHIEVEMENTS
+//  The day/night clock is saved with the game (S.st.ticks, 60 per second of play),
+//  so "Day N" keeps counting across sessions. One in-game day = COZY.cycle ticks (10 min).
+// ============================================================================
+function czTicks(){return S&&S.st&&S.st.ticks!=null&&state!=='title'?S.st.ticks:frame}
+function czDayPhase(){return(COZY.cycleStart+czTicks()/COZY.cycle)%1}
+function czDay(){return Math.floor(COZY.cycleStart+czTicks()/COZY.cycle)+1}
+const CZ_SEASON={days:15,realDays:7};
+// count play time; note the day and real days when the Commissioner falls
+let czLastFrame=0,czLastDay=0;
+loop=(orig=>function(t){const f0=frame;orig(t);const n=frame-f0;
+ if(!S||!S.st||state==='title'){czLastDay=0;return}
+ if(S.st.ticks==null)czSeasonInit();S.st.ticks+=n;
+ const d=czDay();if(czLastDay&&d>czLastDay&&state==='world')toast(`☀️ Day ${d}`);czLastDay=d;
+ if(S.champion&&S.st.champDay==null&&!S.st.lateStart){S.st.champDay=d;S.st.champReal=(Date.now()-S.st.startedAt)/864e5;saveGame(true)}})(loop);
+function czSeasonInit(){S.st.ticks=0;S.st.startedAt=Date.now();
+ // saves from before the clock existed can't prove their times, so the two season goals are off for them
+ if(!S.cz_new)S.st.lateStart=true}
+newSave=(orig=>function(...a){const s=orig(...a);s.cz_new=1;s.st.ticks=0;s.st.startedAt=Date.now();return s})(newSave);
+
+const CZ_TIMED=['season_days','season_week'];
+ACH.push(
+ {g:'Season Goals',id:'season_days',n:'Two-Minute Drill',d:`Out-coach Commissioner Spino by Day ${CZ_SEASON.days} of the in-game clock (about 2 1/2 hours of play).`,i:'⏱️',t:'plat',c:()=>S.st.champDay!=null&&S.st.champDay<=CZ_SEASON.days},
+ {g:'Season Goals',id:'season_week',n:'One-Week Season',d:`Out-coach Commissioner Spino within ${CZ_SEASON.realDays} real days of starting your save.`,i:'📆',t:'gold',c:()=>S.st.champReal!=null&&S.st.champReal<=CZ_SEASON.realDays},
+ {g:'Season Goals',id:'perfect',n:'Perfect Season',d:'',i:'💍',t:'plat',c:()=>czPerfect().done});
+// the ultimate award: every other achievement (not the two timed ones) and every side quest
+function czPerfect(){const ach=ACH.filter(a=>a.id!=='perfect'&&!CZ_TIMED.includes(a.id)),chests=items.filter(i=>i.kind==='chest'),sp=items.filter(i=>i.kind==='sparkle'),
+ helpers=npcs.filter(n=>n.kind==='giver'||n.kind==='quiz'),tot=totems;
+ const r={a:[ach.filter(a=>S.ach[a.id]).length,ach.length],c:[chests.filter(i=>S.taken[i.id]).length,chests.length],s:[sp.filter(i=>S.taken[i.id]).length,sp.length],
+  h:[helpers.filter(n=>S.npc[n.id]).length,helpers.length],t:[tot.filter(o=>S.totem[o.id]!=null).length,tot.length]};
+ r.done=Object.values(r).every(v=>!Array.isArray(v)||v[0]>=v[1]);return r}
+Object.defineProperty(ACH.find(a=>a.id==='perfect'),'d',{get(){let t='Earn every other achievement (the two timed goals aside), beat every coach, legend and secret boss, and finish every side quest: open every chest, find every sparkle, help every townsperson and rally at every totem.';
+ if(!S||!items.length)return t;const r=czPerfect();return t+` Progress: achievements ${r.a[0]}/${r.a[1]} · chests ${r.c[0]}/${r.c[1]} · sparkles ${r.s[0]}/${r.s[1]} · townsfolk ${r.h[0]}/${r.h[1]} · totems ${r.t[0]}/${r.t[1]}`}});
+// show the day in the Progress tab
+renderMenu=ccPatch(renderMenu,[["Steps ${S.steps}</div>","Steps ${S.steps} · ☀️ Day ${czDay()}</div>"]]);
 
 loadSigArt().then(boot);
 </script>
