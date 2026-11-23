@@ -2607,10 +2607,10 @@ drawWorld=function(){
  for(let ty=y0-1;ty<=y0+vh+4;ty++)for(let tx=x0-2;tx<=x0+vw+2;tx++){if(!inb(tx,ty))continue;const t=map[idx(tx,ty)];if(t===T.TREE||t===T.PINE)ents.push({y:ty*16,d:()=>czDrawTree(tx,ty)})}
  for(const l of COZY.lamps){const sx=l.tx*16-camX,sy=l.ty*16-camY;if(sx<-20||sx>CW+20||sy<-10||sy>CH+50)continue;ents.push({y:l.ty*16,d:()=>{ctx.fillStyle='rgba(12,10,24,.3)';ell(sx+9,sy+15,5,2);blit(COZY.lampSpr,sx+4,sy+16-34)}})}
  for(const it of items){if(Math.abs(it.x*16-ppx)>CW/2+40||Math.abs(it.y*16-ppy)>CH/2+40)continue;if(it.kind==='sparkle'&&S.taken[it.id])continue;ents.push({y:it.y*16,d:()=>drawItem(it)})}
- for(const n of npcs){if(Math.abs(n.px-ppx)>CW/2+40||Math.abs(n.py-ppy)>CH/2+40)continue;ents.push({y:n.py,d:()=>drawChar(n.spr||(n.spr=makeCharSprites(n.look)),n.dir,n.moving?1+((n.prog/8)|0)%2:0,n.px,n.py)})}
+ for(const n of npcs){if(Math.abs(n.px-ppx)>CW/2+40||Math.abs(n.py-ppy)>CH/2+40)continue;ents.push({y:n.py,d:()=>drawChar(n.spr||(n.spr=makeCharSprites(n.look)),n.dir,n.moving?[1,0,2,0][((n.prog/4)|0)%4]:0,n.px,n.py)})}
  for(const b of bosses){if(Math.abs(b.x*16-ppx)>CW/2+80||Math.abs(b.y*16-ppy)>CH/2+80)continue;ents.push({y:b.y*16,d:()=>drawBossMap(b)})}
  if(state!=='title'&&folVisible())ents.push({y:Math.min(fol.py,ppy)-.5,d:drawFollower});
- if(state!=='title')ents.push({y:ppy+.1,d:()=>{const n=bumpFx&&bumpFx.t>16?1:0;const fx=ppx+DX[player.dir]*n,fy=ppy+DY[player.dir]*n;drawAura(fx-camX,fy-camY);drawMiniWeapon(fx,fy,player.dir,false);drawChar(bradySpr,player.dir,player.moving?1+((player.anim/8)|0)%2:0,fx,fy);drawMiniWeapon(fx,fy,player.dir,true)}});
+ if(state!=='title')ents.push({y:ppy+.1,d:()=>{const n=bumpFx&&bumpFx.t>16?1:0;const fx=ppx+DX[player.dir]*n,fy=ppy+DY[player.dir]*n;drawAura(fx-camX,fy-camY);drawMiniWeapon(fx,fy,player.dir,false);drawChar(bradySpr,player.dir,player.moving?czWalkF(player.anim):0,fx,fy);drawMiniWeapon(fx,fy,player.dir,true)}});
  ents.sort((a,b)=>a.y-b.y).forEach(e=>e.d());
  if(state!=='title')drawBradyFx(ppx,ppy);
  czParticles(x0,y0,vw,vh);
@@ -2619,6 +2619,9 @@ drawWorld=function(){
  if(excl>0){const sx=ppx-camX+5,sy=ppy-camY-20;ctx.fillStyle=OUT;ctx.fillRect(sx-1,sy-1,8,12);ctx.fillStyle='#fff';ctx.fillRect(sx,sy,6,10);ctx.fillStyle='#e8443a';ctx.fillRect(sx+2,sy+1,2,5);ctx.fillRect(sx+2,sy+7,2,2)}
 };
 
+// walk cycle: stride, pass (standing frame), stride, pass. The base sheet's two stride
+// frames have the same leg forward, so flipping between only them looked frozen.
+function czWalkF(a){return[1,0,2,0][((a/5)|0)%4]}
 function czParticles(x0,y0,vw,vh){const P=COZY.parts,L=lightLevel();
  // falling leaves from autumn trees on screen
  if(frame%5===0&&P.length<260){const tx=x0+((Math.random()*(vw+2))|0),ty=y0+((Math.random()*(vh+2))|0);if(inb(tx,ty)&&map[idx(tx,ty)]===T.TREE){const tr=treeFor(tx,ty);if(tr.autumn||Math.random()<.25)P.push({k:'leaf',x:tx*16+8+(Math.random()-.5)*24,y:ty*16-20+Math.random()*10,vx:(Math.random()-.3)*.25,vy:.18+Math.random()*.12,t:0,m:220,c:tr.c,ph:Math.random()*6})}}
@@ -3202,7 +3205,7 @@ function czCarryDraw(im,fr,dir,proj,X,Y,sc,S,front,sparkle){const c=czCarry(fr,d
  if(sparkle){ctx.fillStyle='#fff6c0';ctx.fillRect(x+s/2-1,y-s/2,1,1)}}
 // map: called once behind the body (front=false) and once in front (front=true)
 drawMiniWeapon=(orig=>function(px,py,dir,front){if(!COZY_IMG.heroart||COZY_SHEETS.hero)return front?orig(px,py,dir):undefined;const w=GEAR[S.equip.weapon];const im=w&&COZY_IMG['held_'+w.proj];
- const f=player.moving?1+((player.anim/8)|0)%2:0,fr=bradySpr[dir]&&bradySpr[dir][f];if(!im||!fr||!fr._hand||!fr._head)return;
+ const f=player.moving?czWalkF(player.anim):0,fr=bradySpr[dir]&&bradySpr[dir][f];if(!im||!fr||!fr._hand||!fr._head)return;
  const sx=Math.round(px-camX),sy=Math.round(py-camY),ox=sx+8-spW(fr)/2,oy=sy+15-spH(fr)-(f?1:0);
  czCarryDraw(im,fr,dir,w.proj,ox,oy,1/fr.hd,8,!!front,w.r>=4&&(frame>>3)%3===0)})(drawMiniWeapon);
 // battle: the same, until it's thrown

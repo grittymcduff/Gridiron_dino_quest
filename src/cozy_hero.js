@@ -191,7 +191,7 @@ function czCarryDraw(im,fr,dir,proj,X,Y,sc,S,front,sparkle){const c=czCarry(fr,d
  if(sparkle){ctx.fillStyle='#fff6c0';ctx.fillRect(x+s/2-1,y-s/2,1,1)}}
 // map: called once behind the body (front=false) and once in front (front=true)
 drawMiniWeapon=(orig=>function(px,py,dir,front){if(!COZY_IMG.heroart||COZY_SHEETS.hero)return front?orig(px,py,dir):undefined;const w=GEAR[S.equip.weapon];const im=w&&COZY_IMG['held_'+w.proj];
- const f=player.moving?1+((player.anim/8)|0)%2:0,fr=bradySpr[dir]&&bradySpr[dir][f];if(!im||!fr||!fr._hand||!fr._head)return;
+ const f=player.moving?czWalkF(player.anim):0,fr=bradySpr[dir]&&bradySpr[dir][f];if(!im||!fr||!fr._hand||!fr._head)return;
  const sx=Math.round(px-camX),sy=Math.round(py-camY),ox=sx+8-spW(fr)/2,oy=sy+15-spH(fr)-(f?1:0);
  czCarryDraw(im,fr,dir,w.proj,ox,oy,1/fr.hd,8,!!front,w.r>=4&&(frame>>3)%3===0)})(drawMiniWeapon);
 // battle: the same, until it's thrown
