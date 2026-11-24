@@ -18,6 +18,7 @@ const CZ_EMOTES=[['wave','👋'],['cheer','🎉'],['thumbs','👍'],['spike','�
 const CZ_PHRASES=['GG!','Wanna battle?','Follow me!','Nice catch!','Over here!','Be right back'];
 const CZ_CODE_CHARS='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 function czNewCode(){let s='';const a=new Uint32Array(8);crypto.getRandomValues(a);for(let i=0;i<8;i++){s+=CZ_CODE_CHARS[a[i]%CZ_CODE_CHARS.length];if(i===3)s+='-'}return s}
+function czFmtCode(c){return c&&c.length===8?c.slice(0,4)+'-'+c.slice(4):c||''}
 function czCleanCode(c){return String(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,16)}
 function czCleanName(n){return String(n||'Player').replace(/[^A-Za-z0-9 _'.-]/g,'').trim().slice(0,12)||'Player'}
 
@@ -44,7 +45,7 @@ async function czNetJoin(code){code=czCleanCode(code);if(!code||code.length<4)re
  ch.on('presence',{event:'sync'},()=>czPresenceSync());
  for(const f of CZ_NET.onChannel)try{f(ch)}catch(e){}
  ch.subscribe(async st=>{if(CZ_NET.ch!==ch)return;
-  if(st==='SUBSCRIBED'){CZ_NET.status='on';czNetUI();await ch.track(czTrackMeta());ch.send({type:'broadcast',event:'hello',payload:{id:CZ_NET.id}});czSendPos(true);czPing(code)}
+  if(st==='SUBSCRIBED'){const first=CZ_NET.status!=='on'&&!CZ_NET.toldOn;CZ_NET.status='on';czNetUI();if(first){CZ_NET.toldOn=1;toast(`🌐 You're online in room ${czFmtCode(code)}`)}await ch.track(czTrackMeta());ch.send({type:'broadcast',event:'hello',payload:{id:CZ_NET.id}});czSendPos(true);czPing(code)}
   else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){CZ_NET.status='retrying';czNetUI()}
   else if(st==='CLOSED'&&CZ_NET.room){CZ_NET.status='retrying';czNetUI()}})}
 function czNetLeave(keepCode){const ch=CZ_NET.ch;CZ_NET.ch=null;CZ_NET.peers={};if(ch){try{ch.untrack();ch.unsubscribe();CZ_NET.sb&&CZ_NET.sb.removeChannel(ch)}catch(e){}}
@@ -110,7 +111,7 @@ CZ_HOOKS.ents.push((x0,y0,vw,vh,ents)=>{if(!CZ_NET.ch)return;
  w.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.k)czSendEmote(b.dataset.k);else if(b.dataset.p!=null)czSendEmote(+b.dataset.p)};document.body.appendChild(w);
  const box=document.getElementById('hudBtns');if(box){const b=document.createElement('button');b.id='btnNet';b.title='Online room';b.textContent='🌐';b.onclick=()=>czNetDialog(true);box.insertBefore(b,box.firstChild);
   const e2=document.createElement('button');e2.id='btnEmo';e2.title='Emotes (E)';e2.textContent='💬';e2.style.display='none';e2.onclick=()=>czEmoteWheel();box.insertBefore(e2,box.firstChild)}
- const tb=document.getElementById('titleBtns');if(tb){const b=document.createElement('button');b.textContent='🌐 Play online';b.onclick=()=>czNetDialog(true);tb.appendChild(b)}
+ const tb=document.getElementById('titleBtns');if(tb){const b=document.createElement('button');b.id='btnTitleNet';b.onclick=()=>czNetDialog(true);tb.appendChild(b)}
  window.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.code==='KeyE'&&state==='world'&&CZ_NET.status==='on'){czEmoteWheel();e.preventDefault()}
   else if(e.code==='Escape'){czEmoteWheel(false);czNetDialog(false)}})})();
 function czEmoteWheel(show){const w=$('#czEmo');if(!w)return;if(show===undefined)show=w.style.display!=='block';w.style.display=show&&CZ_NET.status==='on'?'block':'none'}
@@ -120,11 +121,24 @@ function czNetDialog(show){const d=$('#czNet');if(!d)return;if(!show){d.style.di
   const inp=$('#czCode');inp.onkeydown=e=>{if(e.key==='Enter')$('#czJoin').click()};setTimeout(()=>inp.focus(),30);
   $('#czJoin').onclick=()=>{const c=czCleanCode(inp.value);if(c.length<4){inp.focus();return}czNetJoin(c);czNetDialog(true)};
   $('#czMake').onclick=()=>{czNetJoin(czNewCode());czNetDialog(true)};$('#czClose').onclick=()=>czNetDialog(false);return}
- const code=CZ_NET.room.length===8?CZ_NET.room.slice(0,4)+'-'+CZ_NET.room.slice(4):CZ_NET.room,names=Object.values(CZ_NET.peers).map(q=>czCleanName(q.look&&q.look.name));
+ const code=czFmtCode(CZ_NET.room);
+ if(CZ_NET.status==='waiting'||state==='title'){const sv=loadSave();
+  b.innerHTML=`<h3>✅ You've joined the room!</h3><div class="code">${code}</div>
+   <p><b>Next step:</b> ${sv?'continue your game or start a new one':'start a new game'} to see your friends in the world.</p>
+   <p>Share this code with friends so they can join too. You'll rejoin this room automatically every time you play.</p>
+   <div class="row">${sv?`<button id="czGoCont">▶ Continue (Lv ${sv.lv})</button>`:''}<button id="czGoNew">🏈 New Game</button></div>
+   <div class="row"><button id="czCopy">Copy code</button><button id="czLeave">Leave room</button></div>`;
+  if(sv)$('#czGoCont').onclick=()=>{czNetDialog(false);G.continueGame()};$('#czGoNew').onclick=()=>{czNetDialog(false);G.showNew()};
+  $('#czCopy').onclick=()=>{try{navigator.clipboard.writeText(code);toast('📋 Room code copied')}catch(e){}};$('#czLeave').onclick=()=>{czNetLeave(false);czNetDialog(true)};return}
+ const names=Object.values(CZ_NET.peers).map(q=>czCleanName(q.look&&q.look.name));
  const stat={on:'Connected',connecting:'Connecting…',retrying:'Reconnecting…',error:"Couldn't connect (playing solo)",waiting:'Start or continue a game to go online'}[CZ_NET.status]||'';
  b.innerHTML=`<h3>🌐 Online room</h3><div class="code">${code}</div><p>${stat}${CZ_NET.status==='on'?` · ${names.length} other player${names.length===1?'':'s'} here`:''}</p>
   ${names.length?'<ul>'+names.map(n=>`<li>${n}</li>`).join('')+'</ul>':''}<p>Friends join with this code. Press <b>E</b> or 💬 for emotes.</p>
   <div class="row"><button id="czCopy">Copy code</button><button id="czLeave">Leave room</button></div><div class="row"><button id="czClose">Close</button></div>`;
  $('#czCopy').onclick=()=>{try{navigator.clipboard.writeText(code);toast('📋 Room code copied')}catch(e){}};$('#czLeave').onclick=()=>{czNetLeave(false);czNetDialog(true)};$('#czClose').onclick=()=>czNetDialog(false)}
-function czNetUI(){const b=$('#btnNet');if(b){const n=Object.keys(CZ_NET.peers).length;b.textContent=CZ_NET.status==='on'?`🌐 ${n+1}`:(CZ_NET.status==='off'||CZ_NET.status==='error'||CZ_NET.status==='waiting')?'🌐':'🌐…';b.title=CZ_NET.room?'Online room '+CZ_NET.room:'Play online'}
+function czNetUI(){const tbn=$('#btnTitleNet');if(tbn)tbn.textContent=CZ_NET.room?`🌐 Room ${czFmtCode(CZ_NET.room)}`:'🌐 Play online';const b=$('#btnNet');if(b){const n=Object.keys(CZ_NET.peers).length;b.textContent=CZ_NET.status==='on'?`🌐 ${n+1}`:(CZ_NET.status==='off'||CZ_NET.status==='error'||CZ_NET.status==='waiting')?'🌐':'🌐…';b.title=CZ_NET.room?'Online room '+CZ_NET.room:'Play online'}
  const e=$('#btnEmo');if(e)e.style.display=CZ_NET.status==='on'?'':'none';const d=$('#czNet');if(d&&d.style.display==='flex'&&!(document.activeElement&&document.activeElement.id==='czCode'))czNetDialog(true)}
+
+// pick up a remembered room on the title screen too (shows on the button; connects once a game starts)
+try{const rc=localStorage.getItem('dq_room');if(rc){CZ_NET.room=rc;CZ_NET.status='waiting'}}catch(e){}
+czNetUI();
