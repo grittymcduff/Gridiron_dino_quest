@@ -70,3 +70,43 @@ talk=(orig=>function(n){const it=CZ_GOLD.riddles[n.id];if(n.kind==='tip'&&it&&!S
 
 genWorld=(orig=>function(){orig();try{czGoldFlowers();czSetupRiddles()}catch(e){console.warn('gold',e)}})(genWorld);
 openMap=(orig=>function(){orig();czMapLegendText()})(openMap);
+
+// ---------------------------------------------------------------------------
+//  SMOOTH EDGES: where two kinds of ground meet at a corner (water/sand/path/
+//  gravel/grass), the corner is rounded off with the neighbour's texture, so
+//  coasts and paths curve instead of stepping. Water edges get a foam line.
+// ---------------------------------------------------------------------------
+const CZ_EDGE={cache:{},data:{},R:13};
+const CZ_EDGE_OK=new Set([T.TALL,T.FLOWER,T.JUNGLE,T.BRUSH,T.TREE,T.PINE,T.ROCK,T.CACTUS]);
+function czCls(t){return t===T.WATER?'w':t===T.SAND?'s':t===T.PATH?'p':t===T.MFLOOR?'m':(t===T.GRASS||t===T.TALL||t===T.FLOWER||t===T.JUNGLE)?'g':null}
+const CZ_EDGE_PAIRS=new Set(['wg','gw','ws','sw','wp','pw','wm','mw','pg','gp','sg','gs','ps','sp','mg','gm','pm','mp']);
+function czTexData(c,f){const k=c+f;if(CZ_EDGE.data[k])return CZ_EDGE.data[k];const t={w:T.WATER,s:T.SAND,p:T.PATH,m:T.MFLOOR,g:T.GRASS}[c];
+ const im=tileCache[t][c==='w'?f:0],g=im.getContext('2d');return CZ_EDGE.data[k]=g.getImageData(0,0,im.width,im.height)}
+// corners: 0=NW 1=NE 2=SW 3=SE; B[k] = neighbour class for that corner (or null)
+function czEdgeImg(A,B,f){const key=A+B.join('')+f;if(CZ_EDGE.cache[key])return CZ_EDGE.cache[key];
+ const N=32,R=CZ_EDGE.R,c=hdCanvas(N,N,2),g=c.getContext('2d'),out=g.createImageData(N,N),o=out.data;
+ B.forEach((b,k)=>{if(!b)return;const src=czTexData(b,f).data,cx=k&1?N-R:R,cy=k&2?N-R:R,x0=k&1?N-R:0,y0=k&2?N-R:0,wat=A==='w'||b==='w';
+  for(let y=y0;y<y0+R;y++)for(let x=x0;x<x0+R;x++){const d=Math.hypot(x+.5-cx,y+.5-cy);if(d<=R)continue;const i=(y*N+x)*4;
+   // foam: a light rim on the water side of the curve
+   if(wat&&d<R+1.6){const onWater=b==='w';if(onWater){o[i]=232;o[i+1]=244;o[i+2]=255;o[i+3]=255;continue}}
+   o[i]=src[i];o[i+1]=src[i+1];o[i+2]=src[i+2];o[i+3]=255}
+  if(wat&&A==='w'){// land filled into a water corner: foam just inside the water
+   for(let y=y0;y<y0+R;y++)for(let x=x0;x<x0+R;x++){const d=Math.hypot(x+.5-cx,y+.5-cy);if(d<=R&&d>R-1.5){const i=(y*N+x)*4;o[i]=232;o[i+1]=244;o[i+2]=255;o[i+3]=230}}}});
+ g.putImageData(out,0,0);return CZ_EDGE.cache[key]=c}
+CZ_HOOKS.ground.push((x0,y0,vw,vh)=>{const f=(frame>>5)&1,cl=(x,y)=>inb(x,y)?czCls(groundAt(x,y)):null;
+ for(let ty=y0-1;ty<=y0+vh+1;ty++)for(let tx=x0-1;tx<=x0+vw+1;tx++){if(!inb(tx,ty))continue;const t=map[idx(tx,ty)];if(LAYERED.has(t)&&!CZ_EDGE_OK.has(t))continue;const A=czCls(groundAt(tx,ty));if(!A)continue;
+  const n=cl(tx,ty-1),s=cl(tx,ty+1),w=cl(tx-1,ty),e=cl(tx+1,ty);if(n===A&&s===A&&w===A&&e===A)continue;
+  const corner=(a,b,d)=>a&&a===b&&a!==A&&CZ_EDGE_PAIRS.has(A+a)&&(d===a||d===null||true)?a:null;
+  const B=[corner(n,w,cl(tx-1,ty-1)),corner(n,e,cl(tx+1,ty-1)),corner(s,w,cl(tx-1,ty+1)),corner(s,e,cl(tx+1,ty+1))];
+  if(!B[0]&&!B[1]&&!B[2]&&!B[3])continue;blit(czEdgeImg(A,B,A==='w'||B.includes('w')?f:0),tx*16-camX,ty*16-camY)}});
+// foam on every water edge (the base game only lit the top and left), moving gently, plus a darker shallow band
+CZ_HOOKS.ground.unshift((x0,y0,vw,vh)=>{const land=(x,y)=>{if(!inb(x,y))return false;const m=map[idx(x,y)];return m!==T.WATER&&m!==T.BRIDGE&&m!==T.GATE};
+ for(let ty=y0-1;ty<=y0+vh+1;ty++)for(let tx=x0-1;tx<=x0+vw+1;tx++){if(!inb(tx,ty)||map[idx(tx,ty)]!==T.WATER)continue;const sx=tx*16-camX,sy=ty*16-camY;
+  const N=land(tx,ty-1),S_=land(tx,ty+1),W=land(tx-1,ty),E=land(tx+1,ty);if(!N&&!S_&&!W&&!E)continue;
+  ctx.fillStyle='rgba(20,52,110,.22)';if(N)ctx.fillRect(sx,sy+1,16,3);if(S_)ctx.fillRect(sx,sy+12,16,4);if(W)ctx.fillRect(sx+1,sy,3,16);if(E)ctx.fillRect(sx+12,sy,4,16);
+  for(let k=0;k<16;k++){const w=Math.sin((frame/22)+(tx*16+k)/5+ty)>.25?1:0,v=Math.sin((frame/22)+(ty*16+k)/5+tx)>.25?1:0;
+   ctx.fillStyle='rgba(236,246,255,.9)';if(N)ctx.fillRect(sx+k,sy+w,1,1);if(S_)ctx.fillRect(sx+k,sy+15-w,1,1);if(W)ctx.fillRect(sx+v,sy+k,1,1);if(E)ctx.fillRect(sx+15-v,sy+k,1,1);
+   ctx.fillStyle='rgba(220,238,255,.45)';if(N&&w)ctx.fillRect(sx+k,sy+2,1,1);if(S_&&w)ctx.fillRect(sx+k,sy+13,1,1);if(W&&v)ctx.fillRect(sx+2,sy+k,1,1);if(E&&v)ctx.fillRect(sx+13,sy+k,1,1)}}});
+// a few glints drifting across open water
+CZ_HOOKS.ground.push((x0,y0,vw,vh)=>{if(lightLevel().dark>.5)return;for(let ty=y0;ty<=y0+vh;ty++)for(let tx=x0;tx<=x0+vw;tx++){if(!inb(tx,ty)||map[idx(tx,ty)]!==T.WATER)continue;const h=hash(tx,ty);if(h%7)continue;
+ const ph=((frame+h)%160)/160;if(ph>.35)continue;const a=Math.sin(ph/.35*Math.PI);ctx.fillStyle=`rgba(255,255,255,${.75*a})`;const sx=tx*16-camX+(h>>3)%12+2,sy=ty*16-camY+(h>>5)%10+3;ctx.fillRect(sx,sy,3,1);ctx.fillRect(sx+1,sy-1,1,1)}});
