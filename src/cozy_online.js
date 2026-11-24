@@ -133,7 +133,7 @@ function czNetDialog(show){const d=$('#czNet');if(!d)return;if(!show){d.style.di
  const names=Object.values(CZ_NET.peers).map(q=>czCleanName(q.look&&q.look.name));
  const stat={on:'Connected',connecting:'Connecting…',retrying:'Reconnecting…',error:"Couldn't connect (playing solo)",waiting:'Start or continue a game to go online'}[CZ_NET.status]||'';
  b.innerHTML=`<h3>🌐 Online room</h3><div class="code">${code}</div><p>${stat}${CZ_NET.status==='on'?` · ${names.length} other player${names.length===1?'':'s'} here`:''}</p>
-  ${names.length?'<ul>'+names.map(n=>`<li>${n}</li>`).join('')+'</ul>':''}<p>Friends join with this code. Press <b>E</b> or 💬 for emotes.</p>
+  ${names.length?'<ul>'+names.map(n=>`<li>${n}</li>`).join('')+'</ul>':''}<p>Friends join with this code. Press <b>E</b> or 💬 for emotes. To <b>duel</b>, walk up to a friend and press <b>Space</b>, tap them, or use ⚔️ below.</p>
   <div class="row"><button id="czCopy">Copy code</button><button id="czLeave">Leave room</button></div><div class="row"><button id="czClose">Close</button></div>`;
  $('#czCopy').onclick=()=>{try{navigator.clipboard.writeText(code);toast('📋 Room code copied')}catch(e){}};$('#czLeave').onclick=()=>{czNetLeave(false);czNetDialog(true)};$('#czClose').onclick=()=>czNetDialog(false)}
 function czNetUI(){const tbn=$('#btnTitleNet');if(tbn)tbn.textContent=CZ_NET.room?`🌐 Room ${czFmtCode(CZ_NET.room)}`:'🌐 Play online';const b=$('#btnNet');if(b){const n=Object.keys(CZ_NET.peers).length;b.textContent=CZ_NET.status==='on'?`🌐 ${n+1}`:(CZ_NET.status==='off'||CZ_NET.status==='error'||CZ_NET.status==='waiting')?'🌐':'🌐…';b.title=CZ_NET.room?'Online room '+CZ_NET.room:'Play online'}

@@ -3855,7 +3855,7 @@ function czNetDialog(show){const d=$('#czNet');if(!d)return;if(!show){d.style.di
  const names=Object.values(CZ_NET.peers).map(q=>czCleanName(q.look&&q.look.name));
  const stat={on:'Connected',connecting:'Connecting…',retrying:'Reconnecting…',error:"Couldn't connect (playing solo)",waiting:'Start or continue a game to go online'}[CZ_NET.status]||'';
  b.innerHTML=`<h3>🌐 Online room</h3><div class="code">${code}</div><p>${stat}${CZ_NET.status==='on'?` · ${names.length} other player${names.length===1?'':'s'} here`:''}</p>
-  ${names.length?'<ul>'+names.map(n=>`<li>${n}</li>`).join('')+'</ul>':''}<p>Friends join with this code. Press <b>E</b> or 💬 for emotes.</p>
+  ${names.length?'<ul>'+names.map(n=>`<li>${n}</li>`).join('')+'</ul>':''}<p>Friends join with this code. Press <b>E</b> or 💬 for emotes. To <b>duel</b>, walk up to a friend and press <b>Space</b>, tap them, or use ⚔️ below.</p>
   <div class="row"><button id="czCopy">Copy code</button><button id="czLeave">Leave room</button></div><div class="row"><button id="czClose">Close</button></div>`;
  $('#czCopy').onclick=()=>{try{navigator.clipboard.writeText(code);toast('📋 Room code copied')}catch(e){}};$('#czLeave').onclick=()=>{czNetLeave(false);czNetDialog(true)};$('#czClose').onclick=()=>czNetDialog(false)}
 function czNetUI(){const tbn=$('#btnTitleNet');if(tbn)tbn.textContent=CZ_NET.room?`🌐 Room ${czFmtCode(CZ_NET.room)}`:'🌐 Play online';const b=$('#btnNet');if(b){const n=Object.keys(CZ_NET.peers).length;b.textContent=CZ_NET.status==='on'?`🌐 ${n+1}`:(CZ_NET.status==='off'||CZ_NET.status==='error'||CZ_NET.status==='waiting')?'🌐':'🌐…';b.title=CZ_NET.room?'Online room '+CZ_NET.room:'Play online'}
@@ -3991,6 +3991,25 @@ function escapeHTML(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'
 czNetDialog=(orig=>function(show){orig(show);if(!show||!CZ_NET.room||CZ_NET.status!=='on')return;const ul=$('#czNet ul');if(!ul)return;
  ul.innerHTML=Object.values(CZ_NET.peers).map(q=>`<li style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:3px 0">${czCleanName(q.look&&q.look.name)}${q.uid?`<button data-d="${q.id}" style="flex:0;min-width:0;padding:3px 8px;font-size:12px">⚔️ Duel</button>`:''}</li>`).join('');
  ul.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{czNetDialog(false);czDuelSetup(CZ_NET.peers[b.dataset.d])})})(czNetDialog);
+
+// ---- making duels easy to find ----
+function czPeerAt(x,y){for(const id in CZ_NET.peers){const q=CZ_NET.peers[id];if(Math.round(q.px/16)===x&&Math.round(q.py/16)===y)return q}return null}
+// 1) walk up to a friend and press Space/Enter (the same button as talking to townspeople)
+interact=(orig=>function(){if(CZ_NET.ch&&state==='world'&&!player.moving){const q=czPeerAt(player.x+DX[player.dir],player.y+DY[player.dir])||czPeerAt(player.x,player.y);if(q)return czDuelSetup(q)}return orig.apply(this,arguments)})(interact);
+// 2) tap or click a friend's character
+clickTile=(orig=>function(tx,ty){if(CZ_NET.ch&&state==='world'){const q=czPeerAt(tx,ty)||czPeerAt(tx,ty+1);if(q)return czDuelSetup(q)}return orig.apply(this,arguments)})(clickTile);
+// 3) a ⚔️ Duel button in the HUD whenever someone else is in the room
+(function(){const box=document.getElementById('hudBtns');if(!box)return;const b=document.createElement('button');b.id='btnDuel';b.title='Challenge a player to a duel';b.textContent='⚔️ Duel';b.style.display='none';
+ b.onclick=()=>{if(state==='world')czDuelChoose()};box.insertBefore(b,box.firstChild)})();
+czNetUI=(orig=>function(){orig.apply(this,arguments);const b=$('#btnDuel');if(b)b.style.display=CZ_NET.status==='on'&&Object.keys(CZ_NET.peers).length?'':'none'})(czNetUI);
+// 4) a hint over a friend's head when you're right next to them, and a one-time tip when the first friend shows up
+CZ_HOOKS.ents.push((x0,y0,vw,vh,ents)=>{if(!CZ_NET.ch||state!=='world')return;for(const id in CZ_NET.peers){const q=CZ_NET.peers[id];
+ if(Math.hypot(Math.round(q.px/16)-player.x,Math.round(q.py/16)-player.y)>1.5)continue;
+ ents.push({y:1e9-1,d:()=>{const spr=czPeerSprites(q.look),fr=spr[q.dir]&&spr[q.dir][0],h=fr?spH(fr):24,cx=q.px-camX+8,top=q.py-camY+15-h-(q.emote&&frame-q.emote.t<200?22:0);
+  ctx.save();ctx.font='bold 6px monospace';const t=('ontouchstart' in window)?'Tap to duel ⚔️':'Space: duel ⚔️',w=Math.ceil(ctx.measureText(t).width)+6,bx=Math.round(cx-w/2),by=Math.round(top-17+Math.sin(frame/12));
+  ctx.fillStyle='#2a1a12';ctx.fillRect(bx-1,by-1,w+2,10);ctx.fillStyle='#ffd84a';ctx.fillRect(bx,by,w,8);ctx.fillStyle='#2a1a12';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(t,Math.round(cx),by+4.5);ctx.restore()}})}});
+czPresenceSync=(orig=>function(){const before=Object.keys(CZ_NET.peers).length;orig.apply(this,arguments);if(!before&&Object.keys(CZ_NET.peers).length&&!CZ_NET.toldDuel){CZ_NET.toldDuel=1;
+ setTimeout(()=>toast('⚔️ Tip: walk up to a friend and press Space (or tap them) to challenge them to a duel'),2500)}})(czPresenceSync);
 
 loadSigArt().then(boot);
 </script>
