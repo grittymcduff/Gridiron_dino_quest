@@ -21,6 +21,8 @@ The game ships as one self-contained `index.html` (served by GitHub Pages). Edit
 | `src/cozy_season.js` | The saved day/night clock (Day N), the Season Goals awards (Two-Minute Drill, One-Week Season, Perfect Season) and the difficulty coach that suggests moving up or down. |
 | `src/cozy_world2.js` | World polish: hidden gold chests with clues (golden dragonflies, golden flowers, riddles), shorelines, town props, ambient life, weather. |
 | `src/cozy_online.js` | Online rooms: friends with the same room code see each other (Supabase Realtime broadcast + presence) and send emotes/preset phrases. Opt-in; solo play is unchanged. |
+| `src/cozy_duel.js` | Online duels: same 10 questions for both players, server-scored (see `server/duels.sql`), optional coin stake. |
+| `server/duels.sql` | Supabase setup for duels: tables, the `dq_duel_*` functions and the question bank. Re-run after editing questions. |
 | `art/cozy/sprites/` | Every drawn sprite (embedded into `index.html` by the build). See `art/cozy/README.md`. |
 | `build.py` | Combines all of the above into `index.html`. |
 

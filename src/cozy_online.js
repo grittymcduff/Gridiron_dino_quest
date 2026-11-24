@@ -11,7 +11,7 @@ const CZ_NET={
  url:'https://hqozayzhguqbsfahuruc.supabase.co',
  key:'sb_publishable_8Fmhu0ldNTpAIZnzmEdQjg_4DQU_23h', // publishable key: meant to be public
  lib:'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.js',
- room:null,ch:null,sb:null,status:'off',peers:{},sprites:{},last:null,lastSend:0,myEmote:null,lastEmote:0,
+ room:null,ch:null,sb:null,onChannel:[],status:'off',peers:{},sprites:{},last:null,lastSend:0,myEmote:null,lastEmote:0,
  // one id per tab (sessionStorage), so two tabs on the same computer are two players
  id:(()=>{try{let v=sessionStorage.getItem('dq_pid');if(!v){v=Math.random().toString(36).slice(2,10);sessionStorage.setItem('dq_pid',v)}return v}catch(e){return Math.random().toString(36).slice(2,10)}})()};
 const CZ_EMOTES=[['wave','👋'],['cheer','🎉'],['thumbs','👍'],['spike','🏈'],['dance','🕺'],['laugh','😂'],['heart','❤️'],['wow','😮']];
@@ -22,14 +22,19 @@ function czCleanCode(c){return String(c||'').toUpperCase().replace(/[^A-Z0-9]/g,
 function czCleanName(n){return String(n||'Player').replace(/[^A-Za-z0-9 _'.-]/g,'').trim().slice(0,12)||'Player'}
 
 // ---- connection ----------------------------------------------------------
+// anonymous sign-in: no email or password, just a per-tab id the server can trust for duels
+async function czNetAuth(){try{const{data}=await CZ_NET.sb.auth.getSession();let u=data&&data.session&&data.session.user;
+ if(!u){const r=await CZ_NET.sb.auth.signInAnonymously();if(r.error)throw r.error;u=r.data.user}CZ_NET.uid=u.id;CZ_NET.authErr=null}catch(e){CZ_NET.uid=null;CZ_NET.authErr=String(e&&e.message||e)}}
 function czLoadLib(){if(window.supabase&&window.supabase.createClient)return Promise.resolve();
  return new Promise((ok,bad)=>{const s=document.createElement('script');s.src=CZ_NET.lib;s.async=true;s.onload=()=>ok();s.onerror=()=>bad(new Error('lib'));document.head.appendChild(s)})}
 function czMyLook(){const h=S&&S.hero||{};return{name:czCleanName(h.name||'Brady'),hero:{style:h.style||'shaggy',hair:h.hair,skin:h.skin,fr:!!h.fr},eq:{helmet:S.equip.helmet,pads:S.equip.pads,cleats:S.equip.cleats}}}
+function czTrackMeta(){return{id:CZ_NET.id,uid:CZ_NET.uid||null,coins:S?S.coins:0,look:czMyLook(),...czMyPos()}}
 function czMyPos(){return{x:player.x,y:player.y,dir:player.dir,m:player.moving?1:0,r:held.run?1:0}}
 async function czNetJoin(code){code=czCleanCode(code);if(!code||code.length<4)return;czNetLeave(true);CZ_NET.room=code;try{localStorage.setItem('dq_room',code)}catch(e){}
  if(!S||state==='title'){CZ_NET.status='waiting';czNetUI();return}
  CZ_NET.status='connecting';czNetUI();
- try{await czLoadLib();if(!CZ_NET.sb)CZ_NET.sb=window.supabase.createClient(CZ_NET.url,CZ_NET.key,{realtime:{params:{eventsPerSecond:10}}})}
+ try{await czLoadLib();if(!CZ_NET.sb)CZ_NET.sb=window.supabase.createClient(CZ_NET.url,CZ_NET.key,{realtime:{params:{eventsPerSecond:10}},auth:{storage:window.sessionStorage,storageKey:'dq-auth',persistSession:true,autoRefreshToken:true}});
+  await czNetAuth()}
  catch(e){CZ_NET.status='error';czNetUI();toast("🌐 Couldn't reach the online room. Playing solo for now.");return}
  if(CZ_NET.room!==code)return;
  const ch=CZ_NET.sb.channel('dq-room-'+code,{config:{broadcast:{self:false},presence:{key:CZ_NET.id}}});CZ_NET.ch=ch;
@@ -37,8 +42,9 @@ async function czNetJoin(code){code=czCleanCode(code);if(!code||code.length<4)re
  ch.on('broadcast',{event:'emote'},({payload:p})=>{const q=CZ_NET.peers[p.id];if(q)q.emote={k:p.k,t:frame}});
  ch.on('broadcast',{event:'hello'},({payload:p})=>{if(p.id!==CZ_NET.id)czSendPos(true)});
  ch.on('presence',{event:'sync'},()=>czPresenceSync());
+ for(const f of CZ_NET.onChannel)try{f(ch)}catch(e){}
  ch.subscribe(async st=>{if(CZ_NET.ch!==ch)return;
-  if(st==='SUBSCRIBED'){CZ_NET.status='on';czNetUI();await ch.track({id:CZ_NET.id,look:czMyLook(),...czMyPos()});ch.send({type:'broadcast',event:'hello',payload:{id:CZ_NET.id}});czSendPos(true);czPing(code)}
+  if(st==='SUBSCRIBED'){CZ_NET.status='on';czNetUI();await ch.track(czTrackMeta());ch.send({type:'broadcast',event:'hello',payload:{id:CZ_NET.id}});czSendPos(true);czPing(code)}
   else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){CZ_NET.status='retrying';czNetUI()}
   else if(st==='CLOSED'&&CZ_NET.room){CZ_NET.status='retrying';czNetUI()}})}
 function czNetLeave(keepCode){const ch=CZ_NET.ch;CZ_NET.ch=null;CZ_NET.peers={};if(ch){try{ch.untrack();ch.unsubscribe();CZ_NET.sb&&CZ_NET.sb.removeChannel(ch)}catch(e){}}
@@ -49,7 +55,7 @@ async function czPing(code){try{const h=await crypto.subtle.digest('SHA-256',new
 function czPresenceSync(){const st=CZ_NET.ch?CZ_NET.ch.presenceState():{},seen=new Set();
  for(const k in st){const m=st[k]&&st[k][0];if(!m||m.id===CZ_NET.id)continue;seen.add(m.id);let p=CZ_NET.peers[m.id];
   if(!p){p=CZ_NET.peers[m.id]={id:m.id,px:m.x*16,py:m.y*16,tx:m.x,ty:m.y,dir:m.dir||'down',m:0,anim:0};toast(`🌐 ${czCleanName(m.look&&m.look.name)} joined`)}
-  p.look=m.look||p.look}
+  p.look=m.look||p.look;p.uid=m.uid||p.uid;p.coins=m.coins!=null?m.coins:p.coins}
  for(const id in CZ_NET.peers)if(!seen.has(id)){toast(`🌐 ${czCleanName(CZ_NET.peers[id].look&&CZ_NET.peers[id].look.name)} left`);delete CZ_NET.peers[id]}
  czNetUI()}
 function czPeerPos(p){const q=CZ_NET.peers[p.id];if(!q)return;q.tx=p.x;q.ty=p.y;q.dir=p.dir||q.dir;q.m=p.m;q.r=p.r;q.seen=frame;
@@ -65,7 +71,7 @@ loop=(orig=>function(t){const f0=frame;orig(t);if(!CZ_NET.ch||!S)return;const n=
  for(const id in CZ_NET.peers){const q=CZ_NET.peers[id],tx=q.tx*16,ty=q.ty*16,dx=tx-q.px,dy=ty-q.py,d=Math.hypot(dx,dy);
   const sp=(q.r?2.25:1.125)*n;if(d<=sp){q.px=tx;q.py=ty;q.walking=q.m&&q.seen&&frame-q.seen<20}else{q.px+=dx/d*sp;q.py+=dy/d*sp;q.walking=true;q.anim+=sp/1.6}}})(loop);
 // our look changed (new gear, new hair): update what others see
-rebuildBrady=(orig=>function(){const r=orig.apply(this,arguments);if(CZ_NET.ch&&CZ_NET.status==='on')try{CZ_NET.ch.track({id:CZ_NET.id,look:czMyLook(),...czMyPos()})}catch(e){}return r})(rebuildBrady);
+rebuildBrady=(orig=>function(){const r=orig.apply(this,arguments);if(CZ_NET.ch&&CZ_NET.status==='on')try{CZ_NET.ch.track(czTrackMeta())}catch(e){}return r})(rebuildBrady);
 startGame=(orig=>function(){const r=orig.apply(this,arguments);let code=null;try{code=localStorage.getItem('dq_room')}catch(e){}if(code)setTimeout(()=>czNetJoin(code),300);return r})(startGame);
 
 // ---- drawing other players, name tags and emote bubbles ----
@@ -101,7 +107,7 @@ CZ_HOOKS.ents.push((x0,y0,vw,vh,ents)=>{if(!CZ_NET.ch)return;
 @media(max-width:520px){#czEmo .em{grid-template-columns:repeat(4,1fr)}#czEmo .ph{grid-template-columns:repeat(2,1fr)}}`;document.head.appendChild(st);
  const d=document.createElement('div');d.id='czNet';d.innerHTML='<div class="box"></div>';d.onclick=e=>{if(e.target===d)czNetDialog(false)};document.body.appendChild(d);
  const w=document.createElement('div');w.id='czEmo';w.innerHTML='<div class="em">'+CZ_EMOTES.map(([k,e])=>`<button data-k="${k}" title="${k}">${e}</button>`).join('')+'</div><div class="ph">'+CZ_PHRASES.map((p,i)=>`<button data-p="${i}">${p}</button>`).join('')+'</div>';
- w.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.k)czSendEmote(b.dataset.k);else czSendEmote(+b.dataset.p)};document.body.appendChild(w);
+ w.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.k)czSendEmote(b.dataset.k);else if(b.dataset.p!=null)czSendEmote(+b.dataset.p)};document.body.appendChild(w);
  const box=document.getElementById('hudBtns');if(box){const b=document.createElement('button');b.id='btnNet';b.title='Online room';b.textContent='🌐';b.onclick=()=>czNetDialog(true);box.insertBefore(b,box.firstChild);
   const e2=document.createElement('button');e2.id='btnEmo';e2.title='Emotes (E)';e2.textContent='💬';e2.style.display='none';e2.onclick=()=>czEmoteWheel();box.insertBefore(e2,box.firstChild)}
  const tb=document.getElementById('titleBtns');if(tb){const b=document.createElement('button');b.textContent='🌐 Play online';b.onclick=()=>czNetDialog(true);tb.appendChild(b)}
