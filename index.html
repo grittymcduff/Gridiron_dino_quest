@@ -3754,13 +3754,20 @@ function czMyLook(){const h=S&&S.hero||{};return{name:czCleanName(h.name||'Brady
 function czBusy(){return state==='battle'?'battle':(state==='duel'&&typeof CZ_DUEL!=='undefined'&&CZ_DUEL.cur&&CZ_DUEL.cur.q)?'duel':null}
 function czTrackMeta(){return{id:CZ_NET.id,uid:CZ_NET.uid||null,coins:S?S.coins:0,busy:czBusy(),duel:(typeof CZ_DUEL!=='undefined'&&CZ_DUEL.cur&&CZ_DUEL.cur.q)?CZ_DUEL.cur.id:null,look:czMyLook(),...czMyPos()}}
 function czMyPos(){return{x:player.x,y:player.y,dir:player.dir,m:player.moving?1:0,r:held.run?1:0}}
-async function czNetJoin(code){code=czCleanCode(code);if(!code||code.length<4)return;czNetLeave(true);CZ_NET.room=code;try{localStorage.setItem('dq_room',code)}catch(e){}
+async function czNetJoin(code){code=czCleanCode(code);if(!code||code.length<4)return;
+ // already in (or joining) this room: nothing to do. Avoids a double join when the automatic rejoin and a manual Join overlap
+ if(CZ_NET.room===code&&CZ_NET.ch&&(CZ_NET.status==='on'||CZ_NET.status==='connecting'))return;
+ if(CZ_NET.joining){CZ_NET.pendingJoin=code;return}CZ_NET.joining=true;
+ try{await czNetJoinInner(code)}finally{CZ_NET.joining=false;const nx=CZ_NET.pendingJoin;CZ_NET.pendingJoin=null;if(nx&&nx!==CZ_NET.room)czNetJoin(nx)}}
+async function czNetJoinInner(code){await czNetLeave(true);CZ_NET.room=code;try{localStorage.setItem('dq_room',code)}catch(e){}
  if(!S||state==='title'){CZ_NET.status='waiting';czNetUI();return}
  CZ_NET.status='connecting';czNetUI();
  try{await czLoadLib();if(!CZ_NET.sb)CZ_NET.sb=window.supabase.createClient(CZ_NET.url,CZ_NET.key,{realtime:{params:{eventsPerSecond:10}},auth:{storage:window.sessionStorage,storageKey:'dq-auth',persistSession:true,autoRefreshToken:true}});
   await czNetAuth()}
  catch(e){CZ_NET.status='error';czNetUI();toast("🌐 Couldn't reach the online room. Playing solo for now.");return}
  if(CZ_NET.room!==code)return;
+ // drop any leftover connection to this room first (Supabase reuses a channel with the same name)
+ for(const c of (CZ_NET.sb.getChannels?CZ_NET.sb.getChannels():[]))if(c.topic==='realtime:dq-room-'+code)try{await CZ_NET.sb.removeChannel(c)}catch(e){}
  const ch=CZ_NET.sb.channel('dq-room-'+code,{config:{broadcast:{self:false},presence:{key:CZ_NET.id}}});CZ_NET.ch=ch;
  ch.on('broadcast',{event:'pos'},({payload:p})=>czPeerPos(p));
  ch.on('broadcast',{event:'emote'},({payload:p})=>{const q=CZ_NET.peers[p.id];if(q)q.emote={k:p.k,t:frame}});
@@ -3771,8 +3778,9 @@ async function czNetJoin(code){code=czCleanCode(code);if(!code||code.length<4)re
   if(st==='SUBSCRIBED'){const first=CZ_NET.status!=='on'&&!CZ_NET.toldOn;CZ_NET.status='on';czNetUI();if(first){CZ_NET.toldOn=1;toast(`🌐 You're online in room ${czFmtCode(code)}`)}await ch.track(czTrackMeta());ch.send({type:'broadcast',event:'hello',payload:{id:CZ_NET.id}});czSendPos(true);czPing(code)}
   else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){CZ_NET.status='retrying';czNetUI()}
   else if(st==='CLOSED'&&CZ_NET.room){CZ_NET.status='retrying';czNetUI()}})}
-function czNetLeave(keepCode){const ch=CZ_NET.ch;CZ_NET.ch=null;CZ_NET.peers={};if(ch){try{ch.untrack();ch.unsubscribe();CZ_NET.sb&&CZ_NET.sb.removeChannel(ch)}catch(e){}}
- if(!keepCode){CZ_NET.room=null;try{localStorage.removeItem('dq_room')}catch(e){}}CZ_NET.status=CZ_NET.room?'waiting':'off';czNetUI()}
+async function czNetLeave(keepCode){const ch=CZ_NET.ch;CZ_NET.ch=null;CZ_NET.peers={};
+ if(!keepCode){CZ_NET.room=null;try{localStorage.removeItem('dq_room')}catch(e){}}CZ_NET.status=CZ_NET.room?'waiting':'off';czNetUI();
+ if(ch){try{ch.untrack()}catch(e){}try{CZ_NET.sb&&await CZ_NET.sb.removeChannel(ch)}catch(e){}}}
 // keeps the free project awake while people play: one tiny row per room join (room stored as a hash, not the code)
 async function czPing(code){try{const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('dq:'+code)),hex=[...new Uint8Array(h)].slice(0,8).map(b=>b.toString(16).padStart(2,'0')).join('');
  await CZ_NET.sb.from('room_pings').insert({room:hex})}catch(e){}}
