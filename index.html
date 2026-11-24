@@ -3064,6 +3064,20 @@ function czCrisp(img,w,h,flip,grid){if(grid>1){const full=czCrisp(img,w,h,flip);
  g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';if(flip){g.translate(w,0);g.scale(-1,1)}g.drawImage(img,0,0,w,h);
  const d=g.getImageData(0,0,w,h);for(let i=3;i<d.data.length;i+=4)d.data[i]=d.data[i]>110?255:0;g.putImageData(d,0,0);return c}
 const CZH_FW=40,CZH_FH=48,CZH_DIRS=['down','up','left','right'];
+// side-view eye: on the face skin just behind the front edge, below any hair (every style, painted or not)
+function czSideEye(at,setPx,o){const{SG,K,hy0,hh,st,HR,hcx,FW,lum}=o,need=Math.max(2*K,Math.round(HR*.55));
+ // already has a painted eye? (a dark spot with face skin on both sides, in the front half of the face)
+ let seen=0;if(K>1)for(let y=Math.round(hy0+hh*.3);y<Math.min(st,hy0+hh*.9);y++)for(let x=1;x<FW-1;x++){if(SG*(x-hcx)<HR*.15||at(x,y)===2||lum(x,y)>200)continue;
+  let l=x-1,r=x+1;while(l>0&&at(l,y)!==2&&lum(l,y)<=200&&x-l<=K)l--;while(r<FW-1&&at(r,y)!==2&&lum(r,y)<=200&&r-x<=K)r++;
+  if(at(l,y)===2&&at(r,y)===2&&(r-l-1)<=K+1)seen++}
+ if(K>1&&seen>=K*3)return;   // small sprites: the painted eye merges into the hairline, so always add one
+ const front=y=>{if(SG>0){for(let x=FW-1;x>=0;x--)if(at(x,y)===2)return x}else{for(let x=0;x<FW;x++)if(at(x,y)===2)return x}return-1};
+ const runOk=(fx,y)=>{for(let i=0;i<need;i++)if(at(fx-SG*i,y)!==2)return false;return true};
+ const y1=Math.min(st-2*K,Math.round(hy0+hh*.85));
+ for(let y=Math.round(hy0+hh*.38);y<=y1;y++){const f=front(y);if(f<0||!runOk(f,y)||!runOk(front(y+2*K-1)<0?f:front(y+2*K-1),y+2*K-1))continue;
+  const px=f-SG*Math.round(Math.max(K,HR*.28))-(SG>0?K-1:0);
+  for(let a=0;a<K;a++)for(let b=0;b<2*K;b++)setPx(px+a,y+b,[42,26,20],0);
+  return}}
 function czHeroBuild(eq,hero,K){K=K||1;const SET=czHeroSet(hero.style,K);if(!SET)return null;const CZH_FW=40*K,CZH_FH=48*K;
  // under a helmet (not the crown) a drawn hairstyle is replaced by the bald head, so nothing pokes out or leaves holes;
  // long hair and ponytails keep the part that hangs below the helmet (drawn behind the body)
@@ -3109,7 +3123,7 @@ function czHeroBuild(eq,hero,K){K=K||1;const SET=czHeroSet(hero.style,K);if(!SET
   const setPx=(x,y,c,r)=>{if(x<0||y<0||x>=CZH_FW||y>=CZH_FH)return;const i=((y0+y)*W+x0+x)*4;O[i]=c[0];O[i+1]=c[1];O[i+2]=c[2];O[i+3]=255;role[(y0+y)*W+x0+x]=r};
   const alphaAt=(x,y)=>x<0||y<0||x>=CZH_FW||y>=CZH_FH?0:O[((y0+y)*W+x0+x)*4+3];
   // side-view eye (the base only has eyes on the front views)
-  if(SG&&!SET.styled){const ex=Math.round(hcx+SG*HR*.5-(SG<0?K:0)),ey=Math.round(hy0+hh*.5);for(let a=0;a<K;a++)for(let b=0;b<2*K;b++)setPx(ex+a,ey+b,OUTC,0)}
+  if(SG)czSideEye(at,setPx,{SG,K,hy0,hh,st,HR,hcx,FW:CZH_FW,lum:(x,y)=>{if(x<0||y<0||x>=CZH_FW||y>=CZH_FH)return 999;const i=((y0+y)*W+x0+x)*4;return O[i+3]?O[i]+O[i+1]+O[i+2]:999}})
   // freckles on the cheeks
   if(hero.fr&&d!=='up'){const pts=SG?[[.32,.72],[.55,.68]].map(([u,v])=>[hcx+SG*HR*u,hy0+hh*v]):[[-.5,.7],[-.3,.75],[.3,.75],[.5,.7]].map(([u,v])=>[hcx+HR*u,hy0+hh*v]);
    const fs=Math.max(1,K-1);for(const[fx,fy]of pts){const X=Math.round(fx),Y=Math.round(fy);for(let a=0;a<fs;a++)for(let b=0;b<fs;b++)if(at(X+a,Y+b)===2)setPx(X+a,Y+b,[168,85,46],2)}}
