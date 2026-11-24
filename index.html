@@ -3263,6 +3263,61 @@ dexSpr=(orig=>function(f){if(f!=='sail')return orig(f);if(dexCache.sail)return d
  return dexCache.sail=c})(dexSpr);
 
 // ============================================================================
+//  HELD ITEMS, HARMONIZED (overrides the carry functions above)
+//  - items are redrawn in the body's style: chunky pixels, flatter shading,
+//    slightly calmer colors and the same dark outline
+//  - smaller, sized per item
+//  - balls, bottles, buckets and trophies sit in the near hand; Brady's fingers
+//    are drawn back over them so they read as gripped. Flags stay in the back
+//    pocket and the whistle on its lanyard.
+// ============================================================================
+const CZ_HOLD_SIZE={ball:.78,gold:.8,bottle:.78,cooler:.82,yflag:.62,rflag:.62,whistle:.48};
+// flatten the shading into a few tones and calm the saturation, like the cel-shaded body
+function czTone(c){const g=c.getContext('2d'),d=g.getImageData(0,0,c.width,c.height),a=d.data;
+ for(let i=0;i<a.length;i+=4){if(!a[i+3])continue;let r=a[i]/255,gg=a[i+1]/255,b=a[i+2]/255;const mx=Math.max(r,gg,b),mn=Math.min(r,gg,b);let l=(mx+mn)/2,s=0,h=0;
+  if(mx!==mn){const dd=mx-mn;s=l>.5?dd/(2-mx-mn):dd/(mx+mn);h=mx===r?(gg-b)/dd+(gg<b?6:0):mx===gg?(b-r)/dd+2:(r-gg)/dd+4;h/=6}
+  if(l<.16)continue; // keep outlines/darkest lines as they are
+  s*=.82;l=Math.round(l*5)/5*.92+.04;
+  const q=l<.5?l*(1+s):l+s-l*s,p=2*l-q,f=t=>{t<0&&(t+=1);t>1&&(t-=1);return t<1/6?p+(q-p)*6*t:t<1/2?q:t<2/3?p+(q-p)*(2/3-t)*6:p};
+  a[i]=f(h+1/3)*255;a[i+1]=f(h)*255;a[i+2]=f(h-1/3)*255}
+ g.putImageData(d,0,0);return c}
+function czHeldArt(im,s,grid){const k='_hz'+s+'_'+grid;return im[k]||(im[k]=grid>1?czSnap(czTone(czCrisp(im,s*2,s*2)),grid):czOutline(czTone(czCrisp(im,s*2,s*2))))}
+// the near hand's own pixels (skin plus its outline), to lay back over a held item
+function czHandPatch(fr){if(fr._hp!==undefined)return fr._hp;const W=fr.width,H=fr.height,g=fr.getContext('2d'),d=g.getImageData(0,0,W,H).data,u=fr.hd||2,[hx,hy]=fr._hand;
+ const at=(x,y)=>(y*W+x)*4,ref=at(Math.round(hx),Math.round(hy)),R=d[ref],G=d[ref+1],B_=d[ref+2];if(!d[ref+3])return fr._hp=null;
+ const c=document.createElement('canvas');c.width=W;c.height=H;c.hd=fr.hd;const o=c.getContext('2d'),od=o.createImageData(W,H),oa=od.data,rad=2.6*u,keep=new Uint8Array(W*H);
+ for(let y=Math.max(0,Math.floor(hy-rad));y<Math.min(H,hy+rad);y++)for(let x=Math.max(0,Math.floor(hx-rad));x<Math.min(W,hx+rad);x++){const i=at(x,y);if(!d[i+3])continue;
+  if(Math.abs(d[i]-R)+Math.abs(d[i+1]-G)+Math.abs(d[i+2]-B_)<90&&Math.hypot(x-hx,y-hy)<=rad)keep[y*W+x]=1}
+ // add the outline pixels that touch the kept skin, so the fingers keep their edge
+ for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){if(keep[y*W+x]!==1)continue;for(const[a,b]of[[1,0],[-1,0],[0,1],[0,-1]]){const j=(y+b)*W+x+a,i=j*4;if(!keep[j]&&d[i+3]&&d[i]+d[i+1]+d[i+2]<150)keep[j]=2}}
+ for(let j=0;j<W*H;j++)if(keep[j]){const i=j*4;oa[i]=d[i];oa[i+1]=d[i+1];oa[i+2]=d[i+2];oa[i+3]=d[i+3]}
+ o.putImageData(od,0,0);return fr._hp=c}
+function czCarry(fr,dir,proj){const u=fr.hd||2,h=fr._head,cx=(h[0]+h[2])/2,ny=h[3];
+ const row=y=>{const g=fr.getContext('2d'),d=g.getImageData(0,Math.max(0,Math.min(fr.height-1,Math.round(y))),fr.width,1).data;let a=-1,b=-1;for(let x=0;x<fr.width;x++)if(d[x*4+3]>40){if(a<0)a=x;b=x}return[a,b]};
+ const sz=CZ_HOLD_SIZE[proj]||.8;
+ if(proj==='whistle'){const wy=ny+1.8*u;if(dir==='up')return{mode:'neck',front:true,noItem:true,lan:[[cx-1.5*u,ny+.5*u],[cx+1.5*u,ny+.5*u]]};
+  if(dir==='down')return{mode:'neck',front:true,x:cx,y:wy,sz,lan:[[cx-2*u,ny-1*u],[cx,wy-1.2*u],[cx+2*u,ny-1*u]]};
+  const[a,b]=row(wy),fx=dir==='right'?b-.5*u:a+.5*u;return{mode:'neck',front:true,x:fx,y:wy,sz,flip:dir==='left',lan:[[cx,ny-.5*u],[fx,wy-1.2*u]]}}
+ if(proj==='yflag'||proj==='rflag'){const hy=fr._hand[1]-3*u,[a,b]=row(hy);
+  if(dir==='up')return{mode:'pocket',front:true,x:cx+(fr._hand[0]<cx?-2:2)*u,y:hy,sz,rot:true};
+  if(dir==='down')return{mode:'pocket',front:false,x:fr._hand[0]<cx?b+1*u:a-1*u,y:hy,sz,rot:true};
+  return{mode:'pocket',front:false,x:dir==='right'?a-1*u:b+1*u,y:hy,sz,rot:true,flip:dir==='right'}}
+ // in the near hand
+ const[hx,hy]=fr._hand,side=hx<cx?-1:1;
+ if(dir==='up')return{mode:'hand',front:false,x:hx+side*1.2*u,y:hy+.5*u,sz};
+ if(dir==='down')return{mode:'hand',front:true,x:hx+side*.6*u,y:hy+1.4*u,sz,grip:true};
+ return{mode:'hand',front:true,x:hx+(dir==='right'?1:-1)*.8*u,y:hy+1*u,sz,flip:dir==='left',grip:true}}
+function czCarryDraw(im,fr,dir,proj,X,Y,sc,S,front,sparkle){const c=czCarry(fr,dir,proj);if(!!c.front!==!!front)return;
+ if(c.lan){ctx.strokeStyle='#26222e';ctx.lineWidth=Math.max(1,Math.round(sc*(fr.hd||2)*.6));ctx.beginPath();c.lan.forEach(([x,y],k)=>{const a=X+x*sc,b=Y+y*sc;k?ctx.lineTo(a,b):ctx.moveTo(a,b)});ctx.stroke()}
+ if(c.noItem)return;const s=Math.max(4,Math.round(S*c.sz)),art=czHeldArt(im,s,S>=12?2:1),x=Math.round(X+c.x*sc),y=Math.round(Y+c.y*sc);
+ ctx.save();ctx.translate(x,c.rot?y+s/2-s*.15:y);if(c.rot)ctx.rotate(Math.PI);if(c.flip)ctx.scale(-1,1);ctx.drawImage(art,-s/2,-s/2,s,s);ctx.restore();
+ if(c.grip){const hp=czHandPatch(fr);if(hp)ctx.drawImage(hp,X,Y,fr.width*sc,fr.height*sc)}
+ if(sparkle){ctx.fillStyle='#fff6c0';ctx.fillRect(x+s/2-1,y-s/2,1,1)}}
+// the thrown item in battle gets the same treatment, so it matches the one in Brady's hand
+drawProj=(orig=>function(k,x,y,t,small){const im=COZY_IMG['held_'+k];if(!im)return orig(k,x,y,t,small);
+ const s=Math.round((small?11:18)*.85),art=czHeldArt(im,s,small?1:2);ctx.save();ctx.translate(Math.round(x),Math.round(y));if(!small)ctx.rotate(t*.5);ctx.drawImage(art,-s/2,-s/2,s,s);ctx.restore()})(drawProj);
+
+// ============================================================================
 //  SEASON CLOCK + SEASON ACHIEVEMENTS
 //  The day/night clock is saved with the game (S.st.ticks, 60 per second of play),
 //  so "Day N" keeps counting across sessions. One in-game day = COZY.cycle ticks (10 min).
