@@ -60,3 +60,18 @@ function czDiffCheck(){if(!S||S.cz_noDiffTips||state!=='world')return;const w=cz
   else if(k===1){w.a=[];w.g=[]} // start the count over: another 25 answers (or 15 if struggling) before asking again
   else{S.cz_noDiffTips=1;toast('Got it. Change difficulty any time in Menu → Options.')}
   if(k!==0)saveGame(true)})}
+
+// ============================================================================
+//  MASTER VOLUME: one gain node in front of music and sound effects, a slider in
+//  Menu → Options, 75% by default, remembered per device (with the music setting).
+//  The slider follows a squared curve so the middle of its range sounds even.
+// ============================================================================
+if(SETS.vol==null)SETS.vol=75;
+let CZ_MASTER=null;
+function czMaster(a){if(!CZ_MASTER||CZ_MASTER.context!==a){CZ_MASTER=a.createGain();CZ_MASTER.gain.value=Math.pow(SETS.vol/100,2);CZ_MASTER.connect(a.destination)}return CZ_MASTER}
+tone=ccPatch(tone,[["g.connect(a.destination)","g.connect(czMaster(a))"]]);
+musOut=ccPatch(musOut,[["MUS.gain.connect(a.destination)","MUS.gain.connect(czMaster(a))"]]);
+function czSetVol(v){SETS.vol=Math.max(0,Math.min(100,Math.round(+v)));saveSet();if(CZ_MASTER)CZ_MASTER.gain.setTargetAtTime(Math.pow(SETS.vol/100,2),CZ_MASTER.context.currentTime,.03);
+ const p=$('#volPct');if(p)p.textContent=SETS.vol+'%'}
+renderMenu=ccPatch(renderMenu,[['<div class="opt"><button class="musBtn"','<div class="opt"><label class="volRow">🔈 Volume <input type="range" min="0" max="100" step="5" value="${SETS.vol}" oninput="czSetVol(this.value)" onchange="tone(660,.08,\'square\',.05)"> <span id="volPct">${SETS.vol}%</span></label><button class="musBtn"']]);
+(function(){const st=document.createElement('style');st.textContent='.opt .volRow{display:flex;align-items:center;gap:8px;width:100%;font-weight:bold;margin:2px 0 6px}.opt .volRow input{flex:1;accent-color:#e0a030;height:22px}.opt .volRow span{min-width:42px;text-align:right}';document.head.appendChild(st)})();
