@@ -143,3 +143,30 @@ function czNetUI(){const tbn=$('#btnTitleNet');if(tbn)tbn.textContent=CZ_NET.roo
 // pick up a remembered room on the title screen too (shows on the button; connects once a game starts)
 try{const rc=localStorage.getItem('dq_room');if(rc){CZ_NET.room=rc;CZ_NET.status='waiting'}}catch(e){}
 czNetUI();
+
+// ---------------------------------------------------------------------------
+//  FINDING EACH OTHER
+//  - Map screen (M): a labeled marker for everyone in your room, kept live
+//  - In the world: an arrow at the screen edge pointing to each friend who's
+//    off screen, with their name and how many tiles away they are
+// ---------------------------------------------------------------------------
+const CZ_PEER_COLS=['#ff7ab8','#7ad0ff','#ffd84a','#9be67a','#c89aff','#ff9a5a'];
+// distinct colors in join order, so two friends never share one
+function czPeerCol(id){const q=CZ_NET.peers[id];if(q&&q.col==null){const used=new Set(Object.values(CZ_NET.peers).map(p=>p.col).filter(c=>c!=null));let i=0;while(used.has(i)&&i<CZ_PEER_COLS.length)i++;q.col=i%CZ_PEER_COLS.length}return CZ_PEER_COLS[q?q.col:0]}
+renderMap=(orig=>function(){orig.apply(this,arguments);if(!CZ_NET.ch||!S)return;const c=$('#mapCv'),g=c.getContext('2d'),M=2,pulse=(Date.now()>>8)&1;
+ g.save();g.font='bold 10px monospace';g.textAlign='center';g.textBaseline='bottom';
+ for(const id in CZ_NET.peers){const q=CZ_NET.peers[id],x=q.tx*M,y=q.ty*M,col=czPeerCol(id),name=czCleanName(q.look&&q.look.name)+(q.busy==='duel'?' ⚔️':q.busy?' 🦖':'');
+  g.fillStyle='#2a1a12';g.beginPath();g.arc(x,y,6+pulse,0,6.283);g.fill();g.fillStyle=col;g.beginPath();g.arc(x,y,4+pulse,0,6.283);g.fill();g.fillStyle='#fff';g.fillRect(x-1,y-1,2,2);
+  g.lineWidth=3;g.strokeStyle='#2a1a12';g.strokeText(name,x,y-8);g.fillStyle=col;g.fillText(name,x,y-8)}
+ g.restore()})(renderMap);
+// keep the map's friend markers moving while it's open
+setInterval(()=>{const mv=$('#mapView');if(CZ_NET.ch&&mv&&!mv.classList.contains('hidden'))try{renderMap()}catch(e){}},1000);
+CZ_HOOKS.over.push(()=>{if(!CZ_NET.ch||state!=='world'||!S)return;const padX=16,padT=CH*.16,padB=CH*.13,cx=CW/2,cy=(padT+CH-padB)/2;
+ for(const id in CZ_NET.peers){const q=CZ_NET.peers[id];if(!q.look)continue;const sx=q.px-camX+8,sy=q.py-camY+4;
+  if(sx>-4&&sx<CW+4&&sy>-10&&sy<CH+10)continue; // on screen already
+  const dx=sx-cx,dy=sy-cy,k=Math.min((cx-padX)/Math.abs(dx||1e-6),(dy<0?cy-padT:CH-padB-cy)/Math.abs(dy||1e-6)),ax=cx+dx*k,ay=cy+dy*k,ang=Math.atan2(dy,dx),col=czPeerCol(id);
+  const dist=Math.round(Math.hypot(q.tx-player.x,q.ty-player.y)),label=`${czCleanName(q.look.name)} ${dist}`;
+  ctx.save();ctx.translate(Math.round(ax),Math.round(ay));ctx.rotate(ang);ctx.fillStyle='#2a1a12';ctx.beginPath();ctx.moveTo(8,0);ctx.lineTo(-5,-6);ctx.lineTo(-5,6);ctx.closePath();ctx.fill();
+  ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(6,0);ctx.lineTo(-4,-4);ctx.lineTo(-4,4);ctx.closePath();ctx.fill();ctx.restore();
+  ctx.save();ctx.font='bold 6px monospace';const w=Math.ceil(ctx.measureText(label).width)+4,lx=Math.round(Math.max(2,Math.min(CW-w-2,ax-Math.cos(ang)*14-w/2))),ly=Math.round(Math.max(padT-6,Math.min(CH-padB,ay-Math.sin(ang)*12-4)));
+  ctx.fillStyle='rgba(20,12,30,.7)';ctx.fillRect(lx,ly,w,8);ctx.fillStyle=col;ctx.textBaseline='middle';ctx.fillText(label,lx+2,ly+4.5);ctx.restore()}});
