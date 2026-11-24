@@ -3567,6 +3567,36 @@ function czBattleAnim(bio,sky){const H0=100;
  if(bio==='desert'){ctx.fillStyle='rgba(255,240,200,.08)';for(let y=H0-10;y<H0;y+=3)ctx.fillRect(0,y+Math.sin((frame+y*7)/12),CW,1)}}
 drawBattleScenery=function(bio,sky){const c=czBattleBg(bio,sky);ctx.drawImage(c,0,0,CW,CH);czBattleAnim(bio,sky)};
 
+// ---------------------------------------------------------------------------
+//  TITLE SCENE: golden-hour meadow with Brady and a friendly T-rex, in the open
+//  space beside the logo, instead of a camera drifting over the raw world map
+// ---------------------------------------------------------------------------
+const CZ_TITLE={sky:['#6a5a9a','#f8c088','#6a9a48'],flies:[]};
+function czTitleSprites(){if(CZ_TITLE.brady!==undefined)return;
+ try{const h=czHeroBuild({},{style:'shaggy',hair:'#5b3a1f',skin:'#f2c9a0',fr:true},3);CZ_TITLE.brady=h&&h.right?h.right[0]:null}catch(e){CZ_TITLE.brady=null}
+ try{const d=COZY_DINO.rex,c=document.createElement('canvas');c.width=d.width;c.height=d.height;c.getContext('2d').putImageData(d,0,0);CZ_TITLE.dino=c}catch(e){CZ_TITLE.dino=null}
+ const ta=$('#titleArt');if(ta)ta.style.visibility='hidden';
+ const st=document.createElement('style');st.textContent='#title{background:linear-gradient(rgba(16,11,30,.04),rgba(16,11,30,.08) 55%,rgba(16,11,30,.45))}';document.head.appendChild(st)}
+function czDrawTitle(){const sky=CZ_TITLE.sky,hz=CH*.6,g=ctx.createLinearGradient(0,0,0,hz);g.addColorStop(0,sky[0]);g.addColorStop(.7,sky[1]);g.addColorStop(1,'#ffe0b0');ctx.fillStyle=g;ctx.fillRect(0,0,CW,CH);
+ // low sun just above the hills
+ const sx=CW*.66,sy=hz-34,sg=ctx.createRadialGradient(sx,sy,4,sx,sy,80);sg.addColorStop(0,'rgba(255,244,200,.95)');sg.addColorStop(.2,'rgba(255,222,150,.7)');sg.addColorStop(1,'rgba(255,180,120,0)');ctx.fillStyle=sg;ctx.fillRect(sx-90,sy-90,180,180);
+ ctx.fillStyle='#fff4d0';ell(sx,sy,12,12);
+ // the meadow backdrop, its horizon moved down to the title's horizon
+ const bg=czBattleBg('plains',sky);ctx.save();ctx.translate(0,hz-100);ctx.drawImage(bg,0,0,CW,CH);ctx.restore();
+ const gg=ctx.createLinearGradient(0,hz+CH-100,0,CH);gg.addColorStop(0,shade(sky[2],-.16));gg.addColorStop(1,shade(sky[2],-.3));ctx.fillStyle=gg;ctx.fillRect(0,hz+CH-100-1,CW,CH);
+ czBattleAnim('plains',sky);
+ ctx.fillStyle='rgba(255,170,90,.10)';ctx.fillRect(0,0,CW,CH);
+ czTitleSprites();const gy=CH*.615;
+ if(CZ_TITLE.dino){const d=CZ_TITLE.dino,h=CH*.24,w=d.width*h/d.height,x=CW*.5-w*.15,y=gy-h+3+Math.sin(frame/55);ctx.fillStyle='rgba(20,10,30,.3)';ell(x+w*.5,gy+1,w*.34,4);
+  ctx.save();ctx.translate(x+w,y);ctx.scale(-1,1);ctx.imageSmoothingEnabled=false;ctx.drawImage(d,0,0,w,h);ctx.restore()}
+ if(CZ_TITLE.brady){const b=CZ_TITLE.brady,h=CH*.17,w=b.width*h/b.height,x=CW*.5-w*1.15,y=gy-h+Math.round(Math.sin(frame/40)*.6);ctx.fillStyle='rgba(20,10,30,.3)';ell(x+w*.5,gy,w*.28,3);
+  ctx.drawImage(b,x,y,w,h)}
+ // fireflies starting to come out
+ const F=CZ_TITLE.flies;if(F.length<22&&Math.random()<.2)F.push({x:Math.random()*CW,y:hz+Math.random()*(CH-hz),t:0,ph:Math.random()*6});
+ ctx.save();ctx.globalCompositeOperation='lighter';for(const f of F){f.t++;f.x+=Math.sin((f.t+f.ph*40)/50)*.25;f.y-=.08;const a=Math.max(0,Math.sin(f.t/40))*(f.t<400?1:0);ctx.fillStyle=`rgba(255,230,120,${.18*a})`;ctx.fillRect(f.x-2,f.y-2,5,5);ctx.fillStyle=`rgba(255,250,200,${.9*a})`;ctx.fillRect(f.x,f.y,1,1)}ctx.restore();
+ CZ_TITLE.flies=F.filter(f=>f.t<400)}
+drawWorld=(orig=>function(){if(state==='title'&&COZY_IMG.heroart){czDrawTitle();return}return orig.apply(this,arguments)})(drawWorld);
+
 loadSigArt().then(boot);
 </script>
 <!-- GoatCounter visitor stats: loaded only on the GitHub Pages site -->
