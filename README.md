@@ -19,6 +19,7 @@ The game ships as one self-contained `index.html` (served by GitHub Pages). Edit
 | `src/cozy_items.js` | Item icons, map chests and the thrown items in battle. |
 | `src/cozy_hero.js` | Player and townspeople from the drawn base + hairstyle sheets: recoloring, gear, helmets, carried items, Sail-type Dex card. |
 | `src/cozy_season.js` | The saved day/night clock (Day N), the Season Goals awards (Two-Minute Drill, One-Week Season, Perfect Season) and the difficulty coach that suggests moving up or down. |
+| `src/cozy_world2.js` | World polish: hidden gold chests with clues (golden dragonflies, golden flowers, riddles), shorelines, town props, ambient life, weather. |
 | `art/cozy/sprites/` | Every drawn sprite (embedded into `index.html` by the build). See `art/cozy/README.md`. |
 | `build.py` | Combines all of the above into `index.html`. |
 

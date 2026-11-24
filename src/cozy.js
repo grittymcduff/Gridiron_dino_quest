@@ -249,6 +249,8 @@ function lightLevel(){ // returns {dark:0..1, warm:0..1}
  if(p<.67){const t=(p-.62)/.05;return{dark:.32+t*.42,warm:1-t}}if(p<.92)return{dark:.74,warm:0};
  const t=(p-.92)/.08;return{dark:.74*(1-t),warm:Math.sin(t*Math.PI)*.6}}
 
+// extra world layers register here: ground (after tiles), ents (depth-sorted), air (after particles), over (after lighting)
+const CZ_HOOKS={ground:[],ents:[],air:[],over:[]};function czHook(k,...a){for(const f of CZ_HOOKS[k])try{f(...a)}catch(e){console.warn('hook',k,e)}}
 drawWorld=function(){
  const ppx=player.px,ppy=player.py;
  camX=Math.round(clamp(ppx+8-CW/2,0,MW*TS-CW));camY=Math.round(clamp(ppy+8-CH/2,0,MH*TS-CH));
@@ -259,6 +261,7 @@ drawWorld=function(){
  for(const l of COZY.lanterns){const sx=l.x-camX,sy=l.y-camY;if(sx<-10||sy<-20||sx>CW+10||sy>CH+10)continue;blit(COZY.wallLantern,sx,sy)}
  for(const c of COZY.chimneys){const sx=c.x-camX,sy=c.y-camY;if(sx<-20||sy<-30||sx>CW+20||sy>CH+20)continue;blit(COZY.chimSpr,sx,sy);
   if(frame%9===0&&COZY.parts.length<260)COZY.parts.push({k:'smoke',x:c.x+5.5+(Math.random()-.5)*2,y:c.y,vx:.08+Math.random()*.08,vy:-.28-Math.random()*.1,t:0,m:150+Math.random()*60,s:2+Math.random()})}
+ czHook('ground',x0,y0,vw,vh);
  if(route&&route.mark&&state==='world'){const m=route.mark,sx=m.x*16-camX,sy=m.y*16-camY,k=(frame>>3)&1;ctx.strokeStyle='rgba(16,8,36,.55)';ctx.lineWidth=1;ctx.strokeRect(sx+1.5+k,sy+1.5+k,13-2*k,13-2*k);ctx.strokeStyle='#ffd84a';ctx.strokeRect(sx+.5+k,sy+.5+k,15-2*k,15-2*k)}
  if(bumpFx&&bumpFx.t>0){bumpFx.t--;const a=bumpFx.t/24,sx=bumpFx.x*16-camX,sy=bumpFx.y*16-camY;ctx.strokeStyle=`rgba(255,255,255,${.9*a})`;ctx.lineWidth=1;ctx.strokeRect(sx+.5,sy+.5,15,15);ctx.strokeStyle=`rgba(232,68,58,${.7*a})`;ctx.strokeRect(sx+1.5,sy+1.5,13,13);
   ctx.fillStyle=`rgba(255,255,255,${.8*a})`;const k=24-bumpFx.t,bx=player.px-camX+8+DX[player.dir]*7,by=player.py-camY+13+DY[player.dir]*5;ctx.fillRect(bx-3-k/3,by-k/4,2,2);ctx.fillRect(bx+2+k/3,by-k/4,2,2)}
@@ -271,10 +274,13 @@ drawWorld=function(){
  for(const b of bosses){if(Math.abs(b.x*16-ppx)>CW/2+80||Math.abs(b.y*16-ppy)>CH/2+80)continue;ents.push({y:b.y*16,d:()=>drawBossMap(b)})}
  if(state!=='title'&&folVisible())ents.push({y:Math.min(fol.py,ppy)-.5,d:drawFollower});
  if(state!=='title')ents.push({y:ppy+.1,d:()=>{const n=bumpFx&&bumpFx.t>16?1:0;const fx=ppx+DX[player.dir]*n,fy=ppy+DY[player.dir]*n;drawAura(fx-camX,fy-camY);drawMiniWeapon(fx,fy,player.dir,false);drawChar(bradySpr,player.dir,player.moving?czWalkF(player.anim):0,fx,fy);drawMiniWeapon(fx,fy,player.dir,true)}});
+ czHook('ents',x0,y0,vw,vh,ents);
  ents.sort((a,b)=>a.y-b.y).forEach(e=>e.d());
  if(state!=='title')drawBradyFx(ppx,ppy);
  czParticles(x0,y0,vw,vh);
+ czHook('air',x0,y0,vw,vh);
  czLighting(ppx,ppy,x0,y0,vw,vh);
+ czHook('over',x0,y0,vw,vh);
  if(warpFx>0){warpFx--;ctx.fillStyle=`rgba(255,255,255,${warpFx/40})`;ctx.fillRect(0,0,CW,CH)}
  if(excl>0){const sx=ppx-camX+5,sy=ppy-camY-20;ctx.fillStyle=OUT;ctx.fillRect(sx-1,sy-1,8,12);ctx.fillStyle='#fff';ctx.fillRect(sx,sy,6,10);ctx.fillStyle='#e8443a';ctx.fillRect(sx+2,sy+1,2,5);ctx.fillRect(sx+2,sy+7,2,2)}
 };
