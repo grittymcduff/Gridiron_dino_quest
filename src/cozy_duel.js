@@ -137,9 +137,43 @@ clickTile=(orig=>function(tx,ty){if(CZ_NET.ch&&state==='world'){const q=czPeerAt
 czNetUI=(orig=>function(){orig.apply(this,arguments);const b=$('#btnDuel');if(b)b.style.display=CZ_NET.status==='on'&&Object.keys(CZ_NET.peers).length?'':'none'})(czNetUI);
 // 4) a hint over a friend's head when you're right next to them, and a one-time tip when the first friend shows up
 CZ_HOOKS.ents.push((x0,y0,vw,vh,ents)=>{if(!CZ_NET.ch||state!=='world')return;for(const id in CZ_NET.peers){const q=CZ_NET.peers[id];
- if(Math.hypot(Math.round(q.px/16)-player.x,Math.round(q.py/16)-player.y)>1.5)continue;
+ if(q.busy||Math.hypot(Math.round(q.px/16)-player.x,Math.round(q.py/16)-player.y)>1.5)continue;
  ents.push({y:1e9-1,d:()=>{const spr=czPeerSprites(q.look),fr=spr[q.dir]&&spr[q.dir][0],h=fr?spH(fr):24,cx=q.px-camX+8,top=q.py-camY+15-h-(q.emote&&frame-q.emote.t<200?22:0);
   ctx.save();ctx.font='bold 6px monospace';const t=('ontouchstart' in window)?'Tap to duel ⚔️':'Space: duel ⚔️',w=Math.ceil(ctx.measureText(t).width)+6,bx=Math.round(cx-w/2),by=Math.round(top-17+Math.sin(frame/12));
   ctx.fillStyle='#2a1a12';ctx.fillRect(bx-1,by-1,w+2,10);ctx.fillStyle='#ffd84a';ctx.fillRect(bx,by,w,8);ctx.fillStyle='#2a1a12';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(t,Math.round(cx),by+4.5);ctx.restore()}})}});
 czPresenceSync=(orig=>function(){const before=Object.keys(CZ_NET.peers).length;orig.apply(this,arguments);if(!before&&Object.keys(CZ_NET.peers).length&&!CZ_NET.toldDuel){CZ_NET.toldDuel=1;
  setTimeout(()=>toast('⚔️ Tip: walk up to a friend and press Space (or tap them) to challenge them to a duel'),2500)}})(czPresenceSync);
+
+// ---- showing that another player is busy in a battle or a duel ----
+// tell the room when we go into / come out of a battle or duel (only on change)
+loop=(orig=>function(t){orig(t);if(!CZ_NET.ch||CZ_NET.status!=='on'||!S)return;const b=czBusy();if(b!==CZ_NET.lastBusy){CZ_NET.lastBusy=b;try{CZ_NET.ch.track(czTrackMeta())}catch(e){}}})(loop);
+// a tiny battle scene for the thought bubble (32x20 game px, drawn at 2x detail)
+const CZ_MINI={};
+function czMiniScene(kind){if(CZ_MINI[kind])return CZ_MINI[kind];const c=hdCanvas(64,40,2),g=c.getContext('2d'),R=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(x,y,w,h)};
+ const sk=g.createLinearGradient(0,0,0,24);sk.addColorStop(0,'#7ab8e8');sk.addColorStop(1,'#cfe8f4');g.fillStyle=sk;g.fillRect(0,0,64,24);
+ R(0,16,64,3,'#9cc0a0');R(0,19,64,21,'#6aa84a');R(0,19,64,1,'#8ac868');g.fillStyle='#4e8a38';g.beginPath();g.ellipse(18,32,13,3.5,0,0,6.283);g.fill();g.beginPath();g.ellipse(46,23,12,3,0,0,6.283);g.fill();
+ const kid=(x,y,shirt,flip)=>{R(x,y,6,6,'#2a1a12');R(x+1,y+1,4,4,'#f2c9a0');R(x+(flip?1:3),y+2,1,1,'#2a1a12');R(x,y,6,2,'#5b3a1f');R(x,y+6,6,5,'#2a1a12');R(x+1,y+6,4,4,shirt);R(x+1,y+10,4,2,'#2a2a48')};
+ if(kind==='battle'){kid(15,20,'#2f6fd6',false);
+  // a dino on the far platform
+  R(40,10,12,9,'#2a1a12');R(41,11,10,7,'#5aa848');R(49,7,7,6,'#2a1a12');R(50,8,5,4,'#5aa848');R(53,9,1,1,'#2a1a12');R(41,18,3,4,'#2a1a12');R(47,18,3,4,'#2a1a12');R(36,13,5,2,'#2a1a12');
+  // health bars
+  R(3,3,18,4,'#2a1a12');R(4,4,13,2,'#3ccf5a');R(42,3,18,4,'#2a1a12');R(43,4,9,2,'#e8b030')}
+ else{kid(12,20,'#2f6fd6',false);kid(44,20,'#e8443a',true);
+  // a question card between them
+  R(26,6,12,13,'#2a1a12');R(27,7,10,11,'#fff8e8');g.fillStyle='#2a1a12';g.font='bold 9px monospace';g.textAlign='center';g.textBaseline='middle';g.fillText('?',32,13);R(24,26,16,3,'#2a1a12');R(25,27,6,1,'#3ccf5a');R(33,27,6,1,'#e8443a')}
+ return CZ_MINI[kind]=c}
+function czThought(x,y,kind){const img=czMiniScene(kind),w=34,h=22,bob=Math.round(Math.sin(frame/18)),bx=Math.round(x-w/2),by=Math.round(y-h-10+bob);ctx.save();
+ // cloud outline + fill
+ const puff=(cx,cy,r,col)=>{ctx.fillStyle=col;ctx.beginPath();ctx.arc(cx,cy,r,0,6.283);ctx.fill()};
+ for(const[col,d]of[['#2a1a12',1],['#fffdf4',0]]){for(const[px,py,r]of[[bx+4,by+5,6],[bx+w-4,by+5,6],[bx+4,by+h-4,6],[bx+w-4,by+h-4,6],[bx+w/2,by+1,7],[bx+w/2,by+h,6]])puff(px,py,r+d,col);ctx.fillStyle=col;ctx.fillRect(bx-d,by-d,w+2*d,h+2*d)}
+ // trailing thought dots down to the head
+ for(const[px,py,r]of[[x+3,y-6,2.2],[x+1,y-2,1.4]]){puff(px,py,r+1,'#2a1a12');puff(px,py,r,'#fffdf4')}
+ ctx.drawImage(img,bx+1,by+1,32,20);ctx.strokeStyle='#2a1a12';ctx.lineWidth=1;ctx.strokeRect(bx+.5,by+.5,33,21);
+ // a little flash so it reads as "something's happening"
+ if((frame>>4)%4===0){ctx.fillStyle='rgba(255,255,255,.55)';ctx.fillRect(bx+(kind==='battle'?36:24),by+3,6,6)}
+ ctx.restore()}
+CZ_HOOKS.ents.push((x0,y0,vw,vh,ents)=>{if(!CZ_NET.ch)return;for(const id in CZ_NET.peers){const q=CZ_NET.peers[id];if(!q.busy||!q.look)continue;
+ if(q.px<(x0-3)*16||q.py<(y0-3)*16||q.px>(x0+vw+3)*16||q.py>(y0+vh+4)*16)continue;
+ ents.push({y:1e9-2,d:()=>{const spr=czPeerSprites(q.look),fr=spr[q.dir]&&spr[q.dir][0],h=fr?spH(fr):24;czThought(q.px-camX+8,q.py-camY+15-h-6,q.busy)}})}});
+// no challenges while someone is busy
+czDuelSetup=(orig=>function(peer){if(peer&&peer.busy){state==='world'&&(state='duel');czDuelBox(`<h3>⚔️ ${czCleanName(peer.look&&peer.look.name)} is ${peer.busy==='duel'?'in a duel':'in a battle'}</h3><p>Try again when they're done.</p><div class="row"><button onclick="czDuelClose()">OK</button></div>`);return}return orig.apply(this,arguments)})(czDuelSetup);
