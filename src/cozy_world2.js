@@ -110,3 +110,71 @@ CZ_HOOKS.ground.unshift((x0,y0,vw,vh)=>{const land=(x,y)=>{if(!inb(x,y))return f
 // a few glints drifting across open water
 CZ_HOOKS.ground.push((x0,y0,vw,vh)=>{if(lightLevel().dark>.5)return;for(let ty=y0;ty<=y0+vh;ty++)for(let tx=x0;tx<=x0+vw;tx++){if(!inb(tx,ty)||map[idx(tx,ty)]!==T.WATER)continue;const h=hash(tx,ty);if(h%7)continue;
  const ph=((frame+h)%160)/160;if(ph>.35)continue;const a=Math.sin(ph/.35*Math.PI);ctx.fillStyle=`rgba(255,255,255,${.75*a})`;const sx=tx*16-camX+(h>>3)%12+2,sy=ty*16-camY+(h>>5)%10+3;ctx.fillRect(sx,sy,3,1);ctx.fillRect(sx+1,sy-1,1,1)}});
+
+// ---------------------------------------------------------------------------
+//  TOWN PROPS: a handful of region-themed props on each town's open floor.
+//  Solid (Brady walks around them) but only placed where all 8 neighbours are
+//  open, away from doors, paths, NPCs and items, so nothing gets boxed in.
+// ---------------------------------------------------------------------------
+const OUTL='#2a1a12';
+const CZ_PROP_ART={
+ barrel(){const c=hdCanvas(32,40,2),g=c.getContext('2d');P_(g,7,8,OUTL,18,32);P_(g,8,9,'#8a5a32',16,30);P_(g,8,9,'#a8743e',5,30);P_(g,20,9,'#6e4426',4,30);
+  for(const y of[12,24,35])P_(g,7,y,'#3a3a40',18,2);P_(g,9,9,'#c9925a',14,2);return c},
+ crate(){const c=hdCanvas(32,40,2),g=c.getContext('2d');P_(g,5,12,OUTL,22,28);P_(g,6,13,'#b88a4e',20,26);P_(g,6,13,'#d4a868',20,3);P_(g,6,25,'#8a6234',20,2);
+  for(let i=0;i<20;i++){P_(g,6+i,14+((i*1.2)|0)%12,'#8a6234',1,1)}P_(g,6,13,'#8a6234',2,26);P_(g,24,13,'#8a6234',2,26);return c},
+ hay(){const c=hdCanvas(32,36,2),g=c.getContext('2d');ellT(g,16,24,13,10,OUTL);ellT(g,16,23,12,9,(x,y,a,b)=>b<-.4?'#f0d27a':a>.5?'#b8902e':'#dcb24c');for(let i=0;i<6;i++)P_(g,8+i*3,18+(i%3)*4,'#a07a24',2,1);P_(g,4,23,'#8a4a2a',24,2);return c},
+ planter(){const c=hdCanvas(32,36,2),g=c.getContext('2d');P_(g,3,22,OUTL,26,13);P_(g,4,23,'#9a5a3a',24,11);P_(g,4,23,'#b87048',24,2);
+  for(let i=0;i<5;i++){const x=6+i*5,col=['#e8443a','#f5c542','#e86ab8','#f5f0e0','#e8443a'][i];ellT(g,x+1,15+(i%2)*2,3,3,'#3f8a3a');ellT(g,x+1,13+(i%2)*2,2,2,col)}return c},
+ bench(){const c=hdCanvas(32,32,2),g=c.getContext('2d');P_(g,1,12,OUTL,30,8);P_(g,2,13,'#a8743e',28,3);P_(g,2,16,'#8a5a32',28,3);P_(g,1,20,OUTL,30,4);P_(g,2,20,'#c9925a',28,2);
+  P_(g,4,23,OUTL,3,7);P_(g,25,23,OUTL,3,7);return c},
+ mailbox(){const c=hdCanvas(32,44,2),g=c.getContext('2d');P_(g,14,20,OUTL,4,24);P_(g,15,20,'#6e4426',2,24);P_(g,7,8,OUTL,18,13);P_(g,8,9,'#2f6fd6',16,11);P_(g,8,9,'#5a92ea',16,2);P_(g,23,4,OUTL,2,8);P_(g,23,4,'#e8443a',5,3);return c},
+ anchor(){const c=hdCanvas(32,44,2),g=c.getContext('2d');P_(g,15,6,OUTL,4,30);P_(g,16,7,'#5a5e6a',2,28);P_(g,9,10,OUTL,16,4);P_(g,10,11,'#5a5e6a',14,2);ellT(g,17,5,4,4,OUTL);ellT(g,17,5,2,2,'#8a8e9a');
+  for(let i=0;i<9;i++){P_(g,8+i,34-Math.abs(i-4)*1.2|0,'#5a5e6a',2,2);P_(g,17+i,30+Math.abs(i-4)*1.0|0,'#5a5e6a',2,2)}return c},
+ buoys(){const c=hdCanvas(32,32,2),g=c.getContext('2d');for(const[x,y,col]of[[10,22,'#e8443a'],[22,22,'#f5f0e0'],[16,14,'#f5c542']]){ellT(g,x,y,6,6,OUTL);ellT(g,x,y,5,5,(a,b,u,v)=>v<-.3?'#fff':col)}return c},
+ logs(){const c=hdCanvas(32,32,2),g=c.getContext('2d');for(const[x,y]of[[9,24],[23,24],[16,15]]){ellT(g,x,y,7,6,OUTL);ellT(g,x,y,6,5,'#8a5a32');ellT(g,x,y,4,3,'#d4a868');P_(g,x,y,'#a8743e',1,1)}return c},
+ mushrooms(){const c=hdCanvas(32,32,2),g=c.getContext('2d');for(const[x,y,s]of[[10,22,6],[21,24,5],[16,16,4]]){P_(g,x-1,y,OUTL,4,7);P_(g,x,y,'#f0e6d0',2,6);ellT(g,x+1,y,s+1,s*.7+1,OUTL);ellT(g,x+1,y,s,s*.7,(a,b,u,v)=>v<-.3?'#ff8a7a':'#d8443a');P_(g,x-1,y-2,'#fff',2,2)}return c},
+ cairn(){const c=hdCanvas(32,40,2),g=c.getContext('2d');for(const[x,y,rx,ry]of[[16,32,11,6],[16,23,8,5],[16,15,6,4],[16,9,4,3]]){ellT(g,x,y,rx+1,ry+1,OUTL);ellT(g,x,y,rx,ry,(a,b,u,v)=>v<-.3?'#c8c4cc':'#8e8a96')}return c},
+ pots(){const c=hdCanvas(32,36,2),g=c.getContext('2d');for(const[x,y,s]of[[10,26,7],[22,28,5]]){ellT(g,x,y,s+1,s+2,OUTL);ellT(g,x,y,s,s+1,(a,b,u,v)=>u>.4?'#9a4a2a':v<-.3?'#e89a6a':'#c8683a');P_(g,x-3,y-s-3,OUTL,7,3);P_(g,x-2,y-s-3,'#b8582a',5,2);P_(g,x-s+1,y-1,'#f5e6c8',s*2-2,1)}return c},
+ cactuspot(){const c=hdCanvas(32,44,2),g=c.getContext('2d');P_(g,9,30,OUTL,14,12);P_(g,10,31,'#c8683a',12,10);P_(g,10,31,'#e89a6a',12,2);P_(g,13,10,OUTL,6,21);P_(g,14,11,'#3f9a4a',4,20);P_(g,14,11,'#6ac86a',1,20);P_(g,8,16,OUTL,6,4);P_(g,9,17,'#3f9a4a',5,2);P_(g,8,12,OUTL,3,6);P_(g,9,13,'#3f9a4a',1,5);P_(g,15,8,'#e86ab8',2,2);return c},
+ urn(){const c=hdCanvas(32,40,2),g=c.getContext('2d');ellT(g,16,26,9,10,OUTL);ellT(g,16,26,8,9,(a,b,u,v)=>u>.4?'#8a8478':v<-.3?'#e0dace':'#b8b2a4');P_(g,11,13,OUTL,10,4);P_(g,12,14,'#c8c2b4',8,2);P_(g,9,27,'#8a8478',14,1);return c},
+ rubble(){const c=hdCanvas(32,32,2),g=c.getContext('2d');P_(g,6,14,OUTL,12,18);P_(g,7,15,'#d0cabc',10,16);P_(g,7,15,'#ece6d8',3,16);P_(g,8,13,OUTL,8,3);ellT(g,24,26,5,4,OUTL);ellT(g,24,26,4,3,'#b8b2a4');return c},
+ tub(){const c=hdCanvas(32,32,2),g=c.getContext('2d');ellT(g,16,22,13,9,OUTL);ellT(g,16,22,12,8,'#8a5a32');ellT(g,16,19,10,5,'#7ac8e0');ellT(g,13,18,3,1.5,'#d8f4ff');P_(g,4,22,'#6e4426',24,2);return c},
+ towels(){const c=hdCanvas(32,44,2),g=c.getContext('2d');P_(g,5,8,OUTL,3,34);P_(g,24,8,OUTL,3,34);P_(g,4,8,OUTL,24,3);P_(g,8,10,OUTL,8,16);P_(g,9,11,'#e86ab8',6,14);P_(g,17,10,OUTL,7,14);P_(g,18,11,'#7ac8e0',5,12);P_(g,9,15,'#fff',6,1);return c},
+};
+const CZ_PROP_SETS={plains:['hay','barrel','planter','mailbox','bench','crate'],coast:['barrel','crate','anchor','buoys','bench','planter'],forest:['logs','mushrooms','crate','bench','planter','barrel'],
+ mountain:['logs','cairn','barrel','crate','bench','logs'],desert:['pots','cactuspot','crate','pots','bench','hay'],ruins:['urn','rubble','crate','urn','bench','planter'],springs:['tub','towels','planter','bench','barrel','planter']};
+const CZ_PROPS={list:[],at:new Set(),img:{}};
+function czPlaceProps(){CZ_PROPS.list=[];CZ_PROPS.at=new Set();const rr=mulberry32(WORLD_SEED+303);
+ const busy=new Set();for(const n of npcs)for(let b=-1;b<=1;b++)for(let a=-1;a<=1;a++)busy.add(idx(n.home.x+a,n.home.y+b));for(const it of items)busy.add(idx(it.x,it.y));
+ const blockedNear=(x,y)=>{for(let b=-1;b<=1;b++)for(let a=-1;a<=1;a++){if(!a&&!b)continue;const j=idx(x+a,y+b),m=map[j];if(SOLID.has(m)&&m!==T.TREE&&m!==T.PINE||CZ_PROPS.at.has(j)||m===T.PATH||m===T.DOOR||m===T.FOUNTAIN||m===T.SIGN)return true;if(SOLID.has(m))return true}return false};
+ POIS.forEach((p,k)=>{if(p.id==='champ')return;const set=CZ_PROP_SETS[p.biome]||CZ_PROP_SETS.plains,cand=[];
+  for(let dy=-5;dy<=6;dy++)for(let dx=-8;dx<=8;dx++){const x=p.x+dx,y=p.y+dy;if(!inb(x,y))continue;const i=idx(x,y);if(town[i]!==k+1||map[i]!==T.FLOOR||busy.has(i))continue;
+   // keep the doorways and the row in front of the buildings clear
+   if(dy>=-1&&dy<=0&&Math.abs(dx)>=3)continue;cand.push([x,y])}
+  for(let i=cand.length-1;i>0;i--){const j=(rr()*(i+1))|0;[cand[i],cand[j]]=[cand[j],cand[i]]}
+  let n=0;for(const[x,y]of cand){if(n>=7)break;if(blockedNear(x,y))continue;const i=idx(x,y);CZ_PROPS.at.add(i);CZ_PROPS.list.push({x,y,k:set[n%set.length]});n++}});
+ // safety: every NPC and item must still be reachable
+ const R=flood(POIS[0].x,POIS[0].y+3),bad=[...npcs,...items].filter(o=>!R[idx(o.x,o.y)]&&![[1,0],[-1,0],[0,1],[0,-1]].some(([a,b])=>R[idx(o.x+a,o.y+b)])&&town[idx(o.x,o.y)]!==SANCT_ID);
+ CZ_PROPS.bad=bad.length}
+walkable=(orig=>function(x,y,self){if(CZ_PROPS.at.size&&inb(x,y)&&CZ_PROPS.at.has(idx(x,y)))return false;return orig(x,y,self)})(walkable);
+CZ_HOOKS.ents.push((x0,y0,vw,vh,ents)=>{for(const p of CZ_PROPS.list){if(p.x<x0-2||p.y<y0-2||p.x>x0+vw+2||p.y>y0+vh+3)continue;const im=CZ_PROPS.img[p.k]||(CZ_PROPS.img[p.k]=CZ_PROP_ART[p.k]());
+ ents.push({y:p.y*16,d:()=>{const sx=p.x*16-camX,sy=p.y*16-camY;ctx.fillStyle='rgba(12,10,24,.28)';ell(sx+8,sy+14,7,2.5);blit(im,sx+(16-spW(im))/2,sy+16-spH(im))}})}});
+genWorld=(orig=>function(){orig();try{czPlaceProps()}catch(e){console.warn('props',e)}})(genWorld);
+// cobblestone plaza around each town fountain + flower beds along the building fronts
+const CZ_PLAZA={img:null,tiles:[],beds:[]};
+function czCobble(){const c=hdCanvas(32,32,2),g=c.getContext('2d'),r=mulberry32(77);P_(g,0,0,'#8e8478',32,32);
+ for(let y=0;y<32;y+=6)for(let x=-(y/6%2)*4;x<32;x+=8){const w=6+((r()*2)|0);P_(g,x+1,y+1,'#6e665c',w,5);P_(g,x+1,y+1,r()<.5?'#b4aa9a':'#a89e8e',w-1,4);P_(g,x+1,y+1,'#cfc6b6',w-2,1)}return c}
+function czPlazaSetup(){CZ_PLAZA.tiles=[];CZ_PLAZA.beds=[];POIS.forEach((p,k)=>{if(p.id==='champ')return;const fx=p.x,fy=p.y+2;
+ for(let b=-3;b<=3;b++)for(let a=-3;a<=3;a++){const x=fx+a,y=fy+b;if(!inb(x,y)||town[idx(x,y)]!==k+1)continue;const d=Math.hypot(a,b);if(d<=3.6)CZ_PLAZA.tiles.push({x,y,d})}
+ for(const x0 of[-8,4])for(let dx=0;dx<5;dx++){if(dx===2)continue;const x=p.x+x0+dx,y=p.y;if(inb(x,y)&&map[idx(x,y)]===T.FLOOR&&!CZ_PROPS.at.has(idx(x,y)))CZ_PLAZA.beds.push({x,y,v:hash(x,y)%4})}})}
+CZ_HOOKS.ground.push((x0,y0,vw,vh)=>{const im=CZ_PLAZA.img||(CZ_PLAZA.img=czCobble());
+ for(const t of CZ_PLAZA.tiles){if(t.x<x0-1||t.y<y0-1||t.x>x0+vw+1||t.y>y0+vh+1)continue;const sx=t.x*16-camX,sy=t.y*16-camY,m=map[idx(t.x,t.y)];
+  ctx.save();ctx.beginPath();ctx.rect(sx,sy,16,16);ctx.clip();
+  // round the plaza's outline: only draw the part of the tile inside the circle
+  const f=POIS.find(p=>Math.abs(p.x-t.x)<=3&&Math.abs(p.y+2-t.y)<=3);ctx.beginPath();ctx.arc(f.x*16-camX+8,(f.y+2)*16-camY+8,2.9*16-2,0,6.283);ctx.clip();
+  blit(im,sx,sy);ctx.restore();if(m===T.FOUNTAIN)blit(tileImg(T.FOUNTAIN,t.x,t.y),sx,sy)}
+ for(const f of POIS){if(f.id==='champ')continue;const cx=f.x*16-camX+8,cy=(f.y+2)*16-camY+8;if(cx<-60||cy<-60||cx>CW+60||cy>CH+60)continue;ctx.strokeStyle='rgba(60,52,44,.55)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,2.9*16-2.5,0,6.283);ctx.stroke()}
+ for(const b of CZ_PLAZA.beds){if(b.x<x0-1||b.y<y0-1||b.x>x0+vw+1||b.y>y0+vh+1)continue;const sx=b.x*16-camX,sy=b.y*16-camY;
+  ctx.fillStyle='#5a3a22';ctx.fillRect(sx,sy,16,5);ctx.fillStyle='#6e4a2c';ctx.fillRect(sx,sy,16,1);ctx.fillStyle='#3f7a2a';for(let i=0;i<4;i++)ctx.fillRect(sx+1+i*4,sy-1,3,3);
+  const cols=[['#e8443a','#f5c542'],['#e86ab8','#f5f0e0'],['#f5c542','#7ab8f0'],['#f5f0e0','#e8443a']][b.v];for(let i=0;i<4;i++){ctx.fillStyle=cols[i%2];ctx.fillRect(sx+2+i*4,sy-1,2,2)}}});
+genWorld=(orig=>function(){orig();try{czPlazaSetup()}catch(e){console.warn('plaza',e)}})(genWorld);
