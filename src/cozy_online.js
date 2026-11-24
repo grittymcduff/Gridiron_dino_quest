@@ -30,7 +30,7 @@ function czLoadLib(){if(window.supabase&&window.supabase.createClient)return Pro
  return new Promise((ok,bad)=>{const s=document.createElement('script');s.src=CZ_NET.lib;s.async=true;s.onload=()=>ok();s.onerror=()=>bad(new Error('lib'));document.head.appendChild(s)})}
 function czMyLook(){const h=S&&S.hero||{};return{name:czCleanName(h.name||'Brady'),hero:{style:h.style||'shaggy',hair:h.hair,skin:h.skin,fr:!!h.fr},eq:{helmet:S.equip.helmet,pads:S.equip.pads,cleats:S.equip.cleats}}}
 function czBusy(){return state==='battle'?'battle':(state==='duel'&&typeof CZ_DUEL!=='undefined'&&CZ_DUEL.cur&&CZ_DUEL.cur.q)?'duel':null}
-function czTrackMeta(){return{id:CZ_NET.id,uid:CZ_NET.uid||null,coins:S?S.coins:0,busy:czBusy(),look:czMyLook(),...czMyPos()}}
+function czTrackMeta(){return{id:CZ_NET.id,uid:CZ_NET.uid||null,coins:S?S.coins:0,busy:czBusy(),duel:(typeof CZ_DUEL!=='undefined'&&CZ_DUEL.cur&&CZ_DUEL.cur.q)?CZ_DUEL.cur.id:null,look:czMyLook(),...czMyPos()}}
 function czMyPos(){return{x:player.x,y:player.y,dir:player.dir,m:player.moving?1:0,r:held.run?1:0}}
 async function czNetJoin(code){code=czCleanCode(code);if(!code||code.length<4)return;czNetLeave(true);CZ_NET.room=code;try{localStorage.setItem('dq_room',code)}catch(e){}
  if(!S||state==='title'){CZ_NET.status='waiting';czNetUI();return}
@@ -57,7 +57,7 @@ async function czPing(code){try{const h=await crypto.subtle.digest('SHA-256',new
 function czPresenceSync(){const st=CZ_NET.ch?CZ_NET.ch.presenceState():{},seen=new Set();
  for(const k in st){const m=st[k]&&st[k][0];if(!m||m.id===CZ_NET.id)continue;seen.add(m.id);let p=CZ_NET.peers[m.id];
   if(!p){p=CZ_NET.peers[m.id]={id:m.id,px:m.x*16,py:m.y*16,tx:m.x,ty:m.y,dir:m.dir||'down',m:0,anim:0};toast(`🌐 ${czCleanName(m.look&&m.look.name)} joined`)}
-  p.look=m.look||p.look;p.uid=m.uid||p.uid;p.coins=m.coins!=null?m.coins:p.coins;p.busy=m.busy||null}
+  p.look=m.look||p.look;p.uid=m.uid||p.uid;p.coins=m.coins!=null?m.coins:p.coins;p.busy=m.busy||null;p.duel=m.duel||null}
  for(const id in CZ_NET.peers)if(!seen.has(id)){toast(`🌐 ${czCleanName(CZ_NET.peers[id].look&&CZ_NET.peers[id].look.name)} left`);delete CZ_NET.peers[id]}
  czNetUI()}
 function czPeerPos(p){const q=CZ_NET.peers[p.id];if(!q)return;q.tx=p.x;q.ty=p.y;q.dir=p.dir||q.dir;q.m=p.m;q.r=p.r;q.seen=frame;
