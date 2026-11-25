@@ -72,7 +72,7 @@ Players who already had a save before these events existed won't fire `funnel-1-
 
 ## Music
 
-Battles and outdoor travel use recorded songs (`audio/*.m4a`, streamed from GitHub Pages); the title, towns, volcano, secret island and Daily Challenge keep the chiptune.
-Battles play "Rise of the Horizon" on a loop. Outdoors alternates "Map of Wonder" and "Pathfinder Playtime".
-Each song is turned down in `CZ_SONGS` (`src/cozy_ui.js`, `trim`) to sit at the chiptune's loudness, then goes through the Music level (default 5%) and the fade-out (90 s of music, then a 20 s fade, again on the next area or battle; "Keep music playing" in Options turns the fade off).
+Recorded songs in `audio/*.m4a` (streamed from GitHub Pages) make one continuous soundtrack. "Map of Wonder" and "Pathfinder Playtime" alternate everywhere (title, towns, every area, wild battles, Daily Challenge) without restarting when you change area.
+"Rise of the Horizon" fades in as you walk toward a boss you haven't beaten (Head Coaches, the Commissioner, guarded gold chests, the GOAT: from 14 tiles away, full at 5), plays through the boss fight, and fades back as you walk away.
+Each song is turned down in `CZ_SONGS` (`src/cozy_ui.js`, `trim`) to sit at the old chiptune's loudness, then goes through the Music level (default 5%). Each song plays about 90 s, fades over 20 s, then after a ~2 minute quiet break the next song fades in; nearing a boss brings the music back early. "Keep music playing" in Options turns the fade and break off.
 If a song can't load, or the game is opened as a local file, the chiptune plays instead.
