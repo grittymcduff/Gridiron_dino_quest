@@ -44,20 +44,28 @@ function czCrisp(img,w,h,flip,grid){if(grid>1){const full=czCrisp(img,w,h,flip);
  g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';if(flip){g.translate(w,0);g.scale(-1,1)}g.drawImage(img,0,0,w,h);
  const d=g.getImageData(0,0,w,h);for(let i=3;i<d.data.length;i+=4)d.data[i]=d.data[i]>110?255:0;g.putImageData(d,0,0);return c}
 const CZH_FW=40,CZH_FH=48,CZH_DIRS=['down','up','left','right'];
-// side-view eye: on the face skin just behind the front edge, below any hair (every style, painted or not)
-function czSideEye(at,setPx,o){const{SG,K,hy0,hh,st,HR,hcx,FW,lum}=o,need=Math.max(2*K,Math.round(HR*.55));
- // already has a painted eye? (a dark spot with face skin on both sides, in the front half of the face)
- let seen=0;if(K>1)for(let y=Math.round(hy0+hh*.3);y<Math.min(st,hy0+hh*.9);y++)for(let x=1;x<FW-1;x++){if(SG*(x-hcx)<HR*.15||at(x,y)===2||lum(x,y)>200)continue;
+// side-view eye: same height and size as the front-view eyes (measured from the bald base), set just behind the front of the face
+const CZ_EYEPOS={};
+function czFrontEye(K){if(CZ_EYEPOS[K])return CZ_EYEPOS[K];const set=czHeroSet('bald',K),M=set.mask.data,W=set.mask.width,row=CZH_DIRS.indexOf('down');
+ const a=(x,y)=>x<0||x>=CZH_FW?0:Math.round(M[((row*CZH_FH+y)*W+x)*4]/40);let hy0=-1,ys=[],dx=99,w=0;
+ for(let y=0;y<CZH_FH;y++){let L=-1,R=-1;for(let x=0;x<CZH_FW;x++)if(a(x,y)===2){if(L<0)L=x;R=x}if(L<0)continue;if(hy0<0)hy0=y;
+  for(let x=L+1;x<R;x++)if(a(x,y)!==2&&a(x-1,y)===2){let e=x;while(e<R&&a(e,y)!==2)e++;if(e-x<=2*K&&x<(L+R)/2){ys.push(y);dx=Math.min(dx,x-L);w=Math.max(w,e-x)}}}
+ return CZ_EYEPOS[K]=ys.length?{top:Math.min(...ys)-hy0,h:Math.max(...ys)-Math.min(...ys)+1,dx,w}:{top:Math.round(9*K),h:3*K,dx:4*K,w:K}}
+function czSideEye(at,setPx,o){const{SG,K,hy0,st,HR,hcx,FW,lum,atB}=o;
+ // already has a painted eye? (high-detail art only: a dark spot with face skin on both sides, in the front half of the face)
+ if(K>1){let seen=0;for(let y=hy0;y<st;y++)for(let x=1;x<FW-1;x++){if(SG*(x-hcx)<HR*.15||at(x,y)===2||lum(x,y)>200)continue;
   let l=x-1,r=x+1;while(l>0&&at(l,y)!==2&&lum(l,y)<=200&&x-l<=K)l--;while(r<FW-1&&at(r,y)!==2&&lum(r,y)<=200&&r-x<=K)r++;
   if(at(l,y)===2&&at(r,y)===2&&(r-l-1)<=K+1)seen++}
- if(K>1&&seen>=K*3)return;   // small sprites: the painted eye merges into the hairline, so always add one
- const front=y=>{if(SG>0){for(let x=FW-1;x>=0;x--)if(at(x,y)===2)return x}else{for(let x=0;x<FW;x++)if(at(x,y)===2)return x}return-1};
- const runOk=(fx,y)=>{for(let i=0;i<need;i++)if(at(fx-SG*i,y)!==2)return false;return true};
- const y1=Math.min(st-2*K,Math.round(hy0+hh*.85));
- for(let y=Math.round(hy0+hh*.38);y<=y1;y++){const f=front(y);if(f<0||!runOk(f,y)||!runOk(front(y+2*K-1)<0?f:front(y+2*K-1),y+2*K-1))continue;
-  const px=f-SG*Math.round(Math.max(K,HR*.28))-(SG>0?K-1:0);
-  for(let a=0;a<K;a++)for(let b=0;b<2*K;b++)setPx(px+a,y+b,[42,26,20],0);
-  return}}
+  if(seen>=K*3)return}
+ const E=czFrontEye(K),y=hy0+E.top;
+ // front edge of the face (bald base, so hair never moves it) across the eye rows
+ let f=SG>0?-1:99;for(let yy=y;yy<y+E.h;yy++)for(let x=0;x<FW;x++)if(atB(x,yy)===2){if(SG>0)f=Math.max(f,x);else f=Math.min(f,x)}
+ if(f<0||f>=99)return;
+ const x0=SG>0?f-E.dx-E.w+1:f+E.dx;
+ // high-detail art: if the hair covers that spot, drop the eye just below the hairline
+ const skinAt=yy=>{let n=0;for(let a=0;a<E.w;a++)for(let b=0;b<E.h;b++)if(at(x0+a,yy+b)===2)n++;return n*2>=E.w*E.h};
+ let ey=y;if(K>1)for(let i=0;i<=Math.round(E.h*1.5)&&!skinAt(ey);i++)ey++;if(K>1&&!skinAt(ey))ey=y;
+ for(let a=0;a<E.w;a++)for(let b=0;b<E.h;b++)setPx(x0+a,ey+b,[42,26,20],0)}
 function czHeroBuild(eq,hero,K){K=K||1;const SET=czHeroSet(hero.style,K);if(!SET)return null;const CZH_FW=40*K,CZH_FH=48*K;
  // under a helmet (not the crown) a drawn hairstyle is replaced by the bald head, so nothing pokes out or leaves holes;
  // long hair and ponytails keep the part that hangs below the helmet (drawn behind the body)
@@ -103,7 +111,7 @@ function czHeroBuild(eq,hero,K){K=K||1;const SET=czHeroSet(hero.style,K);if(!SET
   const setPx=(x,y,c,r)=>{if(x<0||y<0||x>=CZH_FW||y>=CZH_FH)return;const i=((y0+y)*W+x0+x)*4;O[i]=c[0];O[i+1]=c[1];O[i+2]=c[2];O[i+3]=255;role[(y0+y)*W+x0+x]=r};
   const alphaAt=(x,y)=>x<0||y<0||x>=CZH_FW||y>=CZH_FH?0:O[((y0+y)*W+x0+x)*4+3];
   // side-view eye (the base only has eyes on the front views)
-  if(SG)czSideEye(at,setPx,{SG,K,hy0,hh,st,HR,hcx,FW:CZH_FW,lum:(x,y)=>{if(x<0||y<0||x>=CZH_FW||y>=CZH_FH)return 999;const i=((y0+y)*W+x0+x)*4;return O[i+3]?O[i]+O[i+1]+O[i+2]:999}})
+  if(SG)czSideEye(at,setPx,{SG,K,hy0,hh,st,HR,hcx,atB,FW:CZH_FW,lum:(x,y)=>{if(x<0||y<0||x>=CZH_FW||y>=CZH_FH)return 999;const i=((y0+y)*W+x0+x)*4;return O[i+3]?O[i]+O[i+1]+O[i+2]:999}})
   // freckles on the cheeks
   if(hero.fr&&d!=='up'){const pts=SG?[[.32,.72],[.55,.68]].map(([u,v])=>[hcx+SG*HR*u,hy0+hh*v]):[[-.5,.7],[-.3,.75],[.3,.75],[.5,.7]].map(([u,v])=>[hcx+HR*u,hy0+hh*v]);
    const fs=Math.max(1,K-1);for(const[fx,fy]of pts){const X=Math.round(fx),Y=Math.round(fy);for(let a=0;a<fs;a++)for(let b=0;b<fs;b++)if(at(X+a,Y+b)===2)setPx(X+a,Y+b,[168,85,46],2)}}
