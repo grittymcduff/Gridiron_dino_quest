@@ -3135,7 +3135,7 @@ function czHeroBuild(eq,hero,K){K=K||1;const SET=czHeroSet(hero.style,K);if(!SET
   if(d==='down'){const E=czFrontEye(K);for(let yy=hy0+E.top;yy<hy0+E.top+E.h;yy++){
     let sk=null;for(let x=Math.round(hcx)-K;x<=Math.round(hcx)+K&&!sk;x++)if(at(x,yy)===2){const i=((y0+yy)*W+x0+x)*4;sk=[O[i],O[i+1],O[i+2]]}if(!sk)continue;
     for(let x=1;x<CZH_FW-1;x++){if(atB(x,yy)===2)continue;let e=x;while(e<CZH_FW&&atB(e,yy)!==2)e++;
-      if(e-x<=E.w&&atB(x-1,yy)===2&&atB(e,yy)===2){const off=(px)=>{if(atB(px,yy)!==2)return;const i=((y0+yy)*W+x0+px)*4;if(at(px,yy)!==2||O[i]+O[i+1]+O[i+2]<sk[0]+sk[1]+sk[2]-150)setPx(px,yy,sk,2)};for(let k=1;k<=K;k++){off(x-k);off(e-1+k)}}x=e}}}
+      if(e-x<=E.w&&atB(x-1,yy)===2&&atB(e,yy)===2){const off=(px)=>{if(atB(px,yy)!==2)return;const i=((y0+yy)*W+x0+px)*4;if(at(px,yy)!==2||O[i]+O[i+1]+O[i+2]<sk[0]+sk[1]+sk[2]-150)setPx(px,yy,sk,2)};for(let k=1;k<=K;k++){off(x-k);off(e-1+k)}if(yy===hy0+E.top||yy===hy0+E.top+E.h-1){const ty=yy,dir=yy===hy0+E.top?-1:1;for(let k=1;k<=K;k++)for(let px=x-K;px<e+K;px++){const yy2=ty+dir*k;if(atB(px,yy2)!==2)continue;const i=((y0+yy2)*W+x0+px)*4;if(at(px,yy2)!==2||O[i]+O[i+1]+O[i+2]<sk[0]+sk[1]+sk[2]-150)setPx(px,yy2,sk,2)}}}x=e}}}
   if(SG)czSideEye(at,setPx,{SG,K,hy0,hh,st,HR,hcx,atB,FW:CZH_FW,lum:(x,y)=>{if(x<0||y<0||x>=CZH_FW||y>=CZH_FH)return 999;const i=((y0+y)*W+x0+x)*4;return O[i+3]?O[i]+O[i+1]+O[i+2]:999}})
   // freckles on the cheeks
   if(hero.fr&&d!=='up'){const pts=SG?[[.32,.72],[.55,.68]].map(([u,v])=>[hcx+SG*HR*u,hy0+hh*v]):[[-.5,.7],[-.3,.75],[.3,.75],[.5,.7]].map(([u,v])=>[hcx+HR*u,hy0+hh*v]);
