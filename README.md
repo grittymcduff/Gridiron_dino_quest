@@ -69,3 +69,10 @@ Anonymous, cookie-free event counts go to [grittymcduff.goatcounter.com](https:/
 | `new-game-<difficulty>`, `coach-<town>`, `champion-<difficulty>`, `legend-<id>`, `goat-beaten`, `sanctum-found`, `level-<n>` | per save, as before | difficulty mix and late-game progress |
 
 Players who already had a save before these events existed won't fire `funnel-1-new-game`, so read early funnel numbers with that in mind.
+
+## Music
+
+Battles and outdoor travel use recorded songs (`audio/*.m4a`, streamed from GitHub Pages); the title, towns, volcano, secret island and Daily Challenge keep the chiptune.
+Battles play "Rise of the Horizon" on a loop. Outdoors alternates "Map of Wonder" and "Pathfinder Playtime".
+Each song is turned down in `CZ_SONGS` (`src/cozy_ui.js`, `trim`) to sit at the chiptune's loudness, then goes through the Music level (default 5%) and the fade-out (90 s of music, then a 20 s fade, again on the next area or battle; "Keep music playing" in Options turns the fade off).
+If a song can't load, or the game is opened as a local file, the chiptune plays instead.
