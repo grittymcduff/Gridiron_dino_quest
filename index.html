@@ -4302,6 +4302,611 @@ CZ_HOOKS.ents.push((x0,y0,vw,vh,ents)=>{if(!CZ_NET.ch||state!=='world')return;fo
 czNetDialog=(orig=>function(show){orig(show);if(!show||!CZ_NET.room||CZ_NET.status!=='on')return;const ul=$('#czNet ul');if(!ul)return;
  ul.querySelectorAll('li').forEach((li,i)=>{const q=Object.values(CZ_NET.peers)[i];if(!q||q.busy!=='duel'||!q.duel)return;const b=li.querySelector('button');if(b){b.textContent='👀 Watch';b.onclick=()=>{czNetDialog(false);czSpecStart(q)}}})})(czNetDialog);
 
+// ===================== MORE QUESTIONS =====================
+// Draft day, colleges, famous draft misses, controversies and rule changes, and what players did after football.
+// Added to the END of the bank so question numbers in existing saves (missed / seen lists) still point at the same questions.
+// [category, difficulty 1-3, question, answer, [wrong answers], explanation]
+// Lines marked "// TS" are time-sensitive (true as of the 2026 season); re-check them each year.
+const CZ_Q_EXTRA=[
+// ---------- DRAFT DAY: where stars were picked ----------
+['players',1,'Which team traded up to draft Patrick Mahomes 10th overall in 2017?','Kansas City Chiefs',['Chicago Bears','Houston Texans','Buffalo Bills'],'The Chiefs traded up to pick Mahomes 10th. He sat behind Alex Smith for a year, then became a superstar.'],
+['players',2,'Tom Brady was drafted in which round of the 2000 NFL Draft?','6th round',['1st round','3rd round','He went undrafted'],'Brady was the 199th pick. Six other quarterbacks were taken before him, and he became the greatest of all time.'],
+['players',2,'Before football, Tom Brady was drafted by which Major League Baseball team?','Montreal Expos',['New York Yankees','Boston Red Sox','San Francisco Giants'],'The Expos picked Brady as a catcher in 1995, but he chose to play football at Michigan.'],
+['players',1,'Peyton Manning was the No. 1 overall pick in 1998 by which team?','Indianapolis Colts',['Denver Broncos','San Diego Chargers','Tennessee Titans'],'The Colts picked Manning first. The Chargers took Ryan Leaf second, a famous "what if" in draft history.'],
+['players',2,'In the 1998 draft, the Chargers picked which QB right after Peyton Manning?','Ryan Leaf',['Tim Couch','Akili Smith','Daunte Culpepper'],'Leaf struggled and was out of the NFL within a few years. He is often called one of the biggest draft busts ever.'],
+['players',2,'Eli Manning was drafted No. 1 in 2004 by the Chargers, then traded on draft day to which team?','New York Giants',['New York Jets','Indianapolis Colts','Oakland Raiders'],'The Giants traded for Eli, and the Chargers got Philip Rivers. Eli won two Super Bowls with New York.'],
+['players',2,'The 1983 Colts drafted John Elway No. 1, but he refused to play for them. Which team did he end up with?','Denver Broncos',['Miami Dolphins','Buffalo Bills','Los Angeles Raiders'],'Elway was traded to Denver, where he played his whole career and won two Super Bowls.'],
+['players',3,'In the famous 1983 QB draft class, Dan Marino was picked 27th. How many QBs were taken before him?','5',['1','3','8'],'Elway, Todd Blackledge, Jim Kelly, Tony Eason and Ken O\'Brien all went before Marino, who went on to break passing records.'],
+['players',2,'Aaron Rodgers waited in the draft green room for hours in 2005 before which team took him at No. 24?','Green Bay Packers',['San Francisco 49ers','Minnesota Vikings','Chicago Bears'],'The 49ers chose Alex Smith first overall. Rodgers fell to the Packers and became a four-time MVP.'],
+['players',2,'Brock Purdy was the very last pick of the 2022 draft. What is the last pick nicknamed?','Mr. Irrelevant',['Mr. Overlooked','The Caboose','Last Call'],'The last pick is called "Mr. Irrelevant." Purdy proved it wrong by leading the 49ers to a Super Bowl.'],
+['players',2,'Lamar Jackson was picked with the very last pick of the 1st round in 2018. Which pick was it?','32nd',['1st','10th','64th'],'The Ravens traded back into round one to take Jackson at 32. He has since won two MVP awards.'],
+['players',1,'Joe Burrow was the No. 1 pick in 2020 after a record season at which college?','LSU',['Ohio State','Alabama','Clemson'],'Burrow transferred from Ohio State to LSU, won the Heisman, and led LSU to a national title before the Bengals drafted him.'],
+['players',2,'Jerry Rice, the greatest receiver ever, played college football at which small school?','Mississippi Valley State',['Alabama','USC','Grambling State'],'Rice set records at Mississippi Valley State, and the 49ers picked him 16th in 1985.'],
+['players',2,'Walter Payton, "Sweetness," played college football at which school?','Jackson State',['Grambling State','Ohio State','Notre Dame'],'Payton starred at Jackson State, a historically Black college in Mississippi, before the Bears picked him 4th in 1975.'],
+['players',2,'Dak Prescott was drafted in which round in 2016?','4th round',['1st round','2nd round','7th round'],'The Cowboys found their starting QB in the 4th round when Prescott stepped in as a rookie.'],
+['players',2,'Russell Wilson was drafted in which round in 2012?','3rd round',['1st round','5th round','He went undrafted'],'Teams worried he was too short. He won a Super Bowl with the Seahawks in his second season.'],
+['players',2,'Joe Montana was drafted in which round in 1979?','3rd round',['1st round','5th round','7th round'],'The 49ers took Montana in round 3. He won four Super Bowls and three Super Bowl MVPs.'],
+['players',2,'Kurt Warner went undrafted. Where did he famously work while waiting for his NFL chance?','Stocking shelves at a grocery store',['Driving a school bus','Working at a car wash','Delivering mail'],'Warner stocked shelves at a Hy-Vee grocery store, played arena football, then won Super Bowl MVP with the Rams.'],
+['players',2,'Tony Romo became the Cowboys\' star QB even though he was...','Undrafted',['A 1st-round pick','A former kicker','A college basketball player only'],'Romo went undrafted out of Eastern Illinois and worked his way up to starting QB in Dallas.'],
+['players',2,'Josh Allen played college football at which school before the Bills picked him 7th in 2018?','Wyoming',['Boise State','Fresno State','Montana'],'Allen had almost no scholarship offers out of high school. He started at a junior college, then went to Wyoming.'],
+['players',2,'Barry Sanders won the Heisman Trophy at which school?','Oklahoma State',['Oklahoma','Michigan','Nebraska'],'Sanders ran for 2,628 yards in 1988 at Oklahoma State, then the Lions drafted him 3rd overall.'],
+['players',2,'Lawrence Taylor, one of the best defenders ever, played college football at which school?','North Carolina',['Penn State','Miami','Clemson'],'The Giants picked "LT" 2nd overall in 1981. He changed how offenses had to protect the quarterback.'],
+['players',2,'Travis Kelce played college football at which school?','Cincinnati',['Ohio State','Kansas','Texas Tech'],'The Chiefs drafted Kelce in the 3rd round in 2013, while his older brother Jason was already playing center for the Eagles.'],
+['players',2,'Tyreek Hill, "Cheetah," was drafted in the 5th round in 2016 from which school?','West Alabama',['Alabama','Florida State','Ohio State'],'Hill also ran track. His speed made him one of the most dangerous receivers in the game.'],
+['players',2,'Shannon Sharpe, a Hall of Fame tight end, was drafted in which round?','7th round',['1st round','3rd round','He went undrafted'],'The Broncos took Sharpe in the 7th round out of Savannah State. He won three Super Bowls.'],
+['players',2,'Antonio Gates became a star tight end without playing any college football. What college sport did he play?','Basketball',['Baseball','Soccer','Volleyball'],'Gates played basketball at Kent State. The Chargers signed him, and he scored more TDs than any tight end before him.'],
+['players',3,'J.J. Watt started college at Central Michigan as a tight end. Where did he walk on and become a star defender?','Wisconsin',['Michigan','Iowa','Notre Dame'],'Watt left Central Michigan, delivered pizzas, and walked on at Wisconsin. He later won three Defensive Player of the Year awards.'],
+['players',2,'Kyler Murray was the No. 1 NFL pick in 2019, but a year earlier he was a 1st-round pick in which sport?','Baseball',['Basketball','Hockey','Soccer'],'The Oakland A\'s drafted Murray 9th overall in 2018. He chose football and the Cardinals.'],
+['players',3,'Russell Wilson was also drafted by which Major League Baseball team?','Colorado Rockies',['Texas Rangers','Seattle Mariners','Atlanta Braves'],'Wilson played minor-league baseball for the Rockies organization before focusing on football.'],
+['players',2,'Baker Mayfield won the Heisman at Oklahoma after joining the team how?','As a walk-on',['As the No. 1 recruit','As a transfer from Alabama','As a kicker'],'Mayfield walked on twice (at Texas Tech and Oklahoma) and became the No. 1 pick in 2018.'],
+['players',1,'Caleb Williams won the Heisman at USC, then was the No. 1 pick in 2024 by which team?','Chicago Bears',['Washington Commanders','New England Patriots','Arizona Cardinals'],'The Bears picked Williams first overall in 2024.'],
+['players',2,'Jayden Daniels won the 2023 Heisman Trophy at which school?','LSU',['Arizona State','Oregon','Texas'],'Daniels started at Arizona State, transferred to LSU, won the Heisman, and was drafted 2nd overall by Washington.'],
+['players',1,'Trevor Lawrence went No. 1 in 2021 after starring at which college?','Clemson',['Alabama','Georgia','Ohio State'],'Lawrence won a national championship at Clemson as a freshman before the Jaguars drafted him.'],
+['players',2,'Cam Newton won the Heisman and a national title at which school?','Auburn',['Florida','Alabama','LSU'],'Newton won both in 2010, then the Panthers made him the No. 1 pick in 2011. He was MVP in 2015.'],
+['players',2,'Calvin Johnson, "Megatron," was drafted 2nd overall in 2007 from which school?','Georgia Tech',['Georgia','Florida State','Michigan'],'The Lions picked him, and in 2012 he set the single-season record with 1,964 receiving yards.'],
+['players',2,'Deion Sanders, "Prime Time," played college football at which school?','Florida State',['Miami','Florida','Jackson State'],'Sanders starred at Florida State. The Falcons drafted him 5th overall in 1989.'],
+['players',3,'Randy Moss slid to the 21st pick in 1998. Which college did he play for?','Marshall',['Florida State','Ohio State','Notre Dame'],'Many teams passed on Moss. As a Vikings rookie he caught 17 touchdowns, a rookie record.'],
+['players',3,'Richard Sherman played which position in college at Stanford before becoming a star cornerback?','Wide receiver',['Running back','Quarterback','Safety'],'Sherman switched to cornerback late in college. The Seahawks drafted him in the 5th round in 2011.'],
+['players',3,'Brett Favre was drafted in 1991 by which team before being traded to Green Bay?','Atlanta Falcons',['New Orleans Saints','Chicago Bears','Kansas City Chiefs'],'Packers GM Ron Wolf traded a 1st-round pick for Favre in 1992. Favre won three MVPs and a Super Bowl.'],
+['players',3,'Drew Brees played college football at which school?','Purdue',['Texas','Michigan','Stanford'],'The Chargers took Brees in the 2nd round in 2001. He later led the Saints to a Super Bowl title.'],
+['players',2,'Jalen Hurts was drafted in which round in 2020?','2nd round',['1st round','4th round','He went undrafted'],'The Eagles picked Hurts 53rd overall. He later won a Super Bowl MVP.'],
+['players',2,'Justin Jefferson won a national title with which college before joining the Vikings?','LSU',['Alabama','Ohio State','Clemson'],'Jefferson and Joe Burrow led LSU\'s 2019 title team, and the Vikings took Jefferson 22nd in 2020.'],
+['players',3,'Rob Gronkowski played college football at which school?','Arizona',['Pittsburgh','Penn State','Wisconsin'],'The Patriots drafted "Gronk" in the 2nd round in 2010. He won four Super Bowls.'],
+['players',3,'Aaron Donald, a three-time Defensive Player of the Year, played college football at which school?','Pittsburgh',['Penn State','Miami','Alabama'],'The Rams picked Donald 13th in 2014. He helped them win Super Bowl LVI.'],
+['players',3,'Before he was a star, Saquon Barkley was drafted 2nd overall in 2018 from which school?','Penn State',['Ohio State','Georgia','Alabama'],'The Giants drafted Barkley. He later joined the Eagles and ran for over 2,000 yards in 2024.'],
+['players',3,'Derrick Henry won the Heisman Trophy in 2015 at which school?','Alabama',['Georgia','Ohio State','Tennessee'],'Henry ran for over 2,200 yards that year. The Titans took him in the 2nd round.'],
+['players',3,'Bo Jackson was the No. 1 pick in 1986 but refused to sign. What did he play instead?','Baseball',['Basketball','Hockey','Track'],'Jackson played for the Kansas City Royals, then also played for the Raiders. He was an All-Star in both sports.'],
+['players',2,'Patrick Mahomes\'s father, Pat Mahomes, played which professional sport?','Baseball',['Basketball','Football','Hockey'],'Pat Mahomes was a Major League pitcher. Patrick played baseball at Texas Tech too before focusing on football.'],
+['players',2,'Peyton and Eli Manning\'s father, Archie Manning, played QB for which NFL team?','New Orleans Saints',['Dallas Cowboys','Miami Dolphins','Green Bay Packers'],'Archie was the Saints\' QB in the 1970s. Both of his sons became Super Bowl MVPs.'],
+['players',3,'Christian McCaffrey played college football at which school?','Stanford',['Oregon','USC','Notre Dame'],'The Panthers drafted McCaffrey 8th in 2017. He was Offensive Player of the Year with the 49ers in 2023.'],
+['players',3,'Micah Parsons played college football at which school?','Penn State',['Ohio State','Michigan','Clemson'],'The Cowboys drafted Parsons 12th in 2021, and he won Defensive Rookie of the Year.'],
+['players',3,'C.J. Stroud played college football at which school before going 2nd overall in 2023?','Ohio State',['Michigan','Alabama','USC'],'Stroud won Offensive Rookie of the Year with the Texans.'],
+['players',3,'Puka Nacua set rookie receiving records in 2023 after being drafted in which round?','5th round',['1st round','2nd round','7th round'],'The Rams took Nacua out of BYU in the 5th round. He caught 105 passes for 1,486 yards as a rookie.'],
+
+// ---------- THE DRAFT ITSELF ----------
+['history',2,'In what year was the first NFL Draft held?','1936',['1920','1950','1970'],'The first draft was in 1936. The idea was to help weaker teams by letting them pick first.'],
+['history',3,'Jay Berwanger, the first player ever picked in an NFL Draft (1936), went on to...','Never play in the NFL',['Win 5 championships','Become a head coach','Score 100 touchdowns'],'Berwanger, the first Heisman winner, chose a business career instead of pro football.'],
+['rules',1,'In the NFL Draft, which teams usually get to pick first?','Teams with the worst records',['Teams with the best records','The Super Bowl champion','Teams picked by lottery'],'The worst team picks first. It helps struggling teams get better and keeps the league balanced.'],
+['rules',2,'How many rounds does the NFL Draft have today?','7',['3','10','12'],'The draft has had 7 rounds since 1994. It used to have many more.'],
+['rules',2,'A player who is not picked by any team in the draft is called...','Undrafted',['A walk-on','A free agent rookie only in Canada','A redshirt'],'Undrafted players can still sign with any team. Stars like Kurt Warner and Tony Romo went undrafted.'],
+
+// ---------- DRAFT MISSES ("busts") ----------
+['history',2,'JaMarcus Russell was the No. 1 pick in 2007 but didn\'t live up to it. Which team drafted him?','Oakland Raiders',['Cleveland Browns','Detroit Lions','Houston Texans'],'Russell was out of the NFL after three seasons. He is often called one of the biggest draft busts ever.'],
+['history',3,'The Packers drafted Tony Mandarich 2nd in 1989. Which future Hall of Famer did they pass on?','Barry Sanders',['Jerry Rice','Dan Marino','Brett Favre'],'Sanders (3rd), Derrick Thomas (4th) and Deion Sanders (5th) all went right after Mandarich, who never became a star.'],
+['history',3,'Ki-Jana Carter, the No. 1 pick in 1995, had his career slowed by what?','A knee injury in his first preseason',['Choosing to play baseball','A contract holdout','Moving to Canada'],'Carter tore his ACL in his very first preseason game with the Bengals and never became the star people expected.'],
+['history',3,'As a rookie in 2002, Texans QB David Carr set an NFL record for...','Most times sacked in a season',['Most touchdown passes','Longest run by a QB','Most wins'],'Carr was sacked 76 times behind a brand-new expansion team\'s line. It is still the record.'],
+['history',3,'Johnny Manziel, "Johnny Football," won the Heisman at which school before being drafted by the Browns?','Texas A&M',['Texas','Ole Miss','Baylor'],'Manziel was the first freshman to win the Heisman (2012), but his NFL career lasted only two seasons.'],
+['history',3,'The Saints traded ALL of their 1999 draft picks to move up and draft which running back?','Ricky Williams',['Edgerrin James','Jamal Lewis','Marshall Faulk'],'Coach Mike Ditka made the deal. It\'s still one of the most famous trades in draft history.'],
+['history',3,'In 1989 the Cowboys traded Herschel Walker to the Vikings for a pile of draft picks. What did that help build?','A Cowboys dynasty with 3 Super Bowls',['A Vikings Super Bowl win','The first Texans team','Nothing, it failed for both'],'Dallas used the picks to help build the team that won three Super Bowls in the 1990s, including Emmitt Smith.'],
+
+// ---------- CONTROVERSIES, FAMOUS CALLS AND RULE CHANGES ----------
+['history',2,'The "Tuck Rule" game in January 2002 was played in the snow between the Patriots and which team?','Oakland Raiders',['Pittsburgh Steelers','Indianapolis Colts','New York Jets'],'What looked like a Tom Brady fumble was ruled an incomplete pass. The Patriots tied it, won in overtime, and went on to win the Super Bowl.'],
+['rules',3,'What happened to the "Tuck Rule" in 2013?','The NFL got rid of it',['It was made stronger','It became a college-only rule','It was renamed the Brady Rule'],'Team owners voted to abolish the Tuck Rule in 2013, more than 11 years after the famous Raiders-Patriots game.'],
+['history',2,'The "Immaculate Reception" in 1972 was a deflected catch and touchdown by which Steelers player?','Franco Harris',['Terry Bradshaw','Lynn Swann','Jack Lambert'],'The ball bounced off a defender (or a teammate) and Harris caught it just before the ground. People still argue about it.'],
+['history',2,'The 2012 "Fail Mary" Hail Mary catch, called by replacement referees, was won by which team?','Seattle Seahawks',['Green Bay Packers','Detroit Lions','Chicago Bears'],'Golden Tate was ruled to have caught it even though a Packers player seemed to have it. Days later the regular refs came back.'],
+['history',2,'In 2007, the Patriots were punished for filming the other team\'s coaches\' signals. What is this scandal called?','Spygate',['Deflategate','Bountygate','Tapegate'],'The NFL fined coach Bill Belichick $500,000 and took away the team\'s 2008 1st-round pick.'],
+['history',2,'"Deflategate" was about footballs that were what?','Under-inflated',['Too heavy','The wrong color','Signed by players'],'After the 2015 AFC Championship, the NFL ruled footballs had too little air. Tom Brady was suspended for four games in 2016.'],
+['history',3,'For "Bountygate," which team\'s head coach was suspended for the entire 2012 season?','New Orleans Saints',['Pittsburgh Steelers','New England Patriots','Philadelphia Eagles'],'Coach Sean Payton was suspended for a full year after the NFL found the team paid players for big hits.'],
+['history',3,'A missed pass interference call in the 2019 NFC Championship (Rams vs. Saints) led the NFL to...','Let coaches challenge pass interference for a season',['Add a fourth referee','Cancel the Super Bowl','Remove the replay system'],'The famous "no-call" in New Orleans led to a one-year rule making pass interference reviewable by replay.'],
+['history',3,'The "Dez Caught It" play in a 2015 playoff game was a reversed catch by a Cowboys receiver against which team?','Green Bay Packers',['Seattle Seahawks','San Francisco 49ers','New York Giants'],'Dez Bryant\'s catch was overturned. Years later, in 2018, the NFL simplified its rules for what counts as a catch.'],
+['history',3,'In the 2000 "Music City Miracle," the Titans won on a kickoff return that used a...','Lateral pass across the field',['Fake punt','Hail Mary pass','Fumble recovery'],'Frank Wycheck threw it sideways to Kevin Dyson, who ran it back for a TD vs. the Bills. Replay said the pass went backward, so it counted.'],
+['history',3,'In the 1982 "Snowplow Game," how did the Patriots kicker get a clear spot to kick the winning field goal?','A snowplow cleared the spot for him',['He kicked from a towel','The refs shoveled it','He used a kicking tee on ice'],'A plow driver cleared a patch of snow, the Patriots won 3-0, and the NFL later banned that kind of help.'],
+['history',1,'At the end of Super Bowl XLIX, the Seahawks threw an interception at the 1-yard line. Who caught it?','Malcolm Butler',['Richard Sherman','Tom Brady','Rob Gronkowski'],'Many fans thought Seattle should have handed it to Marshawn Lynch. Butler\'s pick won the game for the Patriots.'],
+['history',2,'The "Butt Fumble" happened on Thanksgiving 2012 when Jets QB Mark Sanchez ran into...','His own lineman\'s backside',['The goalpost','A referee','The team mascot'],'Sanchez ran into Brandon Moore, fumbled, and the Patriots returned it for a TD. It\'s one of the most replayed bloopers ever.'],
+['history',2,'In 1984 the Colts left Baltimore in the middle of the night using moving trucks. Where did they go?','Indianapolis',['St. Louis','Phoenix','Houston'],'Moving trucks loaded up overnight in March 1984. Baltimore got the Ravens in 1996.'],
+['history',2,'When the original Cleveland Browns moved to Baltimore in 1996, what happened to the Browns name and history?','It stayed in Cleveland for a new team',['It moved to Baltimore','It was retired forever','It was sold to Canada'],'The moved team became the Baltimore Ravens. A new Browns team started in 1999 with the old name, colors and records.'],
+['history',2,'The "Helmet Catch" in Super Bowl XLII was made by which Giants receiver?','David Tyree',['Plaxico Burress','Victor Cruz','Odell Beckham Jr.'],'Tyree pinned the ball to his helmet on a key drive that ended the Patriots\' dream of a perfect 19-0 season.'],
+['history',2,'The "Philly Special" in Super Bowl LII ended with which player catching a touchdown?','Quarterback Nick Foles',['Tight end Zach Ertz','Running back LeGarrette Blount','Receiver Alshon Jeffery'],'The Eagles snapped the ball to the running back, who pitched to tight end Trey Burton, who threw to QB Nick Foles.'],
+['history',3,'The 2018 "Minneapolis Miracle" was a last-play, 61-yard touchdown catch by which Vikings receiver?','Stefon Diggs',['Adam Thielen','Randy Moss','Cris Carter'],'Diggs caught it as time ran out to beat the Saints in the playoffs. It was the first playoff game to end on a last-play TD in regulation.'],
+['history',2,'The 1967 "Ice Bowl" was played in about -13°F. Which team won it at Lambeau Field?','Green Bay Packers',['Dallas Cowboys','Minnesota Vikings','Chicago Bears'],'Bart Starr\'s QB sneak won it for the Packers, who went on to win Super Bowl II.'],
+['history',2,'"The Catch" in the 1981 NFC Championship (played in January 1982) was made by which 49ers receiver?','Dwight Clark',['Jerry Rice','Roger Craig','John Taylor'],'Joe Montana threw it high to Clark in the back of the end zone to beat the Cowboys and start a 49ers dynasty.'],
+['history',3,'Rocky Bleier came back to win four Super Bowls with the Steelers after being wounded where?','In the Vietnam War',['In a car crash','In a fire','In a boxing match'],'Doctors told Bleier he might never walk normally again. He worked his way back and became a key running back.'],
+
+// ---------- LIFE AFTER (AND OUTSIDE) FOOTBALL ----------
+['players',1,'Michael Strahan, a Giants sack master, became a co-host of which TV morning show?','Good Morning America',['The Today Show','SportsCenter','Sesame Street'],'Strahan also set the single-season sack record (22.5) in 2001.'],
+['players',1,'Terry Crews played linebacker in the NFL before starring as Sgt. Jeffords on which TV comedy?','Brooklyn Nine-Nine',['The Office','Friends','Parks and Recreation'],'Crews played for several NFL teams in the 1990s, then became an actor and host of America\'s Got Talent.'],
+['players',2,'Before becoming a wrestling and movie star, Dwayne "The Rock" Johnson played college football at which school?','Miami (Florida)',['Alabama','USC','Notre Dame'],'Johnson was on Miami\'s 1991 national championship team, then was cut by a Canadian Football League team.'],
+['players',2,'Carl Weathers played linebacker for the Raiders before playing which famous boxer in the "Rocky" movies?','Apollo Creed',['Rocky Balboa','Clubber Lang','Ivan Drago'],'Weathers played for Oakland in 1970-71, then became Rocky\'s rival-turned-friend Apollo Creed.'],
+['players',2,'Hall of Fame running back Jim Brown also starred in which classic war movie?','The Dirty Dozen',['Top Gun','Star Wars','Jaws'],'Brown retired at the top of his game in 1966 to act, and filmed The Dirty Dozen in 1967.'],
+['players',3,'Merlin Olsen, a Rams defensive star, later acted on which TV show?','Little House on the Prairie',['The Brady Bunch','Happy Days','Gilligan\'s Island'],'Olsen played Jonathan Garvey, then starred in his own show, Father Murphy.'],
+['players',3,'Alex Karras, a Lions defensive lineman, played "Mongo" in which comedy movie?','Blazing Saddles',['Airplane!','Caddyshack','Ghostbusters'],'Karras also starred as the dad on the TV show Webster.'],
+['players',3,'Bubba Smith, a star pass rusher, later played Officer Hightower in which movie series?','Police Academy',['Star Trek','Back to the Future','Rocky'],'Smith played college football at Michigan State and won a Super Bowl with the Colts.'],
+['players',2,'Terry Bradshaw played Matthew McConaughey\'s dad in which movie?','Failure to Launch',['Remember the Titans','The Blind Side','Jerry Maguire'],'The four-time Super Bowl champion QB is also a longtime host on FOX NFL Sunday.'],
+['players',2,'Howie Long, a Raiders Hall of Famer, became a longtime TV analyst on which network\'s NFL pregame show?','FOX',['ESPN','CBS','NBC'],'Long also acted in action movies like Broken Arrow (1996).'],
+['players',2,'Which Hall of Fame running back won "Dancing with the Stars" in 2006?','Emmitt Smith',['Jerry Rice','Barry Sanders','Marshall Faulk'],'Smith, the NFL\'s all-time rushing leader, won season 3. Jerry Rice finished 2nd in an earlier season.'],
+['players',2,'Rob Gronkowski won which championship at WrestleMania 36?','WWE 24/7 Championship',['Heavyweight boxing title','UFC belt','NBA Slam Dunk Contest'],'Gronk had retired from football in 2019. He won the title, then came back to win another Super Bowl with Tom Brady.'],
+['players',2,'Pat McAfee became a famous sports talk show host after playing which position for the Colts?','Punter',['Quarterback','Linebacker','Running back'],'McAfee was a Pro Bowl punter and kicker, then started The Pat McAfee Show and joined ESPN.'],
+['players',2,'Jason and Travis Kelce host which popular podcast together?','New Heights',['Pardon My Take','Club Shay Shay','The Herd'],'The brothers talk football and family. Jason won a Super Bowl with the Eagles and Travis has won several with the Chiefs.'],
+['players',2,'Which NFL player hosted "Saturday Night Live" in 2007?','Peyton Manning',['Tom Brady','Brett Favre','Michael Strahan'],'Manning\'s funny "United Way" sketch became a classic. Travis Kelce also hosted SNL in 2023.'],
+['players',2,'After retiring, Tony Romo became famous on TV for what?','Predicting plays as a broadcaster',['Hosting a cooking show','Acting in superhero movies','Coaching in college'],'Romo became CBS\'s lead analyst and was known for calling out plays before they happened.'],
+['players',2,'After retiring, Tom Brady became the lead NFL game analyst for which network?','FOX',['CBS','NBC','ESPN'],'Brady started calling games for FOX in 2024. He also became a part-owner of the Las Vegas Raiders.'], // TS
+['players',3,'Byron "Whizzer" White led the NFL in rushing and later became what?','A U.S. Supreme Court Justice',['President of the United States','An astronaut','A Hollywood director'],'White played for Pittsburgh and Detroit, then served on the Supreme Court from 1962 to 1993.'],
+['players',3,'Alan Page, a Vikings Hall of Fame defensive tackle, later became a justice on which court?','The Minnesota Supreme Court',['The U.S. Supreme Court','The Texas Supreme Court','The World Court'],'Page earned a law degree while still playing and served on Minnesota\'s highest court for over 20 years.'],
+['players',3,'Bills QB Jack Kemp later ran for which office alongside Bob Dole in 1996?','Vice President',['Governor of New York','Mayor of Buffalo','NFL Commissioner'],'Kemp served in Congress for 18 years and was the Republican nominee for Vice President in 1996.'],
+['players',3,'Hall of Fame receiver Steve Largent later served in the U.S. Congress representing which state?','Oklahoma',['Washington','Texas','California'],'Largent starred for the Seahawks, then served in the House of Representatives from 1994 to 2002.'],
+['players',3,'Myron Rolle was drafted by the Titans in 2010, but he became famous for what career afterward?','Brain surgeon (neurosurgeon)',['Astronaut','Movie star','Pro wrestler'],'Rolle was a Rhodes Scholar at Florida State and went to medical school to become a neurosurgeon.'],
+['players',3,'Ravens lineman John Urschel retired young to earn a PhD at MIT in which subject?','Mathematics',['Medicine','Music','History'],'Urschel published math research while still playing in the NFL.'],
+['players',3,'Ed "Too Tall" Jones took a year off from the Cowboys in 1979 to try which sport?','Boxing',['Basketball','Baseball','Wrestling'],'He won all six of his pro fights, then went back to the Cowboys and played until 1989.'],
+['players',3,'Before football and movies, Brian "The Boz" Bosworth starred at which college?','Oklahoma',['Miami','Texas','Nebraska'],'Bosworth was a huge college star, but injuries cut his Seahawks career short. He then starred in the 1991 action movie Stone Cold.'],
+['players',2,'Deion Sanders played in both the Super Bowl and which other championship?','The World Series',['The Stanley Cup Final','The NBA Finals','The World Cup'],'Sanders played in the 1992 World Series with the Atlanta Braves and won Super Bowls with the 49ers and Cowboys.'],
+['players',3,'Jim Thorpe, an Olympic gold medalist, was the first president of which league?','The league that became the NFL',['Major League Baseball','The NBA','The AFL'],'Thorpe was the first president of the American Professional Football Association in 1920, renamed the NFL in 1922.'],
+['players',2,'John Madden coached the Raiders to a Super Bowl win, but is even more famous today for what?','A football video game series',['A brand of football cleats','A stadium','A cartoon show'],'Madden was also a legendary broadcaster. The Madden NFL video games have been made since 1988.'],
+
+// ---------- MOVIES ABOUT FOOTBALL ----------
+['history',1,'"The Blind Side" (2009) tells the story of which NFL offensive lineman?','Michael Oher',['Jason Kelce','Orlando Pace','Joe Thomas'],'The movie followed Oher\'s life before he became a 1st-round pick of the Ravens.'],
+['history',2,'"Remember the Titans" (2000) is based on a real high school team from which state?','Virginia',['Texas','Ohio','Georgia'],'It follows the 1971 T.C. Williams High School team in Alexandria, Virginia, led by coach Herman Boone.'],
+['history',2,'The movie "Rudy" (1993) is about a walk-on player who got into one game for which college?','Notre Dame',['Michigan','USC','Alabama'],'Rudy Ruettiger was undersized but worked so hard his teammates carried him off the field.'],
+
+// ---------- MORE TEAMS AND STADIUMS (filling the 3-star level) ----------
+['teams',3,'Which NFL team is owned by its fans instead of one rich owner?','Green Bay Packers',['Chicago Bears','Pittsburgh Steelers','Kansas City Chiefs'],'The Packers are a community-owned nonprofit with hundreds of thousands of shareholders. That\'s why they\'ve never moved.'],
+['teams',3,'Which franchise moved from Houston to Tennessee in 1997?','The Oilers (now Titans)',['The Texans','The Colts','The Rams'],'The Houston Oilers became the Tennessee Oilers, then the Titans in 1999. Houston got the Texans in 2002.'],
+['teams',3,'Which team played in St. Louis from 1995 to 2015 before moving back to Los Angeles?','Rams',['Cardinals','Chargers','Raiders'],'The St. Louis Rams won Super Bowl XXXIV with Kurt Warner, then returned to LA in 2016.'],
+['teams',3,'Which current NFL team was originally the Boston Patriots?','New England Patriots',['Washington Commanders','Indianapolis Colts','Arizona Cardinals'],'The Boston Patriots started in the AFL in 1960 and became the New England Patriots in 1971.'],
+['stadiums',3,'Which stadium hosted Super Bowl LVIII, the first Super Bowl in Las Vegas?','Allegiant Stadium',['SoFi Stadium','Caesars Superdome','State Farm Stadium'],'The Chiefs beat the 49ers in overtime at Allegiant Stadium in February 2024.'],
+['stadiums',3,'Which stadium, home of both the Rams and the Chargers, has a giant two-sided oval video board called the Infinity Screen?','SoFi Stadium',['Allegiant Stadium','MetLife Stadium','Lumen Field'],'SoFi Stadium in Inglewood, California opened in 2020 and hosted Super Bowl LVI.'],
+['stadiums',3,'The NFL Hall of Fame Game is played every summer in which city?','Canton, Ohio',['Green Bay, Wisconsin','Dallas, Texas','New York, New York'],'The Pro Football Hall of Fame is in Canton, where the NFL was founded in 1920.'],
+];
+for(const r of CZ_Q_EXTRA)QB.push({id:QB.length,cat:r[0],d:r[1],q:r[2],a:r[3],w:r[4],x:r[5]});
+
+// ===================== ECONOMY + FINDABLE SHOPS =====================
+// Shops get a sign and a working door, a ❗ until you've visited, and a daily deal. Chests give fewer
+// consumables and more coins, and coins have new uses: gear upgrades, daily deals, fishing gear, house decor.
+
+// ---- shopkeepers stand beside their door (they used to block it); Mom moves aside from the home door ----
+genNPCs=ccPatch(genNPCs,[["mk(p.x-6,p.y+0,'shop',","mk(p.x-4,p.y+0,'shop',"],["mk(kk.x+6,kk.y,'mom',","mk(kk.x+4,kk.y,'mom',"]]);
+
+// ---- chests: one consumable instead of 1-2, much more often coins; a small chance of fishing gear ----
+openChest=ccPatch(openChest,[
+ ["else if(r<.92){const k=rollCons(),n=rint(1,2);","else if(r<.6){const k=rollCons(),n=1;"],
+ ["else{const c=rint(50,150);S.coins+=c;lines.push(`${NM()} found a bag of ${c} coins! 🪙`)}","else if(r<.95||typeof czFishLoot!=='function'){const c=rint(40,90)*(1+(it.tier||0));S.coins+=c;lines.push(`${NM()} found a bag of ${c} coins! 🪙`)}else czFishLoot(lines)"]]);
+
+// ---- where things are ----
+function czTownDoors(){const out=[];POIS.forEach((p,k)=>{if(p.id==='champ')return;out.push({k:'shop',p,x:p.x-6,y:p.y-1},{k:p.id==='kickoff'?'home':'house',p,x:p.x+6,y:p.y-1})});return out}
+function czShopkeeper(p){return npcs.find(n=>n.kind==='shop'&&Math.abs(n.home.x-p.x)<=8&&Math.abs(n.home.y-p.y)<=3)}
+function czToday(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+
+// ---- doors ----
+function czDoor(x,y){const d=czTownDoors().find(o=>o.x===x&&o.y===y);if(!d)return false;
+ if(d.k==='shop'){const n=czShopkeeper(d.p);if(!n)return false;SFX.blip&&SFX.blip();dialog([`${n.name}: Come on in! Gear, snacks and today's deal.`],()=>openShop(n));return true}
+ if(d.k==='home'){if(typeof czHouseEnter==='function'){czHouseEnter();return true}return false}
+ dialog([pick(['Nobody\'s home. They\'re all out at the game!','A sign on the door: "Gone tailgating. Back after the 4th quarter."','You hear a TV inside: "...and he takes it all the way!" Nobody answers.'])]);return true}
+interact=(orig=>function(){if(state==='world'&&!player.moving){const[fx,fy]=facing();if(inb(fx,fy)&&map[idx(fx,fy)]===T.DOOR&&czDoor(fx,fy))return}return orig.apply(this,arguments)})(interact);
+
+// ---- shop visits, ❗ markers, daily deal ----
+openShop=(orig=>function(n){S.shopSeen=S.shopSeen||{};S.shopSeen[n.id]=czToday();if(n.kind==='shop'&&shopTab==='up'&&!czUpList().length)shopTab='buy';return orig.apply(this,arguments)})(openShop);
+function czShopId(n){return n.x+'_'+n.y}
+function czDeal(n){if(!n)return null;const day=czToday(),tier=Math.min(5,(n.tier||0)+1);
+ const pool=Object.keys(GEAR).filter(k=>GEAR[k].r===tier&&!(typeof LEGENDS!=='undefined'&&LEGENDS[k]));if(!pool.length)return null;
+ let h=0;for(const ch of day+czShopId(n))h=(h*31+ch.charCodeAt(0))>>>0;const id=pool[h%pool.length];
+ const price=Math.round(GEAR_PRICE[tier]*.7);const sold=!!(S.deals&&S.deals[day+'|'+czShopId(n)]);return{id,price,sold,day}}
+function czBuyDeal(){const n=shopN,d=czDeal(n);if(!d||d.sold||S.coins<d.price)return;S.coins-=d.price;S.st.bought=(S.st.bought||0)+1;S.gear.push(d.id);
+ S.deals=S.deals||{};for(const k in S.deals)if(!k.startsWith(d.day))delete S.deals[k];S.deals[d.day+'|'+czShopId(n)]=1;SFX.item();
+ toast(`Bought ${GEAR[d.id].name}! Equip it in Menu → Gear.`);updHud();renderShop()}
+
+// ---- gear upgrades (+1 to +3): each level adds 20% of the item's stats ----
+const CZ_UPMAX=3;
+function czUpLv(id){return(S.gup&&S.gup[id])||0}
+function czUpCost(id){const g=GEAR[id];return Math.round(GEAR_PRICE[g.r]*.6*(czUpLv(id)+1))}
+function czUpBonus(g,lv){const b={};if(!lv)return b;for(const k of['atk','def','hp','heal']){if(g[k])b[k]=Math.max(lv,Math.round(g[k]*.2*lv))}for(const k of['crit','dodge'])if(g[k])b[k]=lv;return b}
+function czUpList(){return SLOTS.map(s=>S.equip[s]).filter(Boolean)}
+stats=(orig=>function(){const s=orig.apply(this,arguments);if(!S||!S.gup)return s;
+ for(const k of SLOTS){const id=S.equip[k];if(!id)continue;const b=czUpBonus(GEAR[id],czUpLv(id));s.atk+=b.atk||0;s.def+=b.def||0;s.hp+=b.hp||0;s.heal+=b.heal||0;s.crit+=(b.crit||0)/100;s.dodge+=(b.dodge||0)/100}return s})(stats);
+function czUpgrade(id){const lv=czUpLv(id);if(lv>=CZ_UPMAX)return;const c=czUpCost(id);if(S.coins<c)return;S.coins-=c;S.gup=S.gup||{};S.gup[id]=lv+1;S.st.upgrades=(S.st.upgrades||0)+1;
+ SFX.level&&SFX.level();toast(`⬆️ ${GEAR[id].name} is now +${lv+1}!`);updHud();renderShop()}
+function czUpDesc(g,lv){const b=czUpBonus(g,lv),p=[];if(b.atk)p.push('ATK+'+b.atk);if(b.def)p.push('DEF+'+b.def);if(b.hp)p.push('💧+'+b.hp);if(b.crit)p.push('CRIT+'+b.crit+'%');if(b.dodge)p.push('JUKE+'+b.dodge+'%');if(b.heal)p.push('Heal+'+b.heal);return p.join('  ')}
+
+renderShop=(orig=>function(){const n=shopN;
+ if(shopTab==='up'){const tabs=`<div id="menuTabs"><button onclick="G.shopTab('buy')">🛒 Buy</button><button onclick="G.shopTab('sell')">💰 Sell</button><button class="on" onclick="G.shopTab('up')">⬆️ Upgrade</button><span class="coins">🪙 ${S.coins}</span><button class="x" onclick="G.closeMenu()">✕</button></div>`;
+  const rows=czUpList().map(id=>{const g=GEAR[id],lv=czUpLv(id),c=czUpCost(id),max=lv>=CZ_UPMAX;
+   return`<div class="card" style="border-color:${RAR[g.r].c}"><div class="ic">${czIc(g)}</div><div><b style="color:${RAR[g.r].c}">${g.name}${lv?' +'+lv:''}</b><br><small>${gearDesc(g)}${lv?'  <span class="good">('+czUpDesc(g,lv)+')</span>':''}</small>${max?'':`<br><small class="muted">Next: ${czUpDesc(g,lv+1)}</small>`}</div>${max?'<button disabled>MAX</button>':`<button ${S.coins>=c?'':'disabled'} onclick="czUpgrade('${id}')">${c}🪙</button>`}</div>`}).join('');
+  $('#shop').innerHTML=tabs+`<div id="menuBody2"><p class="help" style="margin:4px 0 8px">Upgrade the gear you're wearing. Each level adds 20% to its stats (up to +${CZ_UPMAX}).</p><div class="grid">${rows||'<i>Equip some gear first.</i>'}</div></div>`;return}
+ orig.apply(this,arguments);
+ // Upgrade tab button
+ const tb=$('#shop #menuTabs');if(tb){const b=document.createElement('button');b.textContent='⬆️ Upgrade';b.onclick=()=>G.shopTab('up');const coins=tb.querySelector('.coins');tb.insertBefore(b,coins)}
+ // fishing goods and selling fish hook in here (cozy_fish.js)
+ if(typeof czFishShop==='function')czFishShop();
+ // today's deal on top of the Buy list
+ if(shopTab==='buy'&&n&&n.kind==='shop'){const d=czDeal(n),grid=$('#shop .grid');if(d&&grid){const g=GEAR[d.id],full=GEAR_PRICE[g.r];
+  const el=document.createElement('div');el.className='card czdeal';el.style.borderColor=RAR[g.r].c;
+  el.innerHTML=`<div class="ic">${czIc(g)}</div><div><b>⭐ Today's deal</b> <small class="muted">(new one every day)</small><br><b style="color:${RAR[g.r].c}">${g.name}</b> [${RAR[g.r].n}]<br><small>${gearDesc(g)}</small></div>`+
+   (d.sold?'<button disabled>Sold out</button>':`<button ${S.coins>=d.price?'':'disabled'} onclick="czBuyDeal()"><s style="opacity:.6">${full}</s> ${d.price}🪙</button>`);
+  grid.insertBefore(el,grid.firstChild)}}})(renderShop);
+
+// ---- signs over shop and home doors, ❗ over shopkeepers ----
+const CZ_FONT={S:['111','100','111','001','111'],H:['101','101','111','101','101'],O:['111','101','101','101','111'],P:['111','101','111','100','100'],M:['10001','11011','10101','10001','10001'],E:['111','100','111','100','111']};
+function czPixText(t,x,y,c){ctx.fillStyle=c;let cx=x;for(const ch of t){const g=CZ_FONT[ch];if(!g)continue;for(let r=0;r<5;r++)for(let i=0;i<g[r].length;i++)if(g[r][i]==='1')ctx.fillRect(cx+i,y+r,1,1);cx+=g[0].length+1}}
+function czTextW(t){let w=0;for(const ch of t){const g=CZ_FONT[ch];if(g)w+=g[0].length+1}return w-1}
+function czSign(tx,ty,txt,col){const w=czTextW(txt)+8,h=9,sx=Math.round(tx*16+8-w/2-camX),sy=Math.round(ty*16-camY-h-1);
+ ctx.fillStyle='#2a1a12';ctx.fillRect(sx+2,sy-3,1,3);ctx.fillRect(sx+w-3,sy-3,1,3);
+ ctx.fillStyle='#2a1a12';ctx.fillRect(sx-1,sy-1,w+2,h+2);ctx.fillStyle=col;ctx.fillRect(sx,sy,w,h);ctx.fillStyle='rgba(255,255,255,.25)';ctx.fillRect(sx,sy,w,1);ctx.fillStyle='rgba(0,0,0,.18)';ctx.fillRect(sx,sy+h-1,w,1);
+ czPixText(txt,sx+4,sy+2,'#fff7e0')}
+CZ_HOOKS.ground.push((x0,y0,vw,vh)=>{for(const d of czTownDoors()){if(d.x<x0-2||d.x>x0+vw+2||d.y<y0-1||d.y>y0+vh+2)continue;
+ if(d.k==='shop')czSign(d.x,d.y,'SHOP','#b8452f');else if(d.k==='home')czSign(d.x,d.y,'HOME','#3f6fc8')}});
+function czShopNews(n){const id=n.id,seen=S.shopSeen&&S.shopSeen[id];if(!seen)return'!';const d=czDeal(n);if(d&&!d.sold&&seen!==czToday())return'★';return null}
+CZ_HOOKS.ents.push((x0,y0,vw,vh,ents)=>{if(state!=='world')return;for(const n of npcs){if(n.kind!=='shop'||n.x<x0-1||n.x>x0+vw+1||n.y<y0-1||n.y>y0+vh+2)continue;const m=czShopNews(n);if(!m)continue;
+ ents.push({y:n.py+1,d:()=>{const b=Math.sin(frame/9)*1.5,sx=Math.round(n.px-camX+8),sy=Math.round(n.py-camY-14+b);ctx.fillStyle='#2a1a12';ctx.fillRect(sx-5,sy-8,10,10);ctx.fillStyle=m==='!'?'#ffd84a':'#fff7e0';ctx.fillRect(sx-4,sy-7,8,8);
+  ctx.fillStyle=m==='!'?'#b8452f':'#e8900c';if(m==='!'){ctx.fillRect(sx-1,sy-6,2,4);ctx.fillRect(sx-1,sy-1,2,1)}else{ctx.fillRect(sx-1,sy-6,2,6);ctx.fillRect(sx-3,sy-4,6,2)}
+  ctx.fillStyle='#2a1a12';ctx.fillRect(sx-1,sy+2,3,1)}})}});
+
+// ---- map: 🛒 for shops, 🏠 for home ----
+renderMap=(orig=>function(){orig.apply(this,arguments);const c=$('#mapCv');if(!c||!S)return;const g=c.getContext('2d'),M=2;g.font='11px sans-serif';g.textAlign='center';g.textBaseline='middle';
+ for(const d of czTownDoors()){if(d.k==='house')continue;g.fillText(d.k==='shop'?'🛒':'🏠',d.x*M,d.y*M-2)}})(renderMap);
+
+// ---- the first time near the Kickoff shop, point it out ----
+let czShopHintT=0;
+CZ_HOOKS.over.push(()=>{if(state!=='world'||!S||(S.flags&&S.flags.shopHint)||(S.shopSeen&&Object.keys(S.shopSeen).length)||!S.intro||++czShopHintT%30)return;const p=POIS[0];
+ if(Math.abs(player.x-(p.x-6))+Math.abs(player.y-(p.y-1))<=5){S.flags=S.flags||{};S.flags.shopHint=1;toast('🛒 That red building is the Pro Shop. Walk up to the door to go in!')}});
+(()=>{const st=document.createElement('style');st.textContent=`.czdeal{background:#fff6d6!important;box-shadow:0 0 0 2px #ffd84a inset}.czdeal s{margin-right:3px}`;document.head.appendChild(st)})();
+
+// ===================== SMART COACH (adaptive questions) =====================
+// Tracks a skill level (1-4) per category and picks question difficulty so the player gets about 70-75% right.
+// Leans toward weak categories some of the time, and brings missed questions back on a schedule
+// (a few questions later, the next day, a few days later) until they stick.
+// Off switch in Options. Legend/Superfan-only fights, picture plays, duels and the Daily Challenge are unchanged.
+const CZ_SK_START={rookie:1.4,pro:2.0,allpro:2.6,superfan:3.2};
+const CZ_SK_NAMES=[[1.6,'Rookie'],[2.3,'Starter'],[3.0,'Pro'],[3.6,'All-Pro'],[9,'Superfan']];
+let czSmartLast=null;
+function czSmartOn(){return!!S&&S.smart!==false}
+function czSkills(){if(S.sk)return S.sk;const b=CZ_SK_START[S.diff]||2,sk={};
+ for(const k of Object.keys(CATS)){const c=S.st.cat[k];let v=b;if(c&&c[0]>=10)v+=(c[1]/c[0]-.7)*2;sk[k]=Math.max(1,Math.min(4,v))}return S.sk=sk}
+function czSkName(v){for(const[t,n]of CZ_SK_NAMES)if(v<t)return n;return'Superfan'}
+function czExpect(sk,d){return 1/(1+Math.exp((d-sk)*1.6))}
+function czRvDue(id){const r=S.rv&&S.rv[id];return!!r&&S.st.ans>=r.a&&Date.now()>=r.t}
+function czWeakCat(){const sk=czSkills(),ks=Object.keys(CATS);let tot=0;const w=ks.map(k=>{const v=Math.pow(4.3-sk[k],2);tot+=v;return v});let r=R()*tot;for(let i=0;i<ks.length;i++){r-=w[i];if(r<=0)return ks[i]}return ks[0]}
+function czWeakest(n){const sk=czSkills();return Object.keys(CATS).sort((a,b)=>sk[a]-sk[b]).slice(0,n)}
+
+pickQuestion=(orig=>function(cat,dmin,dmax,preferMissed){
+ czSmartLast=null;if(!czSmartOn()||dmin>=4||preferMissed)return orig.apply(this,arguments);
+ const sk=czSkills();let why=null;
+ // lean toward weak spots: when the place doesn't set a category, 40% of questions come from the weaker ones
+ if(!cat&&R()<.4){cat=czWeakCat();why='focus'}
+ // a missed question that's due for another look comes first, about a third of the time
+ const allowHi=S.diff==='rookie'?3:4;
+ if(S.rv&&R()<.2){const due=Object.keys(S.rv).filter(id=>czRvDue(id)).map(Number).map(id=>QB[id]).filter(q=>q&&(!cat||q.cat===cat)&&q.d<=allowHi&&!recent.includes(q.id));
+  if(due.length){const q=pick(due);recent.push(q.id);if(recent.length>15)recent.shift();czSmartLast={id:q.id,why:'review'};return q}}
+ const c=cat||pick(Object.keys(CATS)),s=sk[c]||2;
+ // aim for ~72% right: a bit below the player's level, with some spread
+ const lo=Math.max(1,(dmin||1)-1),hi=Math.min(allowHi,(dmax||3)+1,s>=3.2?4:3);
+ const tgt=Math.max(lo,Math.min(hi,Math.round(s-.75+(R()-.5)*1.2)));
+ let P=null;for(const wide of[0,1,2]){const pool=QB.filter(q=>(!cat||q.cat===cat)&&!q.pic&&Math.abs(q.d-tgt)<=wide&&q.d>=lo&&q.d<=hi&&!recent.includes(q.id));if(pool.length>=3){P=pool;break}}
+ if(!P)return orig.apply(this,[cat,dmin,dmax,preferMissed]);
+ const fresh=P.filter(q=>!S.seen[q.id]);const q=pick(fresh.length&&R()<.8?fresh:P);
+ recent.push(q.id);if(recent.length>15)recent.shift();czSmartLast={id:q.id,why};return q})(pickQuestion);
+
+recordAnswer=(orig=>function(q,ok){const r=orig.apply(this,arguments);if(!S||!q||q.pic)return r;
+ if(czSmartOn()){const sk=czSkills(),k=q.cat;if(sk[k]!=null){const d=Math.min(4,q.d);sk[k]=Math.max(1,Math.min(4.3,sk[k]+.14*((ok?1:0)-czExpect(sk[k],d))))}}
+ // spaced review: wrong -> back in ~8 questions; right when due -> next day -> 3 days later -> mastered
+ S.rv=S.rv||{};const id=q.id,rv=S.rv[id];
+ if(!ok)S.rv[id]={s:0,a:S.st.ans+8,t:0};
+ else if(rv&&czRvDue(id)){const s=rv.s+1;if(s>=3){delete S.rv[id];S.st.locked=(S.st.locked||0)+1}else S.rv[id]={s,a:S.st.ans+20,t:Date.now()+(s===1?20:72)*3600e3}}
+ return r})(recordAnswer);
+
+// a small tag on the question so the player knows why it came up
+renderQ=(orig=>function(){const r=orig.apply(this,arguments);if(B&&B.q&&czSmartLast&&czSmartLast.id===B.q.id&&czSmartLast.why){const h=$('#qHead');if(h&&!h.querySelector('.czwhy')){const t=document.createElement('span');t.className='czwhy';
+ t.textContent=czSmartLast.why==='review'?'🔁 Review':'🎯 Focus area';t.title=czSmartLast.why==='review'?'You missed this one before. Let\'s lock it in!':'The coach is drilling one of your weaker areas.';h.appendChild(t)}}return r})(renderQ);
+
+// Film Room: the coach's read on you; Options: on/off
+renderMenu=(orig=>function(){orig.apply(this,arguments);const mb=$('#menuBody');if(!mb||!S)return;
+ if(menuTab==='film'&&czSmartOn()){const sk=czSkills(),weak=czWeakest(2),due=S.rv?Object.keys(S.rv).length:0;const d=document.createElement('div');d.className='czplay';
+  d.innerHTML=`<h4>🧠 Smart Coach's playbook</h4><p><small>Questions adjust to you, so you get most of them right but still learn something new. Your level in each area:</small></p><div class="czsk">`+
+   Object.keys(CATS).map(k=>`<div><span>${CATS[k].name}</span><div class="bar"><i style="width:${Math.round((sk[k]-1)/3.3*100)}%;background:${CATS[k].c}"></i></div><b>${czSkName(sk[k])}</b></div>`).join('')+
+   `</div><p>🎯 <b>Working on:</b> ${weak.map(k=>CATS[k].name).join(' and ')} · 🔁 <b>${due}</b> question${due===1?'':'s'} coming back for review${S.st.locked?` · 🔒 <b>${S.st.locked}</b> locked in`:''}</p>`;
+  mb.insertBefore(d,mb.firstChild)}
+ if(menuTab==='opt'&&!$('#czSmartOpt')){const d=document.createElement('div');d.id='czSmartOpt';d.className='help';d.style.marginTop='8px';
+  d.innerHTML=`🧠 <b>Smart Coach</b>: ${czSmartOn()?'On':'Off'} <button onclick="S.smart=${czSmartOn()?'false':'true'};renderMenu()">${czSmartOn()?'Turn off':'Turn on'}</button><br><small>${czSmartOn()?'Questions adjust to how you\'re doing, lean into your weaker areas, and bring back missed questions until they stick. Your difficulty setting is where it starts.':'Questions follow your difficulty setting only.'}</small>`;mb.appendChild(d)}})(renderMenu);
+(()=>{const st=document.createElement('style');st.textContent=`.czwhy{margin-left:auto;font-size:11px;background:#fff6d6;color:#2a1a12;border:2px solid #2a1a12;border-radius:6px;padding:0 5px}
+.czplay{background:#fff6d6;border:2px solid #2a1a12;border-radius:8px;padding:6px 10px;margin-bottom:10px}.czplay h4{margin:2px 0}.czplay p{margin:4px 0}
+.czsk>div{display:grid;grid-template-columns:150px 1fr 70px;gap:6px;align-items:center;font-size:12px;margin:2px 0}.czsk .bar{height:8px;background:#e8dcc0;border-radius:4px;overflow:hidden}.czsk .bar i{display:block;height:100%}`;document.head.appendChild(st)})();
+
+// ===================== FISHING =====================
+// Face any water with a rod and press A (Space). Wait for the bite, hit it, then stop the needle in the green
+// zone to reel in. Which fish bite depends on where you are (salt or fresh water, biome), time of day and rain.
+// Rods and bait come from the Pro Shop (and rarely chests). Fish sell for coins; every catch goes in the journal
+// and shows up in the fish tank at home.
+const CZ_FISH_SP=[
+ // id, name, rarity 0-4, where ('any' | 'salt' | 'fresh' | biome list), when (null|'day'|'night'), rain only, value, size [min,max] inches, colors [body, belly, fin]
+ {id:'perch',n:'Pigskin Perch',r:0,w:'any',v:8,sz:[6,12],c:['#a8642e','#e8c89a','#6a3a18'],tip:'Bites almost anywhere.'},
+ {id:'bass',n:'Blitz Bass',r:0,w:['plains','forest','springs','ruins'],v:12,sz:[10,20],c:['#5a8a3a','#d8e0a0','#2f5a22'],tip:'Lakes and rivers in the plains and forest.'},
+ {id:'herring',n:'Huddle Herring',r:0,w:'salt',v:10,sz:[8,14],c:['#8aa8c8','#eef4fa','#4a6a8a'],tip:'Swims in big groups by the sea.'},
+ {id:'trout',n:'Spiral Trout',r:1,w:['forest','mountain','springs'],t:'day',v:30,sz:[12,24],c:['#b8a070','#f0d8c0','#e86a8a'],tip:'Forest and mountain water, in daylight.'},
+ {id:'flounder',n:'Fumble Flounder',r:1,w:'salt',v:28,sz:[10,18],c:['#9a8a6a','#d8ccb0','#6a5a3a'],tip:'Hides on the sea floor. Slippery!'},
+ {id:'pike',n:'Field Goal Pike',r:1,w:['plains','forest','ruins'],v:35,sz:[18,36],c:['#7a8a3a','#e8e0a0','#f5c542'],tip:'Yellow stripes like goalposts. Plains and forest.'},
+ {id:'puffer',n:'Punt Return Puffer',r:1,w:'salt',t:'night',v:40,sz:[6,12],c:['#e8c040','#fff0b0','#a87a20'],tip:'Puffs up by the sea at night.'},
+ {id:'grayling',n:'Glacier Grayling',r:1,w:['mountain'],v:45,sz:[10,20],c:['#7a8aa8','#d8e0f0','#8a5ac8'],tip:'Only in icy mountain water.'},
+ {id:'pupfish',n:'Oasis Pupfish',r:1,w:['desert','ruins','springs'],v:40,sz:[2,4],c:['#4a7ad8','#c8e0ff','#2a4a9a'],tip:'Tiny and blue. Desert oases and warm springs.'},
+ {id:'rainbow',n:'Rookie Rainbow Trout',r:2,w:'fresh',rain:1,v:90,sz:[14,28],c:['#7aa86a','#f8e0e8','#e8607a'],tip:'Comes out when it rains, in fresh water.'},
+ {id:'tuna',n:'Touchdown Tuna',r:2,w:'salt',t:'day',v:110,sz:[30,60],c:['#2a4a7a','#c8d4e0','#f5c542'],tip:'A big ocean fish that feeds in daylight.'},
+ {id:'catfish',n:'Midnight Mudcat',r:2,w:['plains','springs','forest','ruins'],t:'night',v:100,sz:[20,40],c:['#5a4a3a','#b8a890','#2a2018'],tip:'Rivers and lakes, only at night.'},
+ {id:'marlin',n:'Hail Mary Marlin',r:3,w:'salt',rain:1,v:220,sz:[60,110],c:['#2a5aa8','#e0ecf8','#1a3a7a'],tip:'Legend says it leaps in ocean storms.'},
+ {id:'koi',n:'Hall of Fame Koi',r:3,w:['springs'],v:200,sz:[16,30],c:['#f8f0e8','#ffffff','#e8443a'],tip:'Lives in the hot springs. Very picky.'},
+ {id:'guppy',n:'Golden Gridiron Guppy',r:4,w:'any',t:'night',rain:1,v:500,sz:[3,5],c:['#f5c542','#fff6c8','#e8900c'],tip:'Rumored to shine on rainy nights.'},
+];
+const CZ_FISH_RAR=[{n:'Common',c:'#8a9096',hits:1,spd:1},{n:'Uncommon',c:'#2e9e50',hits:2,spd:1.25},{n:'Rare',c:'#2f6fd6',hits:2,spd:1.55},{n:'Epic',c:'#9b40c6',hits:3,spd:1.8},{n:'Legendary',c:'#e8900c',hits:3,spd:2.1}];
+const CZ_RODS=[null,{n:'Bamboo Rod',p:60,zone:.2,str:1,tier:0},{n:'Pro Rod',p:350,zone:.26,str:2,tier:1},{n:'Golden Rod',p:1200,zone:.32,str:2,tier:2,luck:.3}];
+const CZ_BAIT={n:'Bait (x5)',p:25,qty:5};
+function czFS(){return S.fish||(S.fish={rod:0,bait:0,log:{},bag:{}})}
+function czFishBiome(x,y){const r=region[idx(x,y)];return(POIS[r]&&POIS[r].biome)||'plains'}
+function czFishOk(sp,biome){const salt=biome==='coast';if(sp.w==='any')return true;if(sp.w==='salt')return salt;if(sp.w==='fresh')return!salt;return sp.w.includes(biome)}
+function czFishPool(biome,night,rain){return CZ_FISH_SP.filter(sp=>czFishOk(sp,biome)&&(!sp.t||(sp.t==='night')===night)&&(!sp.rain||rain))}
+function czFishRoll(biome){const f=czFS(),night=lightLevel().dark>.4,rain=czWeather()>.2,pool=czFishPool(biome,night,rain),rod=CZ_RODS[f.rod]||CZ_RODS[1];
+ const W=[60,28,9,3,.8],boost=(F.bait?1.6:1)*(1+(rod.luck||0));let tot=0;const w=pool.map(sp=>{const v=W[sp.r]*(sp.r>=2?boost:1);tot+=v;return v});
+ let r=Math.random()*tot;for(let i=0;i<pool.length;i++){r-=w[i];if(r<=0)return pool[i]}return pool[0]}
+
+// ---- pixel fish pictures (journal, shop, fish tank) ----
+const CZ_FISH_IMG={};
+function czFishCanvas(sp,dark){const c=document.createElement('canvas');c.width=26;c.height=14;const g=c.getContext('2d');const[b,l,f]=dark?['#3a3046','#3a3046','#3a3046']:sp.c;
+ const O='#2a1a12',P=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(x,y,w,h)};const tall=sp.id==='flounder'||sp.id==='puffer'?2:0,long=sp.id==='pike'||sp.id==='marlin'||sp.id==='catfish';
+ // outline + body
+ P(4,4-tall/2,long?17:15,6+tall,O);P(3,5-tall/2,1,4+tall,O);P(long?21:19,5,1,4,O);
+ P(4,5-tall/2,long?17:15,4+tall,b);P(5,8,long?14:12,1+tall/2,l);
+ // tail
+ P(long?21:19,3,1,8,O);P(long?22:20,2,2,10,O);P(long?22:20,3,1,8,f);P(long?23:21,3,1,2,f);P(long?23:21,9,1,2,f);
+ // fins, eye, extras
+ P(9,3-tall/2,5,1,O);P(10,2-tall/2,3,1,f);P(10,10+tall/2,3,1,f);P(6,5,1,1,'#fff');P(6,6,1,1,O);
+ if(sp.id==='pike'&&!dark){P(10,5,1,4,'#f5c542');P(14,5,1,4,'#f5c542')}
+ if(sp.id==='rainbow'&&!dark)P(5,7,13,1,'#e8607a');
+ if(sp.id==='koi'&&!dark){P(8,5,3,2,'#e8443a');P(14,6,2,2,'#e8443a')}
+ if(sp.id==='marlin'){P(0,6,4,1,O);P(1,6,3,1,dark?b:'#8ab0e0')}
+ if(sp.id==='catfish'){P(2,8,2,1,O);P(1,9,2,1,O)}
+ if(sp.id==='guppy'&&!dark){P(8,6,1,1,'#fff');P(13,5,1,1,'#fff')}
+ return c}
+function czFishImg(sp,dark){const k=sp.id+(dark?'_d':'');return CZ_FISH_IMG[k]||(CZ_FISH_IMG[k]=czFishCanvas(sp,dark).toDataURL())}
+function czFishIc(sp,dark){return`<img class="czfi" src="${czFishImg(sp,dark)}" alt="">`}
+
+// ---- the mini-game ----
+const F={on:false};
+function czFishStart(fx,fy){const f=czFS();if(!f.rod)return false;const biome=czFishBiome(fx,fy);
+ Object.assign(F,{on:true,fx,fy,biome,phase:'cast',t:performance.now(),sp:null,hits:0,strikes:0,need:1,pos:0,dir:1,bait:f.bait>0,msg:''});
+ if(F.bait){f.bait--}state='fish';czFishUI();SFX.blip&&SFX.blip();return true}
+function czFishEnd(){F.on=false;const d=$('#czFish');if(d)d.style.display='none';if(state==='fish')state='world';updHud()}
+function czFishTick(){if(!F.on)return;const now=performance.now(),el=now-F.t;
+ if(F.phase==='cast'&&el>700){F.phase='wait';F.t=now;F.waitFor=(1500+Math.random()*3200)*(F.bait?.6:1);czFishUI()}
+ else if(F.phase==='wait'&&el>F.waitFor){F.phase='bite';F.t=now;F.sp=czFishRoll(F.biome);SFX.item&&SFX.item();czFishUI()}
+ else if(F.phase==='bite'&&el>900+150*czFS().rod){F.phase='lost';F.msg='Too slow! It got away.';F.t=now;czFishUI()}
+ else if(F.phase==='reel'){const rr=CZ_FISH_RAR[F.sp.r],sp=.0011*rr.spd*(1+.15*F.hits);F.pos+=F.dir*sp*Math.min(40,el);F.t=now;if(F.pos>1){F.pos=1;F.dir=-1}if(F.pos<0){F.pos=0;F.dir=1}czFishMeter()}
+ else if((F.phase==='lost'||F.phase==='caught')&&el>2600)czFishEnd()}
+function czFishAct(){if(!F.on)return;const now=performance.now();
+ if(F.phase==='wait'||F.phase==='cast'){F.phase='lost';F.msg='Reeled in too early. Wait for the ❗';F.t=now;czFishUI();return}
+ if(F.phase==='bite'){F.phase='reel';F.need=CZ_FISH_RAR[F.sp.r].hits;F.hits=0;F.strikes=0;F.pos=Math.random();F.dir=1;F.zc=.25+Math.random()*.5;F.t=now;czFishUI();return}
+ if(F.phase==='reel'){const rod=CZ_RODS[czFS().rod],half=rod.zone/2*(1-.12*F.sp.r);
+  if(Math.abs(F.pos-F.zc)<=half){F.hits++;SFX.correct&&SFX.correct();if(F.hits>=F.need){czFishCatch();return}F.zc=.15+Math.random()*.7;F.msg='Nice! Keep reeling!'}
+  else{F.strikes++;SFX.wrong&&SFX.wrong();if(F.strikes>=rod.str){F.phase='lost';F.msg=`The ${F.sp.n} got away!`;F.t=now}else F.msg='Missed! One more slip and it\'s gone.'}
+  czFishUI();return}
+ if(F.phase==='lost'||F.phase==='caught')czFishEnd()}
+function czFishCatch(){const f=czFS(),sp=F.sp,sz=+(sp.sz[0]+Math.random()*(sp.sz[1]-sp.sz[0])).toFixed(1),L=f.log[sp.id]||(f.log[sp.id]={n:0,best:0});
+ const first=!L.n,rec=sz>L.best;L.n++;if(rec)L.best=sz;f.bag[sp.id]=(f.bag[sp.id]||0)+1;S.st.fish=(S.st.fish||0)+1;
+ F.phase='caught';F.t=performance.now();F.msg=`${first?'🆕 New species! ':''}${rec&&!first?'📏 New record! ':''}${sz}" long · sells for ${sp.v}🪙`;SFX.level&&SFX.level();czFishUI();saveGame(true)}
+
+// ---- the panel ----
+function czFishUI(){let d=$('#czFish');if(!d){d=document.createElement('div');d.id='czFish';document.body.appendChild(d);d.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;czFishAct()})}
+ d.style.display='block';const f=czFS(),rod=CZ_RODS[f.rod],place=POIS[region[idx(F.fx,F.fy)]];
+ const head=`<div class="fh">🎣 <b>${rod.n}</b> · ${place?place.name:''}${F.bait?' · 🪱 bait on':''}<span>🪱 ${f.bait}</span></div>`;
+ let body='';
+ if(F.phase==='cast')body=`<p class="fm">Casting...</p>`;
+ else if(F.phase==='wait')body=`<p class="fm">Waiting for a bite... <small>(press A / Space when you see ❗)</small></p>`;
+ else if(F.phase==='bite')body=`<p class="fm big">❗ BITE! Press A / Space!</p>`;
+ else if(F.phase==='reel'){const rr=CZ_FISH_RAR[F.sp.r];body=`<p class="fm">Stop the needle in the green! <b>${F.hits}/${F.need}</b> ${'💢'.repeat(F.strikes)}<br><small>${F.msg||'It\'s a '+rr.n.toLowerCase()+' fish!'}</small></p><div class="meter"><i class="zone"></i><i class="needle"></i></div>`}
+ else if(F.phase==='caught'){const sp=F.sp,rr=CZ_FISH_RAR[sp.r];body=`<div class="got">${czFishIc(sp)}<div><b style="color:${rr.c}">${sp.n}</b> <small>[${rr.n}]</small><br><small>${F.msg}</small></div></div>`}
+ else if(F.phase==='lost')body=`<p class="fm">${F.msg}</p>`;
+ d.innerHTML=head+body+`<div class="row"><button onclick="czFishAct()">${F.phase==='caught'||F.phase==='lost'?'OK':'🎣 Reel (A)'}</button><button onclick="czFishJournal()">📖 Journal</button><button onclick="czFishEnd()">Stop (B)</button></div>`;
+ czFishMeter()}
+function czFishMeter(){const m=$('#czFish .meter');if(!m||F.phase!=='reel')return;const rod=CZ_RODS[czFS().rod],half=rod.zone/2*(1-.12*F.sp.r);
+ const z=m.querySelector('.zone'),n=m.querySelector('.needle');z.style.left=((F.zc-half)*100)+'%';z.style.width=(half*200)+'%';n.style.left=(F.pos*100)+'%'}
+function czFishJournal(){const f=czFS();const w=$('#czFish')||document.body;const had=F.on;
+ const rows=CZ_FISH_SP.map(sp=>{const L=f.log[sp.id],rr=CZ_FISH_RAR[sp.r];return`<div class="jr${L?'':' un'}">${czFishIc(sp,!L)}<div><b style="color:${L?rr.c:'#7a6a5a'}">${L?sp.n:'???'}</b> <small>[${rr.n}]</small><br><small>${L?`Caught ${L.n} · best ${L.best}" · ${sp.v}🪙`:sp.tip}</small></div></div>`}).join('');
+ const n=Object.keys(f.log).length;
+ czCloudDialog(true,`<h3>📖 Fish Journal <small>${n}/${CZ_FISH_SP.length}</small></h3><div class="czjour">${rows}</div><div class="row"><button id="czjX">Close</button></div>`);
+ $('#czjX').onclick=()=>czCloudDialog(false)}
+
+// ---- hooks into the game ----
+interact=(orig=>function(){if(state==='world'&&!player.moving&&S){const[fx,fy]=facing();if(inb(fx,fy)&&map[idx(fx,fy)]===T.WATER&&!npcs.some(n=>n.x===fx&&n.y===fy)){
+ if(czFS().rod){czFishStart(fx,fy);return}
+ if(!czFishStart.tipped){czFishStart.tipped=1;dialog(['🎣 Looks like a good fishing spot!','Fishing rods are sold at the Pro Shop.'])}return}}return orig.apply(this,arguments)})(interact);
+press=(orig=>function(k,v){if(state==='fish'){if(k==='A')czFishAct();else if(k==='B'||k==='MENU')czFishEnd();return}return orig.apply(this,arguments)})(press);
+(function czFishLoop(){requestAnimationFrame(czFishLoop);if(F.on)czFishTick()})();
+// line and bobber in the world
+CZ_HOOKS.air.push(()=>{if(!F.on||!S)return;const bx=(F.fx+DX[player.dir]*.8)*16+8-camX,by=(F.fy+DY[player.dir]*.8)*16+9-camY,hx=player.px+8+DX[player.dir]*6-camX,hy=player.py-6-camY;
+ const bob=F.phase==='bite'?Math.sin(performance.now()/40)*2+2:F.phase==='reel'?3:Math.sin(performance.now()/400)*1;
+ ctx.strokeStyle='rgba(255,255,255,.75)';ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(hx,hy);ctx.quadraticCurveTo((hx+bx)/2,Math.min(hy,by)-8,bx,by+bob);ctx.stroke();
+ ctx.fillStyle='#2a1a12';ctx.fillRect(bx-2,by-2+bob,4,5);ctx.fillStyle='#e8443a';ctx.fillRect(bx-1,by-1+bob,2,2);ctx.fillStyle='#fff';ctx.fillRect(bx-1,by+1+bob,2,1);
+ if(F.phase==='bite'){ctx.fillStyle='#2a1a12';ctx.fillRect(bx-3,by-17,6,10);ctx.fillStyle='#ffd84a';ctx.fillRect(bx-2,by-16,4,8);ctx.fillStyle='#b8452f';ctx.fillRect(bx-1,by-15,2,4);ctx.fillRect(bx-1,by-10,2,1)}
+ if(F.phase==='wait'&&(performance.now()/700|0)%3===0){ctx.strokeStyle='rgba(255,255,255,.5)';ctx.beginPath();ctx.ellipse(bx,by+4,6,2,0,0,Math.PI*2);ctx.stroke()}});
+
+// ---- chests: a rod if you don't have one, otherwise bait ----
+function czFishLoot(lines){const f=czFS();if(!f.rod){f.rod=1;lines.push(`${NM()} found a 🎣 Bamboo Rod! Face any water and press A to fish.`)}else{const n=rint(3,5);f.bait+=n;lines.push(`${NM()} found 🪱 bait x${n}! It helps rare fish bite.`)}}
+
+// ---- shop: rods and bait to buy, fish to sell ----
+function czFishBuy(k){const f=czFS();if(k==='bait'){if(S.coins<CZ_BAIT.p)return;S.coins-=CZ_BAIT.p;f.bait+=CZ_BAIT.qty}else{const i=+k,r=CZ_RODS[i];if(!r||f.rod>=i||S.coins<r.p)return;S.coins-=r.p;f.rod=i;
+ toast(i===1?'🎣 Got a Bamboo Rod! Face any water and press A (Space) to fish.':`🎣 Upgraded to the ${r.n}!`)}SFX.item&&SFX.item();updHud();renderShop()}
+function czFishSell(id){const f=czFS();const ids=id?[id]:Object.keys(f.bag);let c=0;for(const k of ids){const sp=CZ_FISH_SP.find(s=>s.id===k);if(!sp)continue;c+=sp.v*(f.bag[k]||0);delete f.bag[k]}
+ if(!c)return;S.coins+=c;S.st.fishCoins=(S.st.fishCoins||0)+c;SFX.item&&SFX.item();toast(`🐟 Sold fish for ${c} coins!`);updHud();renderShop()}
+function czFishShop(){const grid=$('#shop .grid');if(!grid||!shopN)return;const f=czFS(),tier=shopN.tier||0;
+ if(shopTab==='buy'){let h='';const next=f.rod+1,maxTier=tier>=2?3:tier>=1?2:1;
+  if(next<=3&&next<=maxTier){const r=CZ_RODS[next];h+=`<div class="card"><div class="ic">🎣</div><div><b>${r.n}</b> <small>${f.rod?'(upgrade)':''}</small><br><small>${next===1?'Fish at any water! Press A while facing it.':next===2?'Bigger green zone, and one slip won\'t lose the fish.':'Biggest green zone and rare fish bite more often.'}</small></div><button ${S.coins>=r.p?'':'disabled'} onclick="czFishBuy(${next})">${r.p}🪙</button></div>`}
+  else if(f.rod<3&&next>maxTier)h+=`<div class="card"><div class="ic">🎣</div><div><b>${CZ_RODS[next].n}</b><br><small>Sold at bigger towns' shops.</small></div><button disabled>—</button></div>`;
+  h+=`<div class="card"><div class="ic">🪱</div><div><b>${CZ_BAIT.n}</b> <small>(have ${f.bait})</small><br><small>Fish bite faster, and rare fish bite more often.</small></div><button ${S.coins>=CZ_BAIT.p?'':'disabled'} onclick="czFishBuy('bait')">${CZ_BAIT.p}🪙</button></div>`;
+  grid.insertAdjacentHTML('beforeend',h)}
+ else if(shopTab==='sell'){const ks=Object.keys(f.bag).filter(k=>f.bag[k]>0);if(!ks.length)return;const tot=ks.reduce((a,k)=>a+CZ_FISH_SP.find(s=>s.id===k).v*f.bag[k],0);
+  const h=`<div class="card czdeal"><div class="ic">🐟</div><div><b>Sell all fish</b><br><small>${ks.reduce((a,k)=>a+f.bag[k],0)} fish in your cooler</small></div><button onclick="czFishSell()">+${tot}🪙</button></div>`+
+   ks.map(k=>{const sp=CZ_FISH_SP.find(s=>s.id===k);return`<div class="card"><div class="ic">${czFishIc(sp)}</div><div><b style="color:${CZ_FISH_RAR[sp.r].c}">${sp.n}</b> x${f.bag[k]}<br><small>${sp.v}🪙 each</small></div><button onclick="czFishSell('${k}')">+${sp.v*f.bag[k]}🪙</button></div>`}).join('');
+  const it=grid.querySelector('i');if(it&&grid.children.length===0)grid.innerHTML='';if(grid.textContent.includes('No spare gear'))grid.innerHTML='';grid.insertAdjacentHTML('afterbegin',h)}}
+
+// ---- awards ----
+ACH.push(
+ {g:'Fishing',id:'fish_first',n:'Gone Fishin\'',d:'Catch your first fish.',i:'🎣',t:'bronze',c:()=>(S.st.fish||0)>=1},
+ {g:'Fishing',id:'fish_half',n:'Tackle Box',d:'Catch 8 different kinds of fish.',i:'🐟',t:'silver',c:()=>S.fish&&Object.keys(S.fish.log).length>=8},
+ {g:'Fishing',id:'fish_all',n:'Master Angler',d:`Catch all ${CZ_FISH_SP.length} kinds of fish.`,i:'🏆',t:'gold',c:()=>S.fish&&Object.keys(S.fish.log).length>=CZ_FISH_SP.length},
+ {g:'Fishing',id:'fish_gold',n:'Golden Catch',d:'Reel in the Golden Gridiron Guppy.',i:'✨',t:'plat',c:()=>S.fish&&!!S.fish.log.guppy});
+(()=>{const st=document.createElement('style');st.textContent=`#czFish{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:55;display:none;background:#fbf1dc;border:3px solid #2a1a12;border-radius:10px;padding:10px 14px;width:min(380px,92vw);box-shadow:0 5px 0 #2a1a12;color:#2a1a12;user-select:none;-webkit-user-select:none}
+#czFish,#czFish *{font-family:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace}
+#czFish .fh{font-size:12px;display:flex;gap:4px}#czFish .fh span{margin-left:auto}#czFish .fm{margin:8px 0;font-size:14px;text-align:center}#czFish .fm.big{font-size:18px;font-weight:800;color:#b8452f;animation:czshake .25s infinite}
+@keyframes czshake{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
+#czFish .meter{position:relative;height:18px;background:#3a7bd5;border:2px solid #2a1a12;border-radius:6px;margin:4px 0 8px;overflow:hidden}#czFish .zone{position:absolute;top:0;bottom:0;background:#3ccf5a;border-left:2px solid #1e7a30;border-right:2px solid #1e7a30}
+#czFish .needle{position:absolute;top:-2px;bottom:-2px;width:3px;margin-left:-1px;background:#fff;box-shadow:0 0 0 1px #2a1a12}
+#czFish .row{display:flex;gap:6px}#czFish .row button{flex:1;font-size:12px}
+#czFish .got{display:flex;gap:10px;align-items:center;margin:8px 0}#czFish .got .czfi{width:78px;height:42px}
+.czfi{width:52px;height:28px;image-rendering:pixelated}
+.czjour{max-height:52vh;overflow:auto;display:grid;grid-template-columns:1fr 1fr;gap:6px}.czjour .jr{display:flex;gap:6px;align-items:center;background:#fff;border:2px solid #2a1a12;border-radius:6px;padding:4px;font-size:12px;line-height:1.3}.czjour .jr.un{background:#efe4cc}
+#czCloud .box:has(.czjour){max-width:640px}`;document.head.appendChild(st)})();
+
+// ===================== YOUR HOUSE =====================
+// The blue house in Kickoff Plains is yours. Inside: trophy shelf, a photo wall of dinos you've met, a fish tank,
+// a stats board, and decor bought with coins. Friends online in your room can visit: your game sends them a
+// snapshot of your house over the room connection (nothing is stored on a server).
+
+// ---- dino photos: remember the dinos you meet (newest first, bosses and golden ones kept) ----
+startBattle=(orig=>function(en,opts){const r=orig.apply(this,arguments);try{if(S&&en&&en.fam&&!(opts&&(opts.practice||opts.drill))){S.photos=S.photos||[];
+ if(!S.photos.some(p=>p.n===en.name)){S.photos.unshift({f:en.fam,p:en.pal,pt:en.pattern||'none',n:en.name,lv:en.lv,b:en.boss?1:0,g:/^Golden /.test(en.name)?1:0});
+  if(S.photos.length>40){const i=S.photos.map((p,k)=>[p,k]).reverse().find(([p])=>!p.b&&!p.g);S.photos.splice(i?i[1]:S.photos.length-1,1)}}}}catch(e){}return r})(startBattle);
+
+// ---- decor shop (coins) ----
+const CZ_DECOR={
+ rug:{n:'Team Rug',p:150,i:'🟥',d:'A big striped rug for the middle of the room.'},
+ plant:{n:'Potted Fern',p:80,i:'🪴',d:'A leafy plant for the corner.'},
+ lamp:{n:'Floor Lamp',p:120,i:'💡',d:'Warm light for cozy nights.'},
+ pennants:{n:'Team Pennants',p:100,i:'🚩',d:'A string of pennants along the wall.'},
+ couch:{n:'Comfy Couch',p:300,i:'🛋️',d:'Perfect for watching film.'},
+ plush:{n:'Rex Plushie',p:250,i:'🦖',d:'A giant stuffed T. rex.'},
+ jersey:{n:'Framed Jersey',p:400,i:'👕',d:'Your jersey, framed on the wall.'},
+ tv:{n:'Big-Screen TV',p:600,i:'📺',d:'Game day on the big screen.'},
+ arcade:{n:'Retro Arcade',p:900,i:'🕹️',d:'An old-school football arcade cabinet.'},
+};
+const CZ_WALLS={cream:{n:'Cream',p:0,c:['#efe1c4','#e4d3b2']},sky:{n:'Sky Blue',p:60,c:['#bcd8ee','#a8c8e2']},mint:{n:'Mint',p:60,c:['#cdebd4','#b8dcc2']},red:{n:'Team Red',p:60,c:['#e8b0a4','#dc9c90']},navy:{n:'Night Navy',p:80,c:['#4a5a86','#404f78']}};
+const CZ_FLOORS={oak:{n:'Oak',p:0,c:['#b07a45','#9a6838']},cherry:{n:'Cherry',p:80,c:['#8a4a32','#7a3e2a']},turf:{n:'Football Turf',p:250,c:['#43a047','#3b8f3f']}};
+function czHS(){return S.house||(S.house={own:{},wall:'cream',floor:'oak',walls:{cream:1},floors:{oak:1}})}
+
+// ---- a snapshot of a house (used for your own house too, so visiting looks exactly the same) ----
+function czHouseSnap(){const h=czHS(),f=S.fish||{log:{}};
+ return{v:1,name:NM(),look:czMyLook(),lv:S.lv,tro:S.trophies.slice(),ch:!!S.champion,
+  ph:(S.photos||[]).slice(0,16),dex:Object.keys(S.dex),gear:[...new Set(S.gear)],
+  fish:Object.fromEntries(Object.entries(f.log).map(([k,v])=>[k,v.best])),
+  st:{ans:S.st.ans,cor:S.st.cor,best:S.st.best,battles:S.st.battles,wins:S.st.wins,cat:S.st.cat,fish:S.st.fish||0,locked:S.st.locked||0},
+  ach:Object.keys(S.ach||{}).length,achN:ACH.length,sk:S.sk||null,
+  house:{own:h.own,wall:h.wall,floor:h.floor},day:typeof czDay==='function'?czDay():0}}
+
+// ---- the room picture ----
+const CZ_HV={data:null,mine:true,tab:'trophy',raf:0,t0:0,fishes:[]};
+const CZ_PHOTO={};
+function czPhotoCanvas(p){const k=p.n+'|'+p.f;if(CZ_PHOTO[k])return CZ_PHOTO[k];let c=null;try{c=makeDino(p.f,p.p||{B:'#7a9',L:'#cdb',P:'#354',K:'#fff'},p.pt||'none',5)}catch(e){try{c=dexSpr(p.f)}catch(e2){}}return CZ_PHOTO[k]=c}
+function czRoomDraw(){const cv=$('#czHouseCv');if(!cv||!CZ_HV.data)return;const g=cv.getContext('2d'),W=cv.width,H=cv.height,d=CZ_HV.data,hs=d.house||{own:{}},own=hs.own||{},t=(performance.now()-CZ_HV.t0)/1000;g.imageSmoothingEnabled=false;
+ const R_=(x,y,w,h,c)=>{g.fillStyle=c;g.fillRect(x|0,y|0,w|0,h|0)},O='#2a1a12';
+ const wall=(CZ_WALLS[hs.wall]||CZ_WALLS.cream).c,floor=(CZ_FLOORS[hs.floor]||CZ_FLOORS.oak).c,FY=134;
+ // wall + stripes + wainscot
+ R_(0,0,W,FY,wall[0]);for(let x=0;x<W;x+=12)R_(x,0,6,FY-30,wall[1]);R_(0,FY-30,W,30,'#8a5a34');R_(0,FY-31,W,2,'#a8743f');for(let x=4;x<W;x+=24)R_(x,FY-26,18,22,'#7a4e2c');R_(0,FY-2,W,2,O);
+ // floor
+ if(hs.floor==='turf'){R_(0,FY,W,H-FY,floor[0]);for(let x=10;x<W;x+=40)R_(x,FY,2,H-FY,'#e8f0e0');for(let x=30;x<W;x+=40)for(let y=FY+6;y<H;y+=10)R_(x,y,4,1,'#cfe6c8')}
+ else{for(let y=FY;y<H;y+=8){R_(0,y,W,8,(y/8|0)%2?floor[0]:floor[1]);for(let x=((y/8|0)%2)*30;x<W;x+=60)R_(x,y,1,8,'rgba(0,0,0,.25)')}}
+ // window with sky
+ const L=lightLevel(),night=L.dark>.45;R_(120,10,44,34,O);R_(122,12,40,30,night?'#1c2450':'#9fd0f8');if(night){R_(150,16,4,4,'#fff6c8');R_(130,30,1,1,'#fff');R_(140,20,1,1,'#fff')}else{R_(128,30,14,6,'#fff');R_(132,27,8,4,'#fff')}R_(141,12,2,30,O);R_(122,26,40,2,O);
+ // pennants
+ if(own.pennants){const cols=['#e8443a','#2f6fd6','#f5c542','#2e9e50','#9b40c6','#e8900c'];g.strokeStyle=O;g.beginPath();g.moveTo(4,6);g.quadraticCurveTo(W/2,20,W-4,6);g.stroke();for(let i=0;i<14;i++){const x=10+i*(W-20)/13,y=6+Math.sin(i/13*Math.PI)*10;g.fillStyle=cols[i%6];g.beginPath();g.moveTo(x-4,y);g.lineTo(x+4,y);g.lineTo(x,y+9);g.fill()}}
+ // trophy shelf (left)
+ R_(8,42,86,3,O);R_(8,74,86,3,O);R_(9,42,84,2,'#a8743f');R_(9,74,84,2,'#a8743f');
+ const tros=POIS.filter(p=>p.boss&&p.id!=='champ').map(p=>p.boss.trophy);
+ tros.slice(0,6).forEach((tn,i)=>{const x=14+(i%3)*28,y=(i<3?42:74),got=d.tro.includes(tn);if(got){R_(x+5,y-20,12,2,O);R_(x+4,y-18,14,8,O);R_(x+5,y-18,12,7,'#f5c542');R_(x+6,y-17,3,5,'#fff2b0');R_(x+9,y-10,4,5,O);R_(x+10,y-10,2,5,'#d8a020');R_(x+6,y-5,10,4,O);R_(x+7,y-4,8,2,'#d8a020');R_(x+1,y-15,3,5,O);R_(x+18,y-15,3,5,O)}
+  else{g.strokeStyle='rgba(42,26,18,.25)';g.setLineDash([2,2]);g.strokeRect(x+5.5,y-18.5,11,13);g.setLineDash([])}});
+ // championship trophy on the floor
+ if(d.ch){const x=12,y=FY+2;R_(x+6,y-36,20,22,O);R_(x+7,y-35,18,20,'#f5c542');R_(x+9,y-33,5,14,'#fff2b0');R_(x+13,y-14,6,8,O);R_(x+14,y-14,4,8,'#d8a020');R_(x+4,y-6,24,6,O);R_(x+5,y-5,22,4,'#8a5a34');R_(x+2,y-30,4,10,O);R_(x+26,y-30,4,10,O)}
+ // photo wall (center)
+ const ph=(d.ph&&d.ph.length?d.ph:(d.dex||[]).map(f=>({f,n:f,dex:1}))).slice(0,8);
+ ph.forEach((p,i)=>{const x=104+(i%4)*26+(i%2),y=50+((i/4)|0)*36+((i*7)%3);const gold=p.b||p.g;R_(x-1,y-1,24,30,O);R_(x,y,22,28,gold?'#f5c542':'#fbf7ee');R_(x+2,y+2,18,18,'#cfe6f0');
+  const c=p.dex?dexSpr(p.f):czPhotoCanvas(p);if(c){const s=Math.min(18/c.width,18/c.height);const w=c.width*s,h=c.height*s;g.drawImage(c,x+2+(18-w)/2,y+20-h,w,h)}R_(x+10,y-3,2,3,'#e8443a')});
+ if(!ph.length){g.fillStyle='rgba(42,26,18,.5)';g.font='7px monospace';g.fillText('Meet dinos to fill',108,70);g.fillText('your photo wall!',110,80)}
+ // framed jersey
+ if(own.jersey){R_(186,12,26,30,O);R_(188,14,22,26,'#fbf7ee');const tc=(d.look&&d.look.eq&&d.look.eq.pads)?'#2f6fd6':'#2f6fd6';R_(192,18,14,16,tc);R_(189,18,4,6,tc);R_(205,18,4,6,tc);g.fillStyle='#fff';g.font='bold 8px monospace';g.fillText('#'+(d.lv||1),193,30)}
+ // fish tank on a cabinet (right)
+ const TX=222,TY=56,TW=86,TH=48;R_(TX-2,TY+TH,TW+4,30,O);R_(TX-1,TY+TH+1,TW+2,28,'#8a5a34');R_(TX+6,TY+TH+6,TW-12,2,'#6a4428');R_(TX+6,TY+TH+16,TW-12,2,'#6a4428');
+ R_(TX-2,TY-2,TW+4,TH+4,O);R_(TX,TY,TW,TH,'#4a9ad8');R_(TX,TY,TW,6,'#7ab8e8');R_(TX,TY+TH-6,TW,6,'#e8d690');R_(TX+8,TY+TH-18,2,12,'#2e9e50');R_(TX+11,TY+TH-14,2,8,'#3cb85a');R_(TX+TW-14,TY+TH-16,2,10,'#2e9e50');
+ const fk=Object.keys(d.fish||{});
+ fk.slice(0,8).forEach((id,i)=>{const sp=CZ_FISH_SP.find(s=>s.id===id);if(!sp)return;const img=CZ_FISH_IMG['cv_'+id]||(CZ_FISH_IMG['cv_'+id]=czFishCanvas(sp,false));const sp_=.25+((i*37)%10)/20,ph_=i*1.7;
+  const fx=TX+4+((Math.sin(t*sp_+ph_)+1)/2)*(TW-30),fy=TY+10+((i*11)%26)+Math.sin(t*1.3+i)*2,dir=Math.cos(t*sp_+ph_)>0;g.save();if(!dir){g.translate(fx+13,0);g.scale(-1,1);g.translate(-fx-13,0)}g.drawImage(img,fx,fy);g.restore()});
+ for(let i=0;i<4;i++){const by=TY+TH-8-((t*14+i*13)%(TH-12));R_(TX+TW-22+((i*5)%9),by,2,2,'rgba(255,255,255,.7)')}
+ if(!fk.length){g.fillStyle='rgba(255,255,255,.85)';g.font='7px monospace';g.fillText('Catch fish to',TX+16,TY+24);g.fillText('fill the tank!',TX+16,TY+33)}
+ g.strokeStyle='rgba(255,255,255,.35)';g.beginPath();g.moveTo(TX+4,TY+8);g.lineTo(TX+12,TY+40);g.stroke();
+ // decor on the floor
+ if(own.tv){const x=62,y=FY-50;R_(x+18,y+28,8,8,O);R_(x+10,y+34,24,3,O);R_(x,y,44,30,O);R_(x+2,y+2,40,26,(t*2|0)%2?'#2f8a3a':'#2e9e50');R_(x+12,y+12,20,2,'#fff');R_(x+20,y+8,4,10,'#e8f0e0')}
+ if(own.rug){R_(96,FY+18,120,24,O);R_(98,FY+20,116,20,'#b8452f');for(let x=100;x<212;x+=12)R_(x,FY+20,6,20,'#d8604a');R_(98,FY+28,116,4,'#f5c542')}
+ if(own.couch){R_(60,FY-8,56,26,O);R_(62,FY-6,52,10,'#4a6aa8');R_(62,FY+4,52,10,'#3a5a98');R_(58,FY-2,8,20,O);R_(59,FY-1,6,18,'#4a6aa8');R_(110,FY-2,8,20,O);R_(111,FY-1,6,18,'#4a6aa8')}
+ if(own.plant){R_(W-20,FY-6,14,14,O);R_(W-19,FY-5,12,12,'#c8643a');for(let i=0;i<5;i++)R_(W-24+i*4,FY-22+((i*5)%7),4,16,'#2e9e50')}
+ if(own.lamp){R_(214,FY-46,2,50,O);R_(206,FY-56,18,12,O);R_(207,FY-55,16,10,'#f5e0a0');if(night){g.fillStyle='rgba(255,230,150,.18)';g.beginPath();g.arc(215,FY-30,40,0,Math.PI*2);g.fill()}}
+
+ if(own.arcade){const x=W-48;R_(x,FY-50,26,58,O);R_(x+1,FY-49,24,56,'#9b40c6');R_(x+4,FY-44,18,14,'#1a1230');R_(x+6,FY-40,4,2,'#f5c542');R_(x+12,FY-36,6,2,'#3ccf5a');R_(x+4,FY-26,18,6,'#7a2aa0');R_(x+8,FY-25,2,3,'#e8443a')}
+ if(own.plush){const x=172,y=FY+6;R_(x,y-18,20,18,O);R_(x+1,y-17,18,16,'#3cb85a');R_(x+12,y-24,10,10,O);R_(x+13,y-23,8,8,'#3cb85a');R_(x+18,y-21,2,2,O);R_(x-4,y-8,6,4,'#3cb85a')}
+ // the owner
+ try{const spr=czPeerSprites(d.look);const fr=spr&&spr.down&&spr.down[0];if(fr){const s=1.5;g.drawImage(fr,150-fr.width*s/2,FY+28-fr.height*s,fr.width*s,fr.height*s)}}catch(e){}
+ // name plate
+ g.fillStyle=O;g.fillRect(4,4,92,14);g.fillStyle='#fbf1dc';g.fillRect(5,5,90,12);g.fillStyle=O;g.font='bold 8px monospace';g.fillText((d.name||'Brady').slice(0,12)+"'s House",9,14)}
+function czRoomLoop(){if(!CZ_HV.data){CZ_HV.raf=0;return}czRoomDraw();CZ_HV.raf=requestAnimationFrame(czRoomLoop)}
+
+// ---- the panel ----
+function czHouseOpen(data,mine){CZ_HV.data=data;CZ_HV.mine=mine;CZ_HV.tab='trophy';CZ_HV.t0=performance.now();state='house';
+ let d=$('#czHouse');if(!d){d=document.createElement('div');d.id='czHouse';d.innerHTML='<div class="box"><div class="hh"></div><canvas id="czHouseCv" width="320" height="180"></canvas><div class="tabs"></div><div class="body"></div></div>';document.body.appendChild(d)}
+ d.style.display='flex';czHouseRender();if(!CZ_HV.raf)czRoomLoop();SFX.blip&&SFX.blip()}
+function czHouseClose(){CZ_HV.data=null;const d=$('#czHouse');if(d)d.style.display='none';if(state==='house')state='world';updHud()}
+function czHouseTab(t){CZ_HV.tab=t;czHouseRender()}
+function czHouseRender(){const d=CZ_HV.data,box=$('#czHouse .box');if(!d||!box)return;const mine=CZ_HV.mine;
+ box.querySelector('.hh').innerHTML=`<b>🏠 ${mine?'Your house':czCloudEsc(d.name)+'\'s house'}</b> <small>Lv ${d.lv} · 🏆 ${d.tro.length}/6${d.ch?' · 👑 Champion':''}</small><button onclick="czHouseClose()">✕ Leave</button>`;
+ const tabs=[['trophy','🏆 Trophy Case'],['photos','🦖 Photo Wall'],['fish','🐟 Aquarium'],['stats','📊 Stats']];if(mine)tabs.push(['decor','🛋️ Decorate']);
+ box.querySelector('.tabs').innerHTML=tabs.map(([k,n])=>`<button class="${CZ_HV.tab===k?'on':''}" onclick="czHouseTab('${k}')">${n}</button>`).join('');
+ const b=box.querySelector('.body');let h='';
+ if(CZ_HV.tab==='trophy'){const tros=POIS.filter(p=>p.boss&&p.id!=='champ');
+  h=`<div class="tro">${tros.map(p=>{const got=d.tro.includes(p.boss.trophy);return`<div class="${got?'':'un'}">${got?'🏆':'▫️'} <b>${got?p.boss.trophy:'???'}</b><br><small>${p.name}</small></div>`}).join('')}${d.ch?'<div>👑 <b>Champion</b><br><small>Beat Commissioner Spino</small></div>':''}</div>`;
+  const all=Object.keys(GEAR),have=new Set(d.gear);h+=`<h4>Gear collection (${all.filter(k=>have.has(k)).length}/${all.length})</h4><div class="gearwall">${all.sort((a,b)=>GEAR[a].r-GEAR[b].r).map(k=>{const g=GEAR[k],got=have.has(k);return`<div class="gw${got?'':' un'}" title="${got?g.name+' ['+RAR[g.r].n+']':'Not found yet'}" style="border-color:${got?RAR[g.r].c:'#c8b89a'}">${czIc(g)}</div>`}).join('')}</div>`}
+ else if(CZ_HV.tab==='photos'){const ph=d.ph||[];h=ph.length?`<div class="photos">${ph.map((p,i)=>`<div class="pol${p.b||p.g?' gold':''}"><canvas data-i="${i}" width="64" height="52"></canvas><b>${czCloudEsc(p.n)}</b><small>Lv ${p.lv||'?'}${p.b?' · Boss':''}${p.g?' · ✨ Golden':''}</small></div>`).join('')}</div>`:`<p>No photos yet. Every new dino ${mine?'you meet':'they meet'} gets a photo here.</p>`}
+ else if(CZ_HV.tab==='fish'){const ks=Object.keys(d.fish||{});h=`<p>${ks.length}/${CZ_FISH_SP.length} kinds of fish caught.</p><div class="czjour">${CZ_FISH_SP.map(sp=>{const best=d.fish&&d.fish[sp.id];return`<div class="jr${best?'':' un'}">${czFishIc(sp,!best)}<div><b>${best?sp.n:'???'}</b><br><small>${best?'Biggest: '+best+'"':'Not caught yet'}</small></div></div>`}).join('')}</div>`}
+ else if(CZ_HV.tab==='stats'){const s=d.st||{},acc=s.ans?Math.round(s.cor/s.ans*100):0;
+  h=`<div class="statgrid"><div><b>${acc}%</b><small>accuracy</small></div><div><b>${s.ans||0}</b><small>questions</small></div><div><b>${s.best||0}</b><small>best streak</small></div><div><b>${s.wins||0}</b><small>dinos out-coached</small></div><div><b>${(d.dex||[]).length}/8</b><small>dino types</small></div><div><b>${s.fish||0}</b><small>fish caught</small></div><div><b>${d.ach}/${d.achN}</b><small>awards</small></div><div><b>${s.locked||0}</b><small>questions locked in</small></div></div>`+
+   `<div class="catbars">`+Object.keys(CATS).map(k=>{const c=(s.cat&&s.cat[k])||[0,0],p=c[0]?Math.round(c[1]/c[0]*100):0,lvl=d.sk&&d.sk[k]!=null?czSkName(d.sk[k]):'';return`<div class="cb"><span>${CATS[k].name}</span><div class="bar"><i style="width:${p}%;background:${CATS[k].c}"></i></div><small>${p}%${lvl?' · '+lvl:''}</small></div>`}).join('')+'</div>'}
+ else if(CZ_HV.tab==='decor'&&mine){const hs=czHS();
+  h=`<p class="coins">🪙 ${S.coins}</p><div class="grid">`+Object.entries(CZ_DECOR).map(([k,o])=>{const have=!!hs.own[k];return`<div class="card"><div class="ic">${o.i}</div><div><b>${o.n}</b><br><small>${o.d}</small></div>${have?`<button onclick="czDecorToggle('${k}')">${hs.own[k]===2?'Put out':'Put away'}</button>`:`<button ${S.coins>=o.p?'':'disabled'} onclick="czDecorBuy('${k}')">${o.p}🪙</button>`}</div>`}).join('')+'</div>'+
+   `<h4>Walls</h4><div class="sw">${Object.entries(CZ_WALLS).map(([k,o])=>czSwatch('wall',k,o)).join('')}</div><h4>Floor</h4><div class="sw">${Object.entries(CZ_FLOORS).map(([k,o])=>czSwatch('floor',k,o)).join('')}</div>`}
+ b.innerHTML=h;
+ if(CZ_HV.tab==='photos')b.querySelectorAll('canvas[data-i]').forEach(c=>{const p=d.ph[+c.dataset.i],img=czPhotoCanvas(p);if(!img)return;const g=c.getContext('2d');g.imageSmoothingEnabled=false;const s=Math.min(60/img.width,48/img.height);g.drawImage(img,(64-img.width*s)/2,50-img.height*s,img.width*s,img.height*s)})}
+function czSwatch(kind,k,o){const hs=czHS(),have=kind==='wall'?hs.walls[k]:hs.floors[k],on=(kind==='wall'?hs.wall:hs.floor)===k;
+ return`<button class="${on?'on':''}" onclick="czDecorStyle('${kind}','${k}')"><i style="background:linear-gradient(90deg,${o.c[0]} 50%,${o.c[1]} 50%)"></i>${o.n}${have?'':' · '+o.p+'🪙'}</button>`}
+function czDecorBuy(k){const o=CZ_DECOR[k],hs=czHS();if(!o||hs.own[k]||S.coins<o.p)return;S.coins-=o.p;hs.own[k]=1;S.st.decor=(S.st.decor||0)+1;SFX.item&&SFX.item();czHouseRefresh()}
+function czDecorToggle(k){const hs=czHS();if(!hs.own[k])return;hs.own[k]=hs.own[k]===2?1:2;czHouseRefresh()}
+function czDecorStyle(kind,k){const hs=czHS(),cat=kind==='wall'?CZ_WALLS:CZ_FLOORS,bag=kind==='wall'?hs.walls:hs.floors,o=cat[k];if(!o)return;
+ if(!bag[k]){if(S.coins<o.p)return;S.coins-=o.p;bag[k]=1;SFX.item&&SFX.item()}if(kind==='wall')hs.wall=k;else hs.floor=k;czHouseRefresh()}
+function czHouseRefresh(){const d=czHouseSnap();d.house.own=Object.fromEntries(Object.entries(czHS().own).filter(([k,v])=>v===1));CZ_HV.data=d;updHud();czHouseRender();saveGame(true)}
+// decor that's "put away" (2) isn't shown
+const czSnapBase=czHouseSnap;czHouseSnap=function(){const s=czSnapBase();s.house.own=Object.fromEntries(Object.entries(s.house.own||{}).filter(([k,v])=>v===1));return s};
+
+// ---- going in: your house, or a friend's ----
+function czHouseEnter(){const peers=CZ_NET.ch?Object.entries(CZ_NET.peers).filter(([id,q])=>q.look&&!q.busy).slice(0,3):[];
+ if(!peers.length){czHouseOpen(czHouseSnap(),true);return}
+ const opts=['🏠 My house',...peers.map(([id,q])=>`👋 ${q.look.name}'s house`),'Cancel'];
+ choice('Whose house do you want to visit?',opts,i=>{if(i===0){czHouseOpen(czHouseSnap(),true);return}if(i>peers.length)return;const[id,q]=peers[i-1];czHouseKnock(id,q.look.name)})}
+const CZ_KNOCK={id:null,t:0};
+function czHouseKnock(id,name){CZ_KNOCK.id=id;CZ_KNOCK.name=name;CZ_KNOCK.t=Date.now();toast(`🚪 Knocking on ${name}'s door...`);
+ try{CZ_NET.ch.send({type:'broadcast',event:'house_req',payload:{from:CZ_NET.id,to:id,name:NM()}})}catch(e){}
+ setTimeout(()=>{if(CZ_KNOCK.id===id){CZ_KNOCK.id=null;toast(`Nobody answered at ${name}'s house. Try again in a bit.`)}},6000)}
+CZ_NET.onChannel.push(ch=>{
+ ch.on('broadcast',{event:'house_req'},({payload:p})=>{if(p.to!==CZ_NET.id||!S)return;
+  try{CZ_NET.ch.send({type:'broadcast',event:'house',payload:{from:CZ_NET.id,to:p.from,data:czHouseSnap()}})}catch(e){}toast(`👋 ${czCleanName(p.name)} is visiting your house!`)});
+ ch.on('broadcast',{event:'house'},({payload:p})=>{if(p.to!==CZ_NET.id||CZ_KNOCK.id!==p.from||!p.data)return;CZ_KNOCK.id=null;if(state!=='world'&&state!=='dialog')return;if(state==='dialog')try{closeDialog&&closeDialog()}catch(e){}
+  const dd=p.data;dd.name=czCleanName(dd.name);czHouseOpen(dd,false)})});
+press=(orig=>function(k,v){if(state==='house'){if(k==='B'||k==='A'||k==='MENU')czHouseClose();return}return orig.apply(this,arguments)})(press);
+
+ACH.push({g:'Home',id:'home_decor',n:'Home Sweet Home',d:'Buy 3 things to decorate your house.',i:'🏠',t:'bronze',c:()=>Object.keys((S.house&&S.house.own)||{}).length>=3},
+ {g:'Home',id:'home_full',n:'Dream House',d:`Own every decoration (${Object.keys(CZ_DECOR).length}).`,i:'🏡',t:'gold',c:()=>Object.keys((S.house&&S.house.own)||{}).length>=Object.keys(CZ_DECOR).length});
+(()=>{const st=document.createElement('style');st.textContent=`#czHouse{position:fixed;inset:0;z-index:58;display:none;align-items:center;justify-content:center;background:rgba(16,11,30,.6)}
+#czHouse,#czHouse *{font-family:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace}
+#czHouse .box{background:#fbf1dc;border:3px solid #2a1a12;border-radius:10px;padding:10px 12px;width:min(820px,96vw);max-height:94vh;display:flex;flex-direction:column;color:#2a1a12;box-shadow:0 6px 0 #2a1a12}
+#czHouse .hh{display:flex;align-items:center;gap:8px;margin-bottom:6px}#czHouse .hh small{color:#6a5848}#czHouse .hh button{margin-left:auto}
+#czHouseCv{width:100%;aspect-ratio:320/180;max-height:42vh;object-fit:contain;image-rendering:pixelated;border:3px solid #2a1a12;border-radius:6px;background:#efe1c4}
+#czHouse .tabs{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0 6px}#czHouse .tabs button{font-size:12px;padding:3px 8px}#czHouse .tabs button.on{background:#ffd84a}
+#czHouse .body{overflow:auto;min-height:120px;font-size:13px}#czHouse h4{margin:8px 0 4px}
+#czHouse .tro{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}#czHouse .tro>div{background:#fff;border:2px solid #2a1a12;border-radius:6px;padding:4px 6px;font-size:12px}#czHouse .tro .un{opacity:.55}
+#czHouse .gearwall{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:4px}#czHouse .gw{background:#fff;border:2px solid;border-radius:6px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px}#czHouse .gw img{width:30px;height:30px;image-rendering:pixelated}#czHouse .gw.un{filter:brightness(0) opacity(.18)}
+#czHouse .photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}#czHouse .pol{background:#fff;border:2px solid #2a1a12;padding:4px 4px 6px;text-align:center;font-size:11px;line-height:1.25}#czHouse .pol.gold{background:#fff2b0;border-color:#d8a020}#czHouse .pol canvas{width:100%;image-rendering:pixelated;background:#cfe6f0;display:block;margin-bottom:3px}#czHouse .pol small{display:block;color:#6a5848}
+#czHouse .statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}#czHouse .statgrid>div{background:#fff;border:2px solid #2a1a12;border-radius:6px;text-align:center;padding:4px}#czHouse .statgrid b{font-size:18px;display:block}#czHouse .statgrid small{font-size:10px;color:#6a5848}
+#czHouse .catbars .cb{display:grid;grid-template-columns:150px 1fr 110px;gap:6px;align-items:center;font-size:12px;margin:2px 0}#czHouse .catbars .bar{height:8px;background:#e8dcc0;border-radius:4px;overflow:hidden}#czHouse .catbars .bar i{display:block;height:100%}
+#czHouse .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}#czHouse .card{display:flex;gap:8px;align-items:center;background:#fff;border:2px solid #2a1a12;border-radius:6px;padding:4px 6px;font-size:12px}#czHouse .card .ic{font-size:22px}#czHouse .card button{margin-left:auto;white-space:nowrap}
+#czHouse .sw{display:flex;gap:6px;flex-wrap:wrap}#czHouse .sw button{font-size:12px;display:flex;align-items:center;gap:4px}#czHouse .sw button.on{background:#ffd84a}#czHouse .sw i{display:inline-block;width:14px;height:14px;border:1px solid #2a1a12}
+#czHouse .coins{margin:0 0 6px;font-weight:800}
+@media (max-width:600px){#czHouse .statgrid{grid-template-columns:repeat(2,1fr)}#czHouse .grid{grid-template-columns:1fr}#czHouse .catbars .cb{grid-template-columns:100px 1fr 70px}}`;document.head.appendChild(st)})();
+
 loadSigArt().then(boot);
 </script>
 <!-- GoatCounter visitor stats: loaded only on the GitHub Pages site -->

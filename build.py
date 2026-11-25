@@ -13,7 +13,7 @@ root = Path(__file__).parent
 src = root / "src"
 shell = (src / "shell.html").read_text(encoding="utf-8")
 game = (src / "game.js").read_text(encoding="utf-8")
-cozy = (src / "cozy.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_chars.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_dinos.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_items.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_hero.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_season.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_world2.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_online.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_cloud.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_duel.js").read_text(encoding="utf-8")
+cozy = (src / "cozy.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_chars.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_dinos.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_items.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_hero.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_season.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_world2.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_online.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_cloud.js").read_text(encoding="utf-8") + "\n" + (src / "cozy_duel.js").read_text(encoding="utf-8") + "".join("\n" + (src / f).read_text(encoding="utf-8") for f in ["cozy_qextra.js","cozy_econ.js","cozy_smart.js","cozy_fish.js","cozy_house.js"] if (src / f).exists())
 
 art = {}
 sheets = root / "art" / "cozy" / "sprites"
