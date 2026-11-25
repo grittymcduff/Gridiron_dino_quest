@@ -22,7 +22,33 @@ function makeNoise(seed){const r=mulberry32(seed);const P=new Float32Array(65536
 
 // ---------------- STATS (GoatCounter) ----------------
 // Counts anonymous game milestones on the GitHub Pages site only (no cookies, no personal data).
-function track(name){try{if(window.goatcounter&&goatcounter.count)goatcounter.count({path:'event/'+name,title:name,event:true})}catch(e){}}
+// Only event names are sent (e.g. "event/funnel-3-first-win"): never names, saves, answers or IDs.
+// Events wait in a queue until GoatCounter's script has loaded, so early events (like the visit on boot) aren't lost.
+const GC_ON=/\.github\.io$/.test(location.hostname);let gcQ=[],gcTries=0,gcWait=false;
+function gcFlush(){gcWait=false;if(window.goatcounter&&goatcounter.count){const q=gcQ;gcQ=[];gcTries=0;q.forEach(n=>{try{goatcounter.count({path:'event/'+n,title:n,event:true})}catch(e){}});return}
+ if(++gcTries>60){gcQ=[];return}gcWait=true;setTimeout(gcFlush,500)}
+function track(name){if(!GC_ON)return;gcQ.push(name);if(!gcWait)gcFlush()}
+// Per-browser stats used only to decide which events to send. Stored on this device (never sent), separate from the save.
+//   once:  events already sent from this browser, so funnel and retention events count each player once
+//   first/last: first and most recent day played; days: number of different days played; ans: answers given
+const STATS_KEY='bradyDinoQuest_stats';let GST=null;
+function gst(){if(!GST){try{GST=JSON.parse(localStorage.getItem(STATS_KEY))}catch(e){}GST=Object.assign({once:{},days:0,ans:0},GST||{})}return GST}
+function gstSave(){try{localStorage.setItem(STATS_KEY,JSON.stringify(gst()))}catch(e){}}
+function trackOnce(name){const g=gst();if(g.once[name])return;g.once[name]=1;gstSave();track(name)}
+function dayStr(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function daysBetween(a,b){return Math.round((new Date(b+'T12:00')-new Date(a+'T12:00'))/864e5)}
+// Called once per page load: new vs returning visitors, and how long players keep coming back.
+function trackVisit(){const g=gst(),today=dayStr();
+ if(!g.first){let had=false;try{had=!!localStorage.getItem(SAVE_KEY)}catch(e){}
+  g.first=today;g.last=today;g.days=1;gstSave();track(had?'visit-first-existing-player':'visit-first');return}
+ if(g.last===today)return;                        // one visit per day per browser
+ g.last=today;g.days++;gstSave();track('visit-return');
+ const gap=daysBetween(g.first,today);
+ if(gap>=1)trackOnce('retained-1-day');if(gap>=7)trackOnce('retained-2-week');if(gap>=30)trackOnce('retained-3-month');
+ for(const n of[3,5,10,20])if(g.days>=n)trackOnce('play-days-'+n)}
+// Learning milestones: answers given across battles, pop quizzes and the Daily Challenge.
+function trackAnswer(){const g=gst();g.ans++;gstSave();if(g.ans===1)trackOnce('funnel-2-first-answer');
+ for(const n of[25,100,250,500,1000])if(g.ans===n)trackOnce('answers-'+n)}
 // ---------------- CONSTANTS ----------------
 const TS=16;let CW=320, CH=208;
 // HD rendering: game logic stays in 16-unit tiles; the canvas has RS device pixels per world unit.
@@ -899,7 +925,7 @@ function pickQuestion(cat,dmin,dmax,preferMissed){
  if(missed.length&&(preferMissed||R()<.25))q=pick(missed);
  else{const fresh=P.filter(q=>!S.seen[q.id]);q=pick(fresh.length?fresh:P)}
  recent.push(q.id);if(recent.length>15)recent.shift();return q}
-function recordAnswer(q,ok){if(ok&&q.pic){if(q.pic.startsWith('sig'))S.st.sig=(S.st.sig||0)+1;else S.st.form=(S.st.form||0)+1}S.seen[q.id]=(S.seen[q.id]||0)+1;S.st.ans++;const c=S.st.cat[q.cat]||(S.st.cat[q.cat]=[0,0]);c[0]++;
+function recordAnswer(q,ok){trackAnswer();if(ok&&q.pic){if(q.pic.startsWith('sig'))S.st.sig=(S.st.sig||0)+1;else S.st.form=(S.st.form||0)+1}S.seen[q.id]=(S.seen[q.id]||0)+1;S.st.ans++;const c=S.st.cat[q.cat]||(S.st.cat[q.cat]=[0,0]);c[0]++;
  if(ok){S.st.cor++;c[1]++;S.st.streak++;S.st.best=Math.max(S.st.best,S.st.streak);if(S.missed[q.id]){S.missed[q.id]--;if(S.missed[q.id]<=0){delete S.missed[q.id];S.st.mastered=(S.st.mastered||0)+1}}}
  else{S.st.streak=0;S.missed[q.id]=2}}
 
@@ -1140,7 +1166,7 @@ function run(){if(!B||B.phase!=='question')return;
  else{const dmg=Math.max(1,Math.round(B.en.atk*.6));S.hp=Math.max(0,S.hp-dmg);B.anim={type:'hit',t:0,dmg};SFX.wrong();updBattleBoxes();B.phase='feedback';B.fbReady=true;
   setPanel(`<div class="qIntro">🏃 ${NMH()} tried to run... but ${esc(B.en.name)} blocked the way! <b>-${dmg} 💧 hydration</b></div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}}
 function victory(){const e=B.en;B.phase='end';SFX.win();S.st.wins++;S.dex[e.fam].def++;
- if(!B.opts.practice){S.st.winsBy[S.diff]=(S.st.winsBy[S.diff]||0)+1;if(e.shiny)S.st.golden=(S.st.golden||0)+1;if(S.hp<=stats().hp*.1)S.flags.comeback=1;if(e.boss&&!B.wrong)S.flags.flawless=1;
+ if(!B.opts.practice){trackOnce('funnel-3-first-win');S.st.winsBy[S.diff]=(S.st.winsBy[S.diff]||0)+1;if(e.shiny)S.st.golden=(S.st.golden||0)+1;if(S.hp<=stats().hp*.1)S.flags.comeback=1;if(e.boss&&!B.wrong)S.flags.flawless=1;
   if(B.opts.boss){S.st.bossBy[S.diff]=(S.st.bossBy[S.diff]||0)+1;if(B.opts.boss.def.final)S.st.champBy[S.diff]=(S.st.champBy[S.diff]||0)+1}}
  const lines=[`<b>${esc(e.name)}</b> ${e.boss?'has been out-coached!':'is dehydrated!'}`];
  if(B.opts.practice){lines.push('Nice practice rep! +5 XP. Coach Dale gives you a high five. ✋');S.xp+=5;}
@@ -1160,8 +1186,8 @@ function victory(){const e=B.en;B.phase='end';SFX.win();S.st.wins++;S.dex[e.fam]
  let after=null;
  if(B.opts.secretBoss){after=()=>dialog(GOAT.outro.map(l=>`${GOAT.name}: ${l}`).concat(['Equip your Mythic gear from Menu → Gear.']))}
  else if(B.opts.legend){const L=LEGENDS[B.opts.legend.legend];after=()=>dialog(L.outro.map(l=>`${L.name}: ${l}`).concat(['Equip your legendary gear from Menu → Gear.']))}
- else if(e.boss&&B.opts.boss){const b=B.opts.boss,d=b.def;if(!S.bosses[b.poi])track('coach-'+b.poi);S.bosses[b.poi]=1;if(!S.trophies.includes(d.trophy))S.trophies.push(d.trophy);lines.push(`🏆 ${NMH()} earned the <b>${d.trophy}</b>!`);
-  after=()=>{dialog(d.outro.map(l=>`${d.name}: ${l}`),()=>{if(d.final){if(!S.champion)track('champion-'+S.diff);S.champion=true;saveGame(true);showEnding()}else if(S.trophies.length>=6)dialog(['All 6 Coach Trophies collected! 🏆','Head to the Championship Gate in the volcano at the center of the map!'])})}}
+ else if(e.boss&&B.opts.boss){const b=B.opts.boss,d=b.def;if(!S.bosses[b.poi])track('coach-'+b.poi);S.bosses[b.poi]=1;if(!S.trophies.includes(d.trophy))S.trophies.push(d.trophy);if(!d.final){const nT=S.trophies.length;if(nT>=1)trackOnce('funnel-4-first-coach');if(nT>=3)trackOnce('funnel-5-three-coaches');if(nT>=6)trackOnce('funnel-6-all-six-coaches')}lines.push(`🏆 ${NMH()} earned the <b>${d.trophy}</b>!`);
+  after=()=>{dialog(d.outro.map(l=>`${d.name}: ${l}`),()=>{if(d.final){if(!S.champion)track('champion-'+S.diff);trackOnce('funnel-7-champion');S.champion=true;saveGame(true);showEnding()}else if(S.trophies.length>=6)dialog(['All 6 Coach Trophies collected! 🏆','Head to the Championship Gate in the volcano at the center of the map!'])})}}
  if(!after&&!B.opts.practice&&!e.boss&&!B.opts.legend&&!B.opts.secretBoss&&S.team.roster.length<TEAM_MAX&&R()<(e.shiny?1:S.team.roster.length?.3:.6))after=()=>offerRecruit(e);
  B.after=after;updBattleBoxes();saveGame(true);
  setPanel(`<div class="qIntro vic">${lines.join('<br>')}</div>`,`<button class="tool go" onclick="G.cont()">Continue ▶</button>`)}
@@ -1589,7 +1615,7 @@ function dailyAnswer(k){if(!D||D.phase!=='q')return;D.phase='fb';const it=D.qs[D
  $('#dFb').innerHTML=`<div class="box ${ok?'ok':'no'} dfb"><b class="${ok?'good':'bad'}">${k<0?'⏱ TIME! ':''}${ok?`✔ Correct! +${pts}`:'✘ Not quite.'}</b> ${ok?'':`Answer: <b>${esc(q.a)}</b>. `}${esc(q.x)}</div><button class="dgo" onclick="G.dailyNext()">${D.i<9?'Next ▶':'See results ▶'}</button>`}
 function dailyNext(){if(!D||D.phase!=='fb')return;D.i++;if(D.i<10)return dailyQ();
  const dd=loadDaily(),y=new Date();y.setDate(y.getDate()-1);dd.streak=(dd.last===dStr(y))?dd.streak+1:1;dd.last=D.ds;dd.best=Math.max(dd.best||0,D.score);dd.bestStreak=Math.max(dd.bestStreak||0,dd.streak);
- const rec={score:D.score,res:D.res,n:D.n};dd.days[D.ds]=rec;dd.played=(dd.played||0)+1;track('daily-complete');if(D.res.every(x=>x))dd.perfect=1;saveDaily(dd);
+ const rec={score:D.score,res:D.res,n:D.n};dd.days[D.ds]=rec;dd.played=(dd.played||0)+1;track('daily-complete');trackOnce('daily-first');if(D.res.every(x=>x))dd.perfect=1;saveDaily(dd);
  if(D.fromGame&&S){const c=Math.round(D.score/10);S.coins+=c;rec.coins=c;saveGame(true)}SFX.win();D.phase='done';renderDailyResult(rec,dd)}
 function dailyShareText(rec,dd){const c=rec.res.filter(x=>x).length;return`🦖🏈 Gridiron Dino Quest: Daily #${rec.n}\n${c}/10 · ${rec.score} pts${dd.streak>1?` · 🔥${dd.streak}-day streak`:''}\n${rec.res.map(x=>x?'🟩':'🟥').join('')}\nPlay: ${PLAY_URL}`}
 function renderDailyResult(rec,dd){const c=rec.res.filter(x=>x).length,txt=dailyShareText(rec,dd);const now=new Date(),mid=new Date(now);mid.setHours(24,0,0,0);const ms=mid-now,h=Math.floor(ms/36e5),m=Math.floor(ms%36e5/6e4);
@@ -1681,7 +1707,7 @@ window.G={daily:()=>openDaily(),dailyStart:()=>dailyStart(),dailyAnswer:k=>daily
  buy:k=>{const c=CONS[k];if(S.coins<c.price)return;S.coins-=c.price;S.st.bought=(S.st.bought||0)+1;S.inv[k]=(S.inv[k]||0)+1;SFX.item();updHud();renderShop()},
  buyGear:k=>{const p=GEAR_PRICE[GEAR[k].r];if(S.coins<p)return;S.coins-=p;S.st.bought=(S.st.bought||0)+1;S.gear.push(k);SFX.item();toast(`Bought ${GEAR[k].name}! Equip it in Menu → Gear.`);updHud();renderShop()},
  sell:i=>{const id=S.gear[i];if(!id)return;S.gear.splice(i,1);S.coins+=Math.round(GEAR_PRICE[GEAR[id].r]/2);SFX.item();updHud();renderShop()},
- newGame:d=>{$('#newGameBox').classList.add('hidden');startGame(newSave(d,CR&&CR.hero),true);track('new-game-'+d)},
+ newGame:d=>{$('#newGameBox').classList.add('hidden');startGame(newSave(d,CR&&CR.hero),true);track('new-game-'+d);trackOnce('funnel-1-new-game')},
  editLook:()=>openCreator('edit'),team:(act,id)=>teamAct(act,id),crDone:()=>crDone(),crBack:()=>crBack(),crRandom:()=>crRandom(),crReopen:()=>{$('#newGameBox').classList.add('hidden');openCreator('new',true)},
  cont:cont,
  continueGame:()=>{const sv=loadSave();if(sv)startGame(sv,false)},
@@ -1696,5 +1722,6 @@ function boot(){
  S=newSave();S.sound=false;bradySpr=makeBradySprites();bradyRed=tint(bradySpr.right[0],'#ff3030');player.px=POIS[0].x*16;player.py=POIS[0].y*16;
  $('#btnMenu').onclick=()=>{if(state==='world')openMenu()};$('#btnMap').onclick=()=>{if(state==='world')openMap()};$('#btnSnd').onclick=()=>{S.sound=!S.sound;updHud()};
  fit();featFit();bindTouch();bindClick();bindZoom();showTitle();requestAnimationFrame(loop);
+ trackVisit();
 }
 loadSigArt().then(boot);

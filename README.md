@@ -52,3 +52,20 @@ The 15 referee signals use hand-drawn pixel art (`art/referee/`, embedded as `SI
 Touchdown, First down, Offside, Pass interference, False start, Delay of game, Face mask and Unsportsmanlike conduct are cut straight from the artwork.
 The other seven reuse the Touchdown referee with new arm poses drawn in the art's palette (`art/referee/make_missing_poses.py`).
 
+
+## Stats (GoatCounter)
+
+Anonymous, cookie-free event counts go to [grittymcduff.goatcounter.com](https://grittymcduff.goatcounter.com) from the GitHub Pages site only (`track()` in `src/game.js`). Only event names are sent. A small per-browser note (`localStorage` key `bradyDinoQuest_stats`, separate from the save) decides which events to send; it never leaves the device.
+
+| Event | Fires | Use it for |
+|---|---|---|
+| `visit-first` / `visit-first-existing-player` | first visit from a browser (the second if a save already existed) | new players |
+| `visit-return` | once per later day the game is opened | returning visits per day |
+| `retained-1-day`, `retained-2-week`, `retained-3-month` | once per browser, when it comes back 1, 7 or 30+ days after its first visit | retention |
+| `play-days-3`, `-5`, `-10`, `-20` | once per browser, after playing on that many different days | loyal players |
+| `funnel-1-new-game` … `funnel-7-champion` | once per browser at each step: new game, first answer, first win, first coach, 3 coaches, all 6 coaches, champion | completion funnel |
+| `answers-25` … `answers-1000` | once per browser, after that many answers | how much people learn |
+| `daily-first`, `daily-complete` | first and every Daily Challenge finished | Daily Challenge use |
+| `new-game-<difficulty>`, `coach-<town>`, `champion-<difficulty>`, `legend-<id>`, `goat-beaten`, `sanctum-found`, `level-<n>` | per save, as before | difficulty mix and late-game progress |
+
+Players who already had a save before these events existed won't fire `funnel-1-new-game`, so read early funnel numbers with that in mind.
