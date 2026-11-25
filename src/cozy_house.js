@@ -70,7 +70,7 @@ function czRoomDraw(){const cv=$('#czHouseCv');if(!cv||!CZ_HV.data)return;const 
  fk.slice(0,8).forEach((id,i)=>{const sp=CZ_FISH_SP.find(s=>s.id===id);if(!sp)return;const img=CZ_FISH_IMG['cv_'+id]||(CZ_FISH_IMG['cv_'+id]=czFishCanvas(sp,false));const sp_=.25+((i*37)%10)/20,ph_=i*1.7;
   const fx=TX+4+((Math.sin(t*sp_+ph_)+1)/2)*(TW-30),fy=TY+10+((i*11)%26)+Math.sin(t*1.3+i)*2,dir=Math.cos(t*sp_+ph_)>0;g.save();if(!dir){g.translate(fx+13,0);g.scale(-1,1);g.translate(-fx-13,0)}g.drawImage(img,fx,fy);g.restore()});
  for(let i=0;i<4;i++){const by=TY+TH-8-((t*14+i*13)%(TH-12));R_(TX+TW-22+((i*5)%9),by,2,2,'rgba(255,255,255,.7)')}
- if(!fk.length){g.fillStyle='rgba(255,255,255,.85)';g.font='7px monospace';g.fillText('Catch fish to',TX+16,TY+24);g.fillText('fill the tank!',TX+16,TY+33)}
+ if(!fk.length){g.fillStyle='rgba(255,255,255,.85)';g.font='7px monospace';g.textAlign='center';g.fillText('Catch fish to',TX+TW/2,TY+24);g.fillText('fill the tank!',TX+TW/2,TY+33);g.textAlign='left'}
  g.strokeStyle='rgba(255,255,255,.35)';g.beginPath();g.moveTo(TX+4,TY+8);g.lineTo(TX+12,TY+40);g.stroke();
  // decor on the floor
  if(own.tv){const x=62,y=FY-50;R_(x+18,y+28,8,8,O);R_(x+10,y+34,24,3,O);R_(x,y,44,30,O);R_(x+2,y+2,40,26,(t*2|0)%2?'#2f8a3a':'#2e9e50');R_(x+12,y+12,20,2,'#fff');R_(x+20,y+8,4,10,'#e8f0e0')}
@@ -108,7 +108,7 @@ function czHouseRender(){const d=CZ_HV.data,box=$('#czHouse .box');if(!d||!box)r
    `<div class="catbars">`+Object.keys(CATS).map(k=>{const c=(s.cat&&s.cat[k])||[0,0],p=c[0]?Math.round(c[1]/c[0]*100):0,lvl=d.sk&&d.sk[k]!=null?czSkName(d.sk[k]):'';return`<div class="cb"><span>${CATS[k].name}</span><div class="bar"><i style="width:${p}%;background:${CATS[k].c}"></i></div><small>${p}%${lvl?' · '+lvl:''}</small></div>`}).join('')+'</div>'}
  else if(CZ_HV.tab==='decor'&&mine){const hs=czHS();
   h=`<p class="coins">🪙 ${S.coins}</p><div class="grid">`+Object.entries(CZ_DECOR).map(([k,o])=>{const have=!!hs.own[k];return`<div class="card"><div class="ic">${o.i}</div><div><b>${o.n}</b><br><small>${o.d}</small></div>${have?`<button onclick="czDecorToggle('${k}')">${hs.own[k]===2?'Put out':'Put away'}</button>`:`<button ${S.coins>=o.p?'':'disabled'} onclick="czDecorBuy('${k}')">${o.p}🪙</button>`}</div>`}).join('')+'</div>'+
-   `<h4>Walls</h4><div class="sw">${Object.entries(CZ_WALLS).map(([k,o])=>czSwatch('wall',k,o)).join('')}</div><h4>Floor</h4><div class="sw">${Object.entries(CZ_FLOORS).map(([k,o])=>czSwatch('floor',k,o)).join('')}</div>`}
+   `<h4>Walls</h4><div class="czsw">${Object.entries(CZ_WALLS).map(([k,o])=>czSwatch('wall',k,o)).join('')}</div><h4>Floor</h4><div class="czsw">${Object.entries(CZ_FLOORS).map(([k,o])=>czSwatch('floor',k,o)).join('')}</div>`}
  b.innerHTML=h;
  if(CZ_HV.tab==='photos')b.querySelectorAll('canvas[data-i]').forEach(c=>{const p=d.ph[+c.dataset.i],img=czPhotoCanvas(p);if(!img)return;const g=c.getContext('2d');g.imageSmoothingEnabled=false;const s=Math.min(60/img.width,48/img.height);g.drawImage(img,(64-img.width*s)/2,50-img.height*s,img.width*s,img.height*s)})}
 function czSwatch(kind,k,o){const hs=czHS(),have=kind==='wall'?hs.walls[k]:hs.floors[k],on=(kind==='wall'?hs.wall:hs.floor)===k;
@@ -152,6 +152,6 @@ ACH.push({g:'Home',id:'home_decor',n:'Home Sweet Home',d:'Buy 3 things to decora
 #czHouse .statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}#czHouse .statgrid>div{background:#fff;border:2px solid #2a1a12;border-radius:6px;text-align:center;padding:4px}#czHouse .statgrid b{font-size:18px;display:block}#czHouse .statgrid small{font-size:10px;color:#6a5848}
 #czHouse .catbars .cb{display:grid;grid-template-columns:150px 1fr 110px;gap:6px;align-items:center;font-size:12px;margin:2px 0}#czHouse .catbars .bar{height:8px;background:#e8dcc0;border-radius:4px;overflow:hidden}#czHouse .catbars .bar i{display:block;height:100%}
 #czHouse .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}#czHouse .card{display:flex;gap:8px;align-items:center;background:#fff;border:2px solid #2a1a12;border-radius:6px;padding:4px 6px;font-size:12px}#czHouse .card .ic{font-size:22px}#czHouse .card button{margin-left:auto;white-space:nowrap}
-#czHouse .sw{display:flex;gap:6px;flex-wrap:wrap}#czHouse .sw button{font-size:12px;display:flex;align-items:center;gap:4px}#czHouse .sw button.on{background:#ffd84a}#czHouse .sw i{display:inline-block;width:14px;height:14px;border:1px solid #2a1a12}
+#czHouse .czsw{display:flex;gap:6px;flex-wrap:wrap}#czHouse .czsw button{font-size:12px;display:flex;align-items:center;gap:4px}#czHouse .czsw button.on{background:#ffd84a}#czHouse .czsw i{display:inline-block;width:14px;height:14px;border:1px solid #2a1a12}
 #czHouse .coins{margin:0 0 6px;font-weight:800}
 @media (max-width:600px){#czHouse .statgrid{grid-template-columns:repeat(2,1fr)}#czHouse .grid{grid-template-columns:1fr}#czHouse .catbars .cb{grid-template-columns:100px 1fr 70px}}`;document.head.appendChild(st)})();
