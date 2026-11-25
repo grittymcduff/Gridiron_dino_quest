@@ -26,6 +26,14 @@ function czCleanName(n){return String(n||'Player').replace(/[^A-Za-z0-9 _'.-]/g,
 // anonymous sign-in: no email or password, just a per-tab id the server can trust for duels
 async function czNetAuth(){try{const{data}=await CZ_NET.sb.auth.getSession();let u=data&&data.session&&data.session.user;
  if(!u){const r=await CZ_NET.sb.auth.signInAnonymously();if(r.error)throw r.error;u=r.data.user}CZ_NET.uid=u.id;CZ_NET.authErr=null}catch(e){CZ_NET.uid=null;CZ_NET.authErr=String(e&&e.message||e)}}
+// one Supabase client for online play and cloud saves.
+// Sign-ins are kept per tab (sessionStorage) when anonymous, so two tabs are two players;
+// a Google sign-in is kept in localStorage so it survives closing the browser.
+const czAuthStore={getItem:k=>{try{return localStorage.getItem(k)??sessionStorage.getItem(k)}catch(e){return null}},
+ setItem:(k,v)=>{try{let anon=false;if(k==='dq-auth'){try{const o=JSON.parse(v);anon=!!(o&&o.user&&o.user.is_anonymous)}catch(e){}}
+  if(anon){sessionStorage.setItem(k,v);localStorage.removeItem(k)}else{localStorage.setItem(k,v);if(k==='dq-auth')sessionStorage.removeItem(k)}}catch(e){}},
+ removeItem:k=>{try{localStorage.removeItem(k);sessionStorage.removeItem(k)}catch(e){}}};
+async function czSb(){await czLoadLib();if(!CZ_NET.sb)CZ_NET.sb=window.supabase.createClient(CZ_NET.url,CZ_NET.key,{realtime:{params:{eventsPerSecond:10}},auth:{storage:czAuthStore,storageKey:'dq-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'pkce'}});return CZ_NET.sb}
 function czLoadLib(){if(window.supabase&&window.supabase.createClient)return Promise.resolve();
  return new Promise((ok,bad)=>{const s=document.createElement('script');s.src=CZ_NET.lib;s.async=true;s.onload=()=>ok();s.onerror=()=>bad(new Error('lib'));document.head.appendChild(s)})}
 function czMyLook(){const h=S&&S.hero||{};return{name:czCleanName(h.name||'Brady'),hero:{style:h.style||'shaggy',hair:h.hair,skin:h.skin,fr:!!h.fr},eq:{helmet:S.equip.helmet,pads:S.equip.pads,cleats:S.equip.cleats}}}
@@ -40,7 +48,7 @@ async function czNetJoin(code){code=czCleanCode(code);if(!code||code.length<4)re
 async function czNetJoinInner(code){await czNetLeave(true);CZ_NET.room=code;try{localStorage.setItem('dq_room',code)}catch(e){}
  if(!S||state==='title'){CZ_NET.status='waiting';czNetUI();return}
  CZ_NET.status='connecting';czNetUI();
- try{await czLoadLib();if(!CZ_NET.sb)CZ_NET.sb=window.supabase.createClient(CZ_NET.url,CZ_NET.key,{realtime:{params:{eventsPerSecond:10}},auth:{storage:window.sessionStorage,storageKey:'dq-auth',persistSession:true,autoRefreshToken:true}});
+ try{await czSb();
   await czNetAuth()}
  catch(e){CZ_NET.status='error';czNetUI();toast("🌐 Couldn't reach the online room. Playing solo for now.");return}
  if(CZ_NET.room!==code)return;
