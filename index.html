@@ -3955,7 +3955,7 @@ async function czCloudInit(){
  const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1));
  const back=q.has('code')||q.has('error')||h.has('access_token')||h.has('error');
  let has=false;try{has=!!localStorage.getItem('dq-auth')}catch(e){}
- if(!back&&!has){czCloudUI();return}
+ if(!back&&!has){czCloudUI();czCloudNews();return}
  try{const sb=await czSb();
   sb.auth.onAuthStateChange((ev,sess)=>{const u=sess&&sess.user;CZ_CLOUD.user=u&&!u.is_anonymous?u:null;czCloudUI()});
   const{data}=await sb.auth.getSession();const u=data&&data.session&&data.session.user;CZ_CLOUD.user=u&&!u.is_anonymous?u:null}
@@ -3964,7 +3964,15 @@ async function czCloudInit(){
  if(back){try{history.replaceState(null,'',location.pathname)}catch(e){}}
  CZ_CLOUD.ready=true;czCloudUI();
  if(bad){toast('☁️ Google sign-in didn\'t finish: '+bad.slice(0,80));return}
- if(CZ_CLOUD.user){if(back)toast('☁️ Signed in as '+czCloudWho());czCloudSync()}}
+ if(CZ_CLOUD.user){if(back)toast('☁️ Signed in as '+czCloudWho());czCloudSync()}
+ else if(!back)czCloudNews()}
+// one-time "new feature" note on the title screen, for players who haven't signed in yet
+function czCloudNews(){let seen=false;try{seen=!!localStorage.getItem('dq_news_cloud')}catch(e){}if(seen)return;
+ setTimeout(()=>{if(state!=='title'||CZ_CLOUD.user)return;const d=$('#czCloud');if(d&&d.style.display==='flex')return;
+  try{localStorage.setItem('dq_news_cloud','1')}catch(e){}
+  czCloudDialog(true,`<h3>✨ New feature!</h3><p><b>Cloud saves are here.</b> Link your game to your Google account and keep playing on any phone, tablet or computer.</p>
+   <p>Select <b>☁️ Save to cloud</b> to get started.</p><div class="row"><button id="czcNewsGo">☁️ Save to cloud</button><button id="czcNewsX">Maybe later</button></div>`);
+  $('#czcNewsGo').onclick=()=>czCloudDialog(true);$('#czcNewsX').onclick=()=>czCloudDialog(false)},900)}
 
 async function czCloudSignIn(){
  if(S&&state!=='title')saveGame(true);
