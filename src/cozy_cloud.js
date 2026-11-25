@@ -75,7 +75,7 @@ function czCloudDialog(show,html){let d=$('#czCloud');if(!d){d=document.createEl
  if(!show){d.style.display='none';return}d.style.display='flex';const b=d.querySelector('.box');
  if(html){b.innerHTML=html;return}
  if(!CZ_CLOUD.user){b.innerHTML=`<h3>☁️ Save to the cloud</h3><p>Sign in with Google to keep your game in the cloud. Then you can keep playing on any phone, tablet or computer by signing in there too.</p>
-  <p><small>We only use your Google name and email to find your save. Grown-ups: some kids' Google accounts can't sign in to games; a parent's account works fine.</small></p>
+  <p><small>We only use your Google name and email to find your save (<a href="privacy.html" target="_blank" rel="noopener">privacy</a>). Grown-ups: some kids' Google accounts can't sign in to games; a parent's account works fine.</small></p>
   <div class="row"><button id="czcGo">Sign in with Google</button></div><div class="row"><button id="czcX">Not now</button></div>`;
   $('#czcGo').onclick=()=>{b.innerHTML='<h3>☁️ Going to Google…</h3><p>You\'ll come right back here after signing in.</p>';czCloudSignIn()};$('#czcX').onclick=()=>czCloudDialog(false);return}
  const m=czCloudMeta();
