@@ -4805,7 +4805,7 @@ function czHS(){return S.house||(S.house={own:{},wall:'cream',floor:'oak',walls:
 // ---- a snapshot of a house (used for your own house too, so visiting looks exactly the same) ----
 function czHouseSnap(){const h=czHS(),f=S.fish||{log:{}};
  return{v:1,name:NM(),look:czMyLook(),lv:S.lv,tro:S.trophies.slice(),ch:!!S.champion,
-  ph:(S.photos||[]).slice(0,16),dex:Object.keys(S.dex),gear:[...new Set(S.gear)],
+  ph:czPhotoPick(),dex:Object.keys(S.dex),gear:[...new Set(S.gear)],
   fish:Object.fromEntries(Object.entries(f.log).map(([k,v])=>[k,v.best])),
   st:{ans:S.st.ans,cor:S.st.cor,best:S.st.best,battles:S.st.battles,wins:S.st.wins,cat:S.st.cat,fish:S.st.fish||0,locked:S.st.locked||0},
   ach:Object.keys(S.ach||{}).length,achN:ACH.length,sk:S.sk||null,
@@ -4900,6 +4900,18 @@ function czHouseRefresh(){const d=czHouseSnap();d.house.own=Object.fromEntries(O
 const czSnapBase=czHouseSnap;czHouseSnap=function(){const s=czSnapBase();s.house.own=Object.fromEntries(Object.entries(s.house.own||{}).filter(([k,v])=>v===1));return s};
 
 // ---- going in: your house, or a friend's ----
+
+// ---- bosses and golden dinos stay on the wall; bosses beaten before photos existed get theirs added ----
+function czPhotoBackfill(){if(!S)return;S.photos=S.photos||[];const have=new Set(S.photos.map(p=>p.n)),add=[];
+ const snap=(d,lv)=>{if(d&&!have.has(d.name)){have.add(d.name);add.push({f:d.fam,p:d.pal,pt:d.pattern||'none',n:d.name,lv,b:1,g:0})}};
+ try{for(const p of POIS)if(p.boss&&S.bosses&&S.bosses[p.id])snap(p.boss,p.boss.lv);
+  for(const it of items)if(it.legend&&S.taken&&S.taken[it.id]&&LEGENDS[it.legend])snap(LEGENDS[it.legend],22);
+  if(S.bosses&&S.bosses.goat&&typeof GOAT!=='undefined')snap(GOAT,GOAT.lv)}catch(e){}
+ if(add.length)S.photos.push(...add)}
+function czPhotoPick(){czPhotoBackfill();const ph=S.photos||[],star=ph.filter(p=>p.b||p.g),rest=ph.filter(p=>!p.b&&!p.g);
+ // the order each boss was met is kept; up to 24 photos, special ones first
+ return[...star,...rest].slice(0,Math.max(24,star.length))}
+startGame=(orig=>function(){const r=orig.apply(this,arguments);try{czPhotoBackfill()}catch(e){}return r})(startGame);
 function czHouseEnter(){const peers=CZ_NET.ch?Object.entries(CZ_NET.peers).filter(([id,q])=>q.look&&!q.busy).slice(0,3):[];
  if(!peers.length){czHouseOpen(czHouseSnap(),true);return}
  const opts=['🏠 My house',...peers.map(([id,q])=>`👋 ${q.look.name}'s house`),'Cancel'];
